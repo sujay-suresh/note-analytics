@@ -1,0 +1,2832 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>note Analytics</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+/* ================================================================
+   BASE
+   ================================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --border: #e5e7eb;
+  --ink: #1a1a2e;
+  --ink-light: #4b5563;
+  --ink-muted: #9ca3af;
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+  --green: #059669;
+  --green-light: #d1fae5;
+  --amber: #d97706;
+  --amber-light: #fef3c7;
+  --red: #dc2626;
+  --red-light: #fee2e2;
+  --purple: #7c3aed;
+  --purple-light: #ede9fe;
+  --radius: 8px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: 'Inter', 'Noto Sans JP', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ================================================================
+   LAYOUT
+   ================================================================ */
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lang-toggle {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--ink-light);
+  transition: all 0.15s;
+}
+.lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
+
+.status-bar {
+  font-size: 11px;
+  color: var(--ink-muted);
+  display: flex;
+  gap: 16px;
+}
+.status-bar .gap-warn { color: var(--amber); font-weight: 500; }
+
+/* Tabs */
+.tab-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  display: flex;
+  gap: 0;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab-btn:hover { color: var(--ink-light); }
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.tab-content {
+  display: none;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.tab-content.active { display: block; }
+
+/* ================================================================
+   BRIEFING TAB
+   ================================================================ */
+.summary-block {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 24px;
+}
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+.kpi-item { text-align: center; padding: 8px 4px; }
+.kpi-item + .kpi-item { border-left: 1px solid var(--border); }
+.kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
+.kpi-value.green { color: var(--green); }
+.kpi-value.amber { color: var(--amber); }
+.kpi-value.red { color: var(--red); }
+.kpi-value.blue { color: var(--accent); }
+.kpi-value.purple { color: var(--purple); }
+.kpi-value.neutral { color: var(--ink); }
+.kpi-label { font-size: 10px; font-weight: 600; color: var(--ink-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
+.kpi-sub { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
+
+.article-index {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-light);
+}
+.article-index-item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 0;
+}
+.article-index-num {
+  font-weight: 700;
+  font-size: 11px;
+  min-width: 24px;
+  color: var(--ink);
+}
+.article-index-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  margin: 32px 0 12px;
+}
+
+.chart-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.chart-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.chart-toggle {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--ink-light);
+}
+.chart-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.chart-toggle.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+
+.chart-wrap { position: relative; width: 100%; }
+.chart-alt { font-size: 11px; color: var(--ink-muted); margin-top: 8px; font-style: italic; }
+.chart-key {
+  display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 10px;
+  font-size: 11px; color: var(--ink-light);
+}
+.chart-key-item { display: flex; align-items: center; gap: 4px; }
+.chart-key-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.chart-key-line {
+  width: 16px; height: 0; border-top: 2px dashed; flex-shrink: 0;
+}
+.chart-key-tri {
+  width: 0; height: 0; border-left: 5px solid transparent;
+  border-right: 5px solid transparent; border-bottom: 10px solid;
+  flex-shrink: 0;
+}
+
+.narrative-bridge {
+  font-size: 13px; color: var(--ink-light); line-height: 1.7;
+  padding: 12px 0 4px; margin-bottom: 8px;
+}
+
+.section-with-insight {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  gap: 16px;
+  align-items: start;
+}
+.section-main { min-width: 0; }
+.section-insight {
+  font-size: 12px;
+  color: var(--ink-light);
+  line-height: 1.7;
+  padding: 12px 0;
+  border-left: 1px solid var(--border);
+  padding-left: 16px;
+}
+.section-insight .si-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+  margin-bottom: 6px;
+}
+.section-insight .si-value { margin-bottom: 10px; }
+.section-insight strong { font-weight: 600; color: var(--ink); }
+
+@media (max-width: 900px) {
+  .section-with-insight { grid-template-columns: 1fr; }
+  .section-insight { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 12px; }
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Follower journey cards */
+.journey-list { display: flex; flex-direction: column; gap: 8px; }
+.journey-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  font-size: 12px;
+}
+.journey-name {
+  font-weight: 600;
+  min-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.journey-events {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.journey-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.journey-dot.like { background: var(--accent); }
+.journey-dot.follow { background: var(--green); }
+.journey-arrow { color: var(--ink-muted); font-size: 10px; }
+.journey-label {
+  font-size: 10px;
+  color: var(--ink-light);
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.journey-time {
+  font-size: 10px;
+  color: var(--ink-muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* Actions block */
+.actions-block {
+  background: var(--green-light);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-top: 24px;
+}
+.actions-block h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+.actions-block ul { padding-left: 20px; }
+.actions-block li { margin-bottom: 6px; font-size: 13px; }
+
+/* Funnel */
+.funnel-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.funnel-row:last-child { border-bottom: none; }
+.funnel-title {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.funnel-bar-wrap {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.funnel-bar {
+  height: 18px;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.funnel-val {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-light);
+  min-width: 40px;
+  text-align: right;
+}
+.funnel-rate {
+  font-size: 11px;
+  color: var(--ink-muted);
+  min-width: 50px;
+}
+
+/* ================================================================
+   DATA TAB
+   ================================================================ */
+.import-zone {
+  background: var(--surface);
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 32px;
+  text-align: center;
+  margin-bottom: 24px;
+  transition: border-color 0.15s;
+}
+.import-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+.import-zone p { color: var(--ink-muted); font-size: 13px; margin-bottom: 12px; }
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn + .btn { margin-left: 8px; }
+
+.import-result {
+  margin-top: 12px;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: none;
+}
+.import-result.success { display: block; background: var(--green-light); color: var(--green); }
+.import-result.error { display: block; background: var(--red-light); color: var(--red); }
+
+.data-table-wrap {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.data-table-toolbar {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.data-table-toolbar input {
+  padding: 6px 10px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  width: 240px;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--ink-light);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.data-table th:hover { color: var(--accent); }
+.data-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+.data-table tr:hover td { background: var(--bg); }
+
+.import-history {
+  margin-top: 24px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+}
+.import-history h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+.import-history-list { font-size: 12px; color: var(--ink-light); }
+.import-history-item { padding: 4px 0; border-bottom: 1px solid var(--border); }
+.import-history-item:last-child { border-bottom: none; }
+
+/* ================================================================
+   DICTIONARY TAB
+   ================================================================ */
+.dict-section {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.dict-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.def-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 4px 16px;
+  font-size: 13px;
+}
+.def-term { font-weight: 600; color: var(--ink-light); padding: 4px 0; }
+.def-desc { color: var(--ink); padding: 4px 0; }
+
+.script-block {
+  margin-top: 12px;
+  position: relative;
+}
+.script-block pre {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  padding: 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-family: 'Cascadia Code', 'Fira Code', monospace;
+  overflow-x: auto;
+  line-height: 1.5;
+  white-space: pre;
+}
+.script-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.limitation-list { padding-left: 20px; font-size: 13px; }
+.limitation-list li { margin-bottom: 6px; }
+.limitation-list .warn { color: var(--amber); font-weight: 500; }
+
+/* ================================================================
+   ARTICLE KEY (collapsible panel)
+   ================================================================ */
+.article-key {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.article-key-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+.article-key-toggle:hover { color: var(--accent); }
+.article-key-toggle .chevron {
+  font-size: 10px;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.article-key.expanded .article-key-toggle .chevron { transform: rotate(90deg); }
+.article-key-list {
+  display: none;
+  padding: 0 16px 12px;
+}
+.article-key.expanded .article-key-list { display: block; }
+.article-key-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 4px 24px;
+}
+.article-key-item {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.article-key-num {
+  font-weight: 700;
+  font-size: 11px;
+  min-width: 24px;
+  flex-shrink: 0;
+}
+.article-key-title {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.article-key-stats {
+  color: var(--ink-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ================================================================
+   RESPONSIVE
+   ================================================================ */
+@media (max-width: 768px) {
+  .charts-row { grid-template-columns: 1fr; }
+  .app-header { flex-wrap: wrap; gap: 8px; }
+  .tab-content { padding: 16px; }
+  .journey-name { min-width: 100px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header">
+  <div class="app-title">note Analytics</div>
+  <div class="header-controls">
+    <div class="status-bar" id="statusBar"></div>
+    <button class="lang-toggle" id="langToggle" onclick="toggleLang()">EN</button>
+  </div>
+</header>
+
+<!-- ============================================================
+     TABS
+     ============================================================ -->
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="briefing" onclick="switchTab('briefing')">
+    <span data-i18n="tab_briefing">Briefing</span>
+  </button>
+  <button class="tab-btn" data-tab="data" onclick="switchTab('data')">
+    <span data-i18n="tab_data">Data</span>
+  </button>
+  <button class="tab-btn" data-tab="dict" onclick="switchTab('dict')">
+    <span data-i18n="tab_dict">Dictionary</span>
+  </button>
+</nav>
+
+<!-- ============================================================
+     BRIEFING TAB
+     ============================================================ -->
+<div class="tab-content active" id="tab-briefing">
+  <!-- NARRATIVE SUMMARY -->
+  <div class="summary-block" id="summaryBlock"></div>
+
+  <!-- ARTICLE KEY -->
+  <div class="article-key" id="articleKey">
+    <button class="article-key-toggle" onclick="toggleArticleKey()">
+      <span class="chevron">&#9654;</span>
+      <span id="articleKeyLabel">Article Key</span>
+      <span style="margin-left:auto;font-weight:400;font-size:11px;color:var(--ink-muted);" id="articleKeyCount"></span>
+    </button>
+    <div class="article-key-list" id="articleKeyList"></div>
+  </div>
+
+  <!-- SECTION 1: WHAT HAPPENED -->
+  <div class="section-heading" id="sectionTimelineHeading"></div>
+  <div class="section-with-insight">
+    <div class="section-main">
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title" id="timelineTitle"></span>
+          <button class="chart-toggle" id="timelineToggle" onclick="toggleTimelineView()">
+            <span data-i18n="toggle_by_user">By User</span>
+          </button>
+        </div>
+        <div class="chart-key" id="timelineKey"></div>
+        <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
+        <div class="chart-alt" id="timelineAlt"></div>
+      </div>
+    </div>
+    <div class="section-insight" id="insightTimeline"></div>
+  </div>
+  <div class="narrative-bridge" id="bridgeAfterTimeline"></div>
+
+  <!-- SECTION 2: WHEN & WHERE -->
+  <div class="section-heading" id="sectionWhenHeading"></div>
+  <div class="section-with-insight">
+    <div class="section-main">
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title" id="activityTitle"></span>
+          </div>
+          <div class="chart-key" id="activityKey"></div>
+          <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
+          <div class="chart-alt" id="activityAlt"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title" id="dayOfWeekTitle"></span>
+          </div>
+          <div class="chart-key" id="dowKey"></div>
+          <div class="chart-wrap"><canvas id="chartDow"></canvas></div>
+          <div class="chart-alt" id="dowAlt"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-insight" id="insightTiming"></div>
+  </div>
+  <div class="narrative-bridge" id="bridgeAfterWhen"></div>
+
+  <!-- SECTION 3: WHO & WHAT -->
+  <div class="section-heading" id="sectionAudienceHeading"></div>
+  <div class="section-with-insight">
+    <div class="section-main">
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title" id="articlePerfTitle"></span>
+          </div>
+          <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
+          <div class="chart-alt" id="articlePerfAlt"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title" id="tagsTitle"></span>
+          </div>
+          <div class="chart-key" id="tagsKey"></div>
+          <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
+          <div class="chart-alt" id="tagsAlt"></div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <span class="chart-title" id="journeysTitle"></span>
+        </div>
+        <div class="chart-key" id="journeysKey"></div>
+        <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
+        <div class="chart-alt" id="journeysAlt"></div>
+      </div>
+    </div>
+    <div class="section-insight" id="insightAudience"></div>
+  </div>
+
+  <!-- SECTION 4: INSIGHTS (heading only, content in side panels) -->
+  <div class="section-heading" id="sectionInsightsHeading"></div>
+</div>
+
+<!-- ============================================================
+     DATA TAB
+     ============================================================ -->
+<div class="tab-content" id="tab-data">
+  <div class="import-zone" id="importZone">
+    <p data-i18n="import_instructions">Paste JSON from extraction script or drop a .json file</p>
+    <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+      <span data-i18n="import_upload">Upload JSON</span>
+    </button>
+    <button class="btn" onclick="pasteFromClipboard()">
+      <span data-i18n="import_paste">Paste from Clipboard</span>
+    </button>
+    <button class="btn" onclick="exportData()">
+      <span data-i18n="import_export">Export All Data</span>
+    </button>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)">
+    <div class="import-result" id="importResult"></div>
+  </div>
+
+  <div class="data-table-wrap">
+    <div class="data-table-toolbar">
+      <span style="font-size:13px;font-weight:600;" data-i18n="table_events">Events</span>
+      <input type="text" id="tableSearch" placeholder="Search..." oninput="filterTable()">
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="eventsTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable(0)" data-i18n="col_time">Time (JST)</th>
+            <th onclick="sortTable(1)" data-i18n="col_kind">Kind</th>
+            <th onclick="sortTable(2)" data-i18n="col_who">Who</th>
+            <th onclick="sortTable(3)" data-i18n="col_article">Article</th>
+            <th onclick="sortTable(4)" data-i18n="col_source">Source</th>
+          </tr>
+        </thead>
+        <tbody id="eventsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="import-history" id="importHistory">
+    <h3 data-i18n="import_history_title">Import History</h3>
+    <div class="import-history-list" id="importHistoryList"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     DICTIONARY TAB
+     ============================================================ -->
+<div class="tab-content" id="tab-dict">
+  <div class="dict-section">
+    <h3 data-i18n="dict_definitions">Data Definitions</h3>
+    <div class="def-grid" id="definitionsGrid"></div>
+  </div>
+
+  <div class="dict-section">
+    <h3 data-i18n="dict_scripts">Extraction Scripts</h3>
+    <p style="font-size:13px;margin-bottom:16px;" data-i18n="dict_scripts_intro">
+      Run these in the browser console on the corresponding note.com page.
+    </p>
+
+    <h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">1. Notifications</h4>
+    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_notif_desc">
+      Open your notifications page (note.com/notifications), scroll to load all, then run:
+    </p>
+    <div class="script-block">
+      <pre id="scriptNotifications">// note Analytics — Notifications Extractor
+// 1. Open https://note.com/notifications
+// 2. Scroll down to load ALL notifications you want
+// 3. Paste this entire script into the browser console
+// 4. JSON is copied to clipboard — paste into the app
+
+(async () => {
+  const rows = document.querySelectorAll(
+    '[class*="NotificationItem"], [class*="notification"] li, ' +
+    'a[href*="/n/"]'
+  );
+
+  // Approach 1: Try __NEXT_DATA__ for structured data
+  const nd = document.getElementById('__NEXT_DATA__');
+  let notifications = [];
+
+  if (nd) {
+    try {
+      const data = JSON.parse(nd.textContent);
+      const pages = data?.props?.pageProps;
+      const notifs = pages?.notifications || pages?.items || [];
+      if (notifs.length > 0) {
+        for (const n of notifs) {
+          const kind = (n.type || '').includes('follow') ? 'follow' : 'like';
+          const users = Array.isArray(n.users) ? n.users : (n.user ? [n.user] : []);
+          notifications.push({
+            kind,
+            who: users.map(u => u.nickname || u.name || '').join('; '),
+            who_url: users.map(u => 'https://note.com/' + (u.urlname || '')).join('; '),
+            noticed_at_iso: n.createdAt || n.timestamp || '',
+            noticed_at_jst: '',
+            article_title: n.note?.name || n.note?.title || (kind === 'follow' ? '\u2014' : ''),
+            article_url: n.note?.key ? 'https://note.com/' + (n.note.user?.urlname || '') + '/n/' + n.note.key : '\u2014',
+            liker_profile: kind === 'follow' ? ('https://note.com/' + (users[0]?.urlname || '')) : '\u2014',
+          });
+        }
+      }
+    } catch (e) { console.warn('__NEXT_DATA__ parse failed, falling back to DOM', e); }
+  }
+
+  // Approach 2: DOM fallback — parse notification list items
+  if (notifications.length === 0) {
+    const items = document.querySelectorAll('[class*="Notification"] > div, [role="listitem"]');
+    for (const item of items) {
+      const links = item.querySelectorAll('a[href*="note.com/"]');
+      const timeEl = item.querySelector('time, [datetime], [class*="time"], [class*="date"]');
+      const timestamp = timeEl?.getAttribute('datetime') || timeEl?.textContent?.trim() || '';
+
+      const userLinks = [];
+      const articleLinks = [];
+      for (const link of links) {
+        const href = link.href || '';
+        if (href.includes('/n/')) articleLinks.push(link);
+        else if (href.match(/note\.com\/[^/]+\/?$/)) userLinks.push(link);
+      }
+
+      const text = item.textContent || '';
+      const isFollow = text.includes('\u30d5\u30a9\u30ed\u30fc') || text.includes('follow');
+      const kind = isFollow ? 'follow' : 'like';
+
+      notifications.push({
+        kind,
+        who: userLinks.map(l => l.textContent?.trim() || '').join('; '),
+        who_url: userLinks.map(l => l.href).join('; '),
+        noticed_at_iso: timestamp,
+        noticed_at_jst: '',
+        article_title: articleLinks[0]?.textContent?.trim() || (isFollow ? '\u2014' : ''),
+        article_url: articleLinks[0]?.href?.replace('?from=notice', '') || '\u2014',
+        liker_profile: isFollow ? (userLinks[0]?.href || '\u2014') : '\u2014',
+      });
+    }
+  }
+
+  // Approach 3: Intercept fetch API for paginated data
+  if (notifications.length === 0) {
+    console.log('No notifications found via DOM. Trying API...');
+    try {
+      const res = await fetch('/api/v2/notifications?page=1&amp;per_page=100', { credentials: 'include' });
+      const json = await res.json();
+      const items = json.data?.notifications || json.notifications || [];
+      for (const n of items) {
+        const kind = (n.type || '').includes('follow') ? 'follow' : 'like';
+        notifications.push({
+          kind,
+          who: n.sender_nickname || n.sender_name || '',
+          who_url: 'https://note.com/' + (n.sender_urlname || ''),
+          noticed_at_iso: n.created_at || '',
+          noticed_at_jst: '',
+          article_title: n.note_title || (kind === 'follow' ? '\u2014' : ''),
+          article_url: n.note_url || '\u2014',
+          liker_profile: kind === 'follow' ? ('https://note.com/' + (n.sender_urlname || '')) : '\u2014',
+        });
+      }
+    } catch (e) { console.warn('API fetch failed', e); }
+  }
+
+  const output = { notifications, extracted_at: new Date().toISOString(), source: 'notifications' };
+  const json = JSON.stringify(output, null, 2);
+  await navigator.clipboard.writeText(json);
+  console.log('Extracted ' + notifications.length + ' notifications. Copied to clipboard.');
+  console.log('Paste into the note Analytics app (Data tab).');
+})();</pre>
+      <button class="btn btn-sm script-copy" onclick="copyScript('scriptNotifications')">Copy</button>
+    </div>
+
+    <h4 style="font-size:13px;font-weight:600;margin:16px 0 8px;">2. Profile &amp; Articles</h4>
+    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_profile_desc">
+      Open your profile page (note.com/your_username), then run:
+    </p>
+    <div class="script-block">
+      <pre id="scriptProfile">// note Analytics — Profile &amp; Articles Extractor
+// 1. Open your profile: https://note.com/YOUR_USERNAME
+// 2. Scroll down to load all articles
+// 3. Paste this entire script into the browser console
+// 4. JSON is copied to clipboard — paste into the app
+
+(async () => {
+  const articles = [];
+  let followerCount = 0;
+  let followingCount = 0;
+  let noteCount = 0;
+  let profileName = '';
+
+  // Approach 1: __NEXT_DATA__ (most reliable)
+  const nd = document.getElementById('__NEXT_DATA__');
+  if (nd) {
+    try {
+      const data = JSON.parse(nd.textContent);
+      const pp = data?.props?.pageProps;
+      const user = pp?.userDetail || pp?.creator || pp?.user || {};
+
+      profileName = user.nickname || user.name || '';
+      followerCount = user.followerCount || 0;
+      followingCount = user.followingCount || 0;
+      noteCount = user.noteCount || 0;
+
+      // Articles may be in contents, notes, or timeline
+      const notes = pp?.contents || pp?.notes || pp?.timeline?.contents || [];
+      for (const n of notes) {
+        const tags = (n.hashtags || n.tags || []).map(
+          t => typeof t === 'string' ? t : (t.hashtag?.name || t.name || '')
+        ).filter(Boolean);
+
+        articles.push({
+          title_jp: n.name || n.title || '',
+          title_en: '',
+          article_url: 'https://note.com/' + (user.urlname || '') + '/n/' + (n.key || ''),
+          published_date_jst: n.publishAt || n.createdAt || '',
+          article_type: n.type || n.noteType || '',
+          tags: tags,
+          views: n.readCount || n.viewCount || 0,
+          likes_total: n.likeCount || n.spCount || 0,
+        });
+      }
+    } catch (e) { console.warn('__NEXT_DATA__ parse failed', e); }
+  }
+
+  // Approach 2: DOM fallback
+  if (articles.length === 0) {
+    const cards = document.querySelectorAll(
+      '[class*="NoteCard"], [class*="note-card"], article, [class*="Timeline"] a[href*="/n/"]'
+    );
+
+    for (const card of cards) {
+      const titleEl = card.querySelector('h3, h2, [class*="title"], [class*="Title"]');
+      const linkEl = card.querySelector('a[href*="/n/"]') || card.closest('a[href*="/n/"]');
+      const timeEl = card.querySelector('time, [datetime]');
+      const likeEl = card.querySelector('[class*="like"], [class*="suki"], [class*="spCount"]');
+      const tagEls = card.querySelectorAll('[class*="tag"], [class*="hashtag"]');
+
+      if (!titleEl &amp;&amp; !linkEl) continue;
+
+      articles.push({
+        title_jp: titleEl?.textContent?.trim() || '',
+        title_en: '',
+        article_url: linkEl?.href?.split('?')[0] || '',
+        published_date_jst: timeEl?.getAttribute('datetime') || timeEl?.textContent?.trim() || '',
+        article_type: '',
+        tags: [...tagEls].map(t => t.textContent?.trim().replace(/^#/, '')).filter(Boolean),
+        views: 0,
+        likes_total: parseInt(likeEl?.textContent?.replace(/\D/g, '') || '0'),
+      });
+    }
+
+    // Follower count from DOM
+    const followerEl = document.querySelector('[class*="follower"] [class*="count"], [class*="Follower"]');
+    if (followerEl) followerCount = parseInt(followerEl.textContent?.replace(/\D/g, '') || '0');
+  }
+
+  // Approach 3: API fallback
+  if (articles.length === 0) {
+    const urlname = location.pathname.replace(/^\//, '').split('/')[0];
+    if (urlname) {
+      try {
+        const res = await fetch('/api/v2/creators/' + urlname + '/contents?kind=note&amp;page=1&amp;per_page=50', { credentials: 'include' });
+        const json = await res.json();
+        const notes = json.data?.contents || [];
+        for (const n of notes) {
+          articles.push({
+            title_jp: n.name || '',
+            title_en: '',
+            article_url: 'https://note.com/' + urlname + '/n/' + (n.key || ''),
+            published_date_jst: n.publishAt || '',
+            article_type: n.type || '',
+            tags: (n.hashtags || []).map(t => t.hashtag?.name || t).filter(Boolean),
+            views: n.readCount || 0,
+            likes_total: n.likeCount || 0,
+          });
+        }
+      } catch (e) { console.warn('API fallback failed', e); }
+    }
+  }
+
+  const output = {
+    articles,
+    profile: { name: profileName, followerCount, followingCount, noteCount },
+    extracted_at: new Date().toISOString(),
+    source: 'profile',
+  };
+  const json = JSON.stringify(output, null, 2);
+  await navigator.clipboard.writeText(json);
+  console.log('Extracted ' + articles.length + ' articles. Followers: ' + followerCount);
+  console.log('Paste into the note Analytics app (Data tab).');
+})();</pre>
+      <button class="btn btn-sm script-copy" onclick="copyScript('scriptProfile')">Copy</button>
+    </div>
+
+    <h4 style="font-size:13px;font-weight:600;margin:16px 0 8px;">3. Creator Dashboard</h4>
+    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_dashboard_desc">
+      Open your creator dashboard (note.com/dashboard), then run:
+    </p>
+    <div class="script-block">
+      <pre id="scriptDashboard">// note Analytics — Creator Dashboard Extractor
+// 1. Open https://note.com/dashboard (must be logged in)
+// 2. Navigate to the analytics/stats section if available
+// 3. Paste this entire script into the browser console
+// 4. JSON is copied to clipboard — paste into the app
+//
+// NOTE: This script attempts to extract whatever analytics
+// data note.com exposes. The dashboard structure may vary.
+
+(async () => {
+  const stats = { daily_views: [], article_stats: [] };
+
+  // Approach 1: __NEXT_DATA__
+  const nd = document.getElementById('__NEXT_DATA__');
+  if (nd) {
+    try {
+      const data = JSON.parse(nd.textContent);
+      const pp = data?.props?.pageProps;
+
+      // Look for analytics/stats data in any likely property
+      const candidates = [
+        pp?.stats, pp?.analytics, pp?.dashboard,
+        pp?.dailyStats, pp?.noteStats, pp?.viewStats
+      ].filter(Boolean);
+
+      for (const c of candidates) {
+        if (Array.isArray(c)) {
+          for (const item of c) {
+            if (item.date &amp;&amp; (item.readCount || item.viewCount)) {
+              stats.daily_views.push({
+                date: item.date,
+                views: item.readCount || item.viewCount || 0,
+                likes: item.likeCount || 0,
+              });
+            }
+          }
+        }
+      }
+
+      // Per-article stats
+      const notes = pp?.contents || pp?.notes || [];
+      for (const n of notes) {
+        stats.article_stats.push({
+          title_jp: n.name || n.title || '',
+          article_url: n.noteUrl || n.key ? ('https://note.com/n/' + n.key) : '',
+          views: n.readCount || n.viewCount || 0,
+          likes: n.likeCount || n.spCount || 0,
+          comments: n.commentCount || 0,
+        });
+      }
+    } catch (e) { console.warn('__NEXT_DATA__ parse failed', e); }
+  }
+
+  // Approach 2: API for stats
+  if (stats.daily_views.length === 0 &amp;&amp; stats.article_stats.length === 0) {
+    try {
+      const res = await fetch('/api/v1/stats/pv', { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        const daily = json.data || json.stats || [];
+        for (const d of daily) {
+          stats.daily_views.push({
+            date: d.date || d.day || '',
+            views: d.pv || d.count || 0,
+            likes: d.likes || 0,
+          });
+        }
+      }
+    } catch (e) { console.warn('Stats API unavailable', e); }
+
+    try {
+      const res = await fetch('/api/v1/stats/notes', { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        const notes = json.data || json.notes || [];
+        for (const n of notes) {
+          stats.article_stats.push({
+            title_jp: n.name || '',
+            article_url: n.noteUrl || '',
+            views: n.readCount || 0,
+            likes: n.likeCount || 0,
+            comments: n.commentCount || 0,
+          });
+        }
+      }
+    } catch (e) { console.warn('Note stats API unavailable', e); }
+  }
+
+  const output = {
+    stats,
+    extracted_at: new Date().toISOString(),
+    source: 'dashboard',
+  };
+  const json = JSON.stringify(output, null, 2);
+  await navigator.clipboard.writeText(json);
+  const total = stats.daily_views.length + stats.article_stats.length;
+  console.log('Extracted ' + stats.daily_views.length + ' daily records, ' + stats.article_stats.length + ' article stats.');
+  if (total === 0) {
+    console.log('No stats found. The dashboard structure may have changed.');
+    console.log('Try navigating to the analytics section first.');
+  }
+  console.log('Paste into the note Analytics app (Data tab).');
+})();</pre>
+      <button class="btn btn-sm script-copy" onclick="copyScript('scriptDashboard')">Copy</button>
+    </div>
+  </div>
+
+  <div class="dict-section">
+    <h3 data-i18n="dict_limitations">Known Limitations</h3>
+    <ul class="limitation-list" id="limitationsList"></ul>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ================================================================
+   I18N — String Tables
+   ================================================================ */
+const STRINGS = {
+  en: {
+    tab_briefing: 'Briefing',
+    tab_data: 'Data',
+    tab_dict: 'Dictionary',
+    section_timeline: 'Timeline',
+    section_audience: 'Audience',
+    chart_timeline: 'Engagement Timeline',
+    chart_activity: 'Activity by Hour (JST)',
+    chart_tags: 'Tag Reach',
+    chart_funnel: 'Views / Likes / Follows per Article',
+    chart_journeys: 'Follower Journeys',
+    toggle_by_user: 'Show People',
+    toggle_by_article: 'Show Timeline',
+    import_instructions: 'Paste JSON from extraction script or drop a .json file',
+    import_upload: 'Upload JSON',
+    import_paste: 'Paste from Clipboard',
+    import_export: 'Export All Data',
+    table_events: 'Events',
+    col_time: 'Time (JST)',
+    col_kind: 'Kind',
+    col_who: 'Who',
+    col_article: 'Article',
+    col_source: 'Source',
+    import_history_title: 'Import History',
+    dict_definitions: 'Data Definitions',
+    dict_scripts: 'Extraction Scripts',
+    dict_scripts_intro: 'Run these in the browser console on the corresponding note.com page.',
+    dict_notif_desc: 'Open your notifications page (note.com/notifications), scroll to load all, then run:',
+    dict_profile_desc: 'Open your profile page (note.com/your_username), then run:',
+    dict_dashboard_desc: 'Open your creator dashboard (note.com/dashboard), then run:',
+    dict_limitations: 'Known Limitations',
+    status_events: 'events',
+    status_articles: 'articles',
+    status_last_import: 'Last import',
+    status_no_data: 'No data yet. Go to the Data tab to import.',
+    status_gap: 'gap',
+    like: 'like',
+    follow: 'follow',
+    summary_articles: 'articles published',
+    summary_over: 'over',
+    summary_days: 'days',
+    summary_views: 'total views',
+    summary_likes: 'total likes',
+    summary_conversion: 'conversion',
+    summary_unique: 'unique engagers',
+    summary_followed: 'followed',
+    summary_repeat: 'liked multiple articles',
+    summary_latest: 'Latest article',
+    summary_picked_up: 'picked up',
+    summary_likes_in: 'likes since publish',
+    actions_title: 'Key Observations',
+    actions_peak: 'Readers are most active between {start}:00 and {end}:00 JST. Consider publishing to land in this window.',
+    actions_repeat: '{count} readers liked more than one article, suggesting genuine interest rather than one-off discovery.',
+    actions_follow_rate: '{count} of {total} readers who engaged went on to follow ({pct}% conversion rate).',
+    actions_top_tag: 'Articles tagged "{tag}" received the most likes ({count} likes across {articles} articles).',
+    actions_velocity: 'The most recent article attracted engagement within {hours} hours of being published.',
+    def_like: 'A "suki" reaction from a logged-in note.com user on an article.',
+    def_follow: 'A user subscribed to receive new article notifications.',
+    def_views: 'Total page views as reported by note.com. Cumulative snapshot, not time-series.',
+    def_like_rate: 'Likes / Views. Measures conversion from reader to engaged supporter.',
+    def_repeat: 'A user who liked 2 or more different articles.',
+    def_timestamp: 'When note.com generated the notification. Batched notifications share a timestamp, approximate to the nearest few minutes.',
+    def_source: 'Which extraction/import produced this event record.',
+    def_gap: 'When note.com reports more likes than we have individual like events for. Some likes may predate the notification extract.',
+    lim_views: 'View counts are cumulative totals, not time-series. We cannot show when views occurred.',
+    lim_batch: 'Batched notifications group 2-4 users under one timestamp. Individual like times are approximate.',
+    lim_coverage: 'Notification extracts only capture what is visible on the page. Very old notifications may have aged off.',
+    lim_friends: 'Some friend likes (e.g. icarus_journal, byonyk) appear in seed data with approximate timestamps set to publish time.',
+  },
+  ja: {
+    tab_briefing: 'ブリーフィング',
+    tab_data: 'データ',
+    tab_dict: '定義',
+    section_timeline: 'タイムライン',
+    section_audience: '読者',
+    chart_timeline: 'エンゲージメント タイムライン',
+    chart_activity: '時間帯別アクティビティ (JST)',
+    chart_tags: 'タグ リーチ',
+    chart_funnel: '記事別 閲覧 / いいね / フォロー',
+    chart_journeys: 'フォロワーの行動経路',
+    toggle_by_user: '人別に表示',
+    toggle_by_article: 'タイムライン表示',
+    import_instructions: '抽出スクリプトのJSONを貼り付けるか、.jsonファイルをドロップ',
+    import_upload: 'JSONアップロード',
+    import_paste: 'クリップボードから貼り付け',
+    import_export: '全データエクスポート',
+    table_events: 'イベント',
+    col_time: '時刻 (JST)',
+    col_kind: '種類',
+    col_who: 'ユーザー',
+    col_article: '記事',
+    col_source: 'ソース',
+    import_history_title: 'インポート履歴',
+    dict_definitions: 'データ定義',
+    dict_scripts: '抽出スクリプト',
+    dict_scripts_intro: '対応するnote.comページのブラウザコンソールで実行してください。',
+    dict_notif_desc: '通知ページ (note.com/notifications) を開き、全て読み込んでから実行:',
+    dict_profile_desc: 'プロフィールページ (note.com/your_username) を開いて実行:',
+    dict_dashboard_desc: 'クリエイターダッシュボード (note.com/dashboard) を開いて実行:',
+    dict_limitations: '既知の制限事項',
+    status_events: 'イベント',
+    status_articles: '記事',
+    status_last_import: '最終インポート',
+    status_no_data: 'データなし。インポートして開始。',
+    status_gap: '差分あり',
+    like: 'いいね',
+    follow: 'フォロー',
+    summary_articles: '記事を公開',
+    summary_over: '',
+    summary_days: '日間で',
+    summary_views: '合計閲覧数',
+    summary_likes: '合計いいね',
+    summary_conversion: 'コンバージョン',
+    summary_unique: 'ユニーク読者',
+    summary_followed: 'フォロー',
+    summary_repeat: '複数記事にいいね',
+    summary_latest: '最新記事',
+    summary_picked_up: '',
+    summary_likes_in: '件のいいねを獲得',
+    actions_title: '観察',
+    actions_peak: 'エンゲージメントは JST {start}:00〜{end}:00 にピーク',
+    actions_repeat: '{count} 人が複数記事にエンゲージ',
+    actions_follow_rate: '{total} 人中 {count} 人がフォロー ({pct}%)',
+    actions_top_tag: '最もリーチの高いタグ: {tag} ({articles} 記事で {count} いいね)',
+    actions_velocity: '最新記事は公開後 {hours} 時間以内にエンゲージメントを獲得',
+    def_like: 'note.comユーザーによる「スキ」リアクション。',
+    def_follow: '新しい記事の通知を受け取るための登録。',
+    def_views: 'note.comが報告するページビュー合計。累積スナップショットであり時系列データではありません。',
+    def_like_rate: 'いいね数 / 閲覧数。読者からエンゲージメントへの変換率。',
+    def_repeat: '異なる2つ以上の記事にいいねしたユーザー。',
+    def_timestamp: 'note.comが通知を生成した時刻。バッチ通知は同じタイムスタンプを共有します。',
+    def_source: 'このイベントレコードを生成した抽出/インポート。',
+    def_gap: 'note.comの報告いいね数が個別イベント数を超える場合。通知抽出前のいいねが含まれない可能性。',
+    lim_views: '閲覧数は累積合計で、時系列ではありません。閲覧がいつ発生したかは表示できません。',
+    lim_batch: 'バッチ通知は2〜4人のユーザーを1つのタイムスタンプにまとめます。個々のいいね時刻は概算です。',
+    lim_coverage: '通知抽出はページに表示されているもののみをキャプチャします。古い通知は消えている可能性があります。',
+    lim_friends: '一部のフレンドのいいね（icarus_journal、byonykなど）はシードデータに公開時刻の概算タイムスタンプで表示されます。',
+  }
+};
+
+let currentLang = 'ja';
+
+function t(key) { return STRINGS[currentLang][key] || STRINGS.en[key] || key; }
+
+function toggleLang() {
+  currentLang = currentLang === 'ja' ? 'en' : 'ja';
+  document.getElementById('langToggle').textContent = currentLang === 'ja' ? 'EN' : 'JP';
+  applyI18n();
+  renderAll();
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (STRINGS[currentLang][key]) el.textContent = STRINGS[currentLang][key];
+  });
+}
+
+/* ================================================================
+   TABS
+   ================================================================ */
+function toggleArticleKey() {
+  document.getElementById('articleKey').classList.toggle('expanded');
+}
+
+function renderArticleKey(m) {
+  const isJa = currentLang === 'ja';
+  const list = document.getElementById('articleKeyList');
+  document.getElementById('articleKeyLabel').textContent =
+    isJa ? '\u8a18\u4e8b\u4e00\u89a7 \u2014 \u30c1\u30e3\u30fc\u30c8\u306e\u8272\u306f\u3053\u306e\u8a18\u4e8b\u306b\u5bfe\u5fdc' : 'Article Key \u2014 colours in charts correspond to these articles';
+  document.getElementById('articleKeyCount').textContent =
+    m.articles.length + (isJa ? '\u8a18\u4e8b' : ' articles');
+
+  let html = '<div class="article-key-grid">';
+  for (let i = 0; i < m.articles.length; i++) {
+    const art = m.articles[i];
+    const title = isJa ? (art.title_jp || art.title_en) : (art.title_en || art.title_jp);
+    const pubDate = art.published_date_jst ? formatDate(art.published_date_jst) : '';
+    const views = art.views || 0;
+    const likes = art.likes_total || 0;
+    const rate = views > 0 ? (likes / views * 100).toFixed(0) : '0';
+    html += '<div class="article-key-item">';
+    html += '<span class="article-key-num" style="color:' + getArticleColor(i) + '">A' + (i + 1) + '</span>';
+    html += '<span class="article-key-title" title="' + escapeHtml(title) + '">' + escapeHtml(shortTitle(title, 36)) + '</span>';
+    html += '<span class="article-key-stats">' + views + (isJa ? '\u95b2\u89a7' : ' views') + ', ' + rate + '% ' + (isJa ? '\u30b9\u30ad\u7387' : 'like rate') + '</span>';
+    html += '</div>';
+  }
+  html += '</div>';
+  list.innerHTML = html;
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tabId));
+}
+
+/* ================================================================
+   STORE — IndexedDB
+   ================================================================ */
+const DB_NAME = 'noteAnalytics';
+const DB_VERSION = 1;
+let db = null;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('events')) {
+        d.createObjectStore('events', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('articles')) {
+        d.createObjectStore('articles', { keyPath: 'article_url' });
+      }
+      if (!d.objectStoreNames.contains('imports')) {
+        d.createObjectStore('imports', { keyPath: 'timestamp' });
+      }
+    };
+    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function dbPut(storeName, item) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).put(item);
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function dbGetAll(storeName) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const req = tx.objectStore(storeName).getAll();
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function dbClear(storeName) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    tx.objectStore(storeName).clear();
+    tx.oncomplete = () => resolve();
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+
+/* ================================================================
+   PARSE — Normalise raw imports
+   ================================================================ */
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = String(str);
+  return div.innerHTML;
+}
+
+function makeEventId(slug, articleUrl, kind) {
+  return slug + '|' + (articleUrl || '') + '|' + kind;
+}
+
+function parseNotifications(raw) {
+  const events = [];
+  const rows = Array.isArray(raw) ? raw : (raw.events || raw.notifications || []);
+  for (const row of rows) {
+    const kind = row.kind;
+    const names = (row.who || '').split(';').map(s => s.trim()).filter(Boolean);
+    const urls = (row.who_url || '').split(';').map(s => s.trim()).filter(Boolean);
+    const maxLen = Math.max(names.length, urls.length);
+
+    for (let i = 0; i < maxLen; i++) {
+      const url = urls[i] || '';
+      const slug = url.replace('https://note.com/', '').trim();
+      if (!slug || slug === '\u2014') continue;
+
+      const artTitle = (row.article_title && row.article_title !== '\u2014') ? row.article_title : null;
+      const artUrl = (row.article_url && row.article_url !== '\u2014')
+        ? row.article_url.replace('?from=notice', '') : null;
+
+      events.push({
+        id: makeEventId(slug, artUrl, kind),
+        kind: kind,
+        who: names[i] || slug,
+        slug: slug,
+        who_url: url,
+        timestamp_jst: row.noticed_at_iso || row.noticed_at_jst || '',
+        article_title_jp: artTitle,
+        article_url: artUrl,
+        source: row.source || 'import_' + new Date().toISOString().slice(0, 10),
+      });
+    }
+  }
+  return events;
+}
+
+function parseArticles(raw) {
+  const articles = Array.isArray(raw) ? raw : (raw.articles || []);
+  return articles.map(a => ({
+    article_url: a.article_url || '',
+    title_jp: a.title_jp || '',
+    title_en: a.title_en || '',
+    published_date_jst: a.published_date_jst || '',
+    article_type: a.article_type || '',
+    tags: a.tags || [],
+    views: parseInt(a.views) || 0,
+    likes_total: parseInt(a.likes_total || a.likes) || 0,
+  }));
+}
+
+async function importData(raw) {
+  let importedEvents = 0;
+  let importedArticles = 0;
+  let importedStats = 0;
+  const source = raw.source || 'manual';
+
+  // Notifications extract or generic events
+  if (raw.events || raw.notifications || (Array.isArray(raw) && raw[0] && raw[0].kind)) {
+    const events = parseNotifications(raw);
+    for (const ev of events) await dbPut('events', ev);
+    importedEvents = events.length;
+  }
+
+  // Articles from profile extract or direct
+  if (raw.articles) {
+    const articles = parseArticles(raw);
+    for (const art of articles) {
+      if (!art.article_url) continue;
+      const existing = await dbGetAll('articles');
+      const match = existing.find(e => e.article_url === art.article_url);
+      if (match) {
+        art.views = Math.max(art.views, match.views);
+        art.likes_total = Math.max(art.likes_total, match.likes_total);
+        if (!art.title_en && match.title_en) art.title_en = match.title_en;
+        if (!art.title_jp && match.title_jp) art.title_jp = match.title_jp;
+        if ((!art.tags || art.tags.length === 0) && match.tags) art.tags = match.tags;
+      }
+      await dbPut('articles', art);
+      importedArticles++;
+    }
+  }
+
+  // Profile metadata (follower count etc.)
+  if (raw.profile) {
+    const existing = await dbGetAll('articles');
+    // Store profile as a special record
+    await dbPut('imports', {
+      timestamp: new Date().toISOString() + '_profile',
+      profile: raw.profile,
+      type: 'profile_snapshot',
+    });
+  }
+
+  // Dashboard stats extract
+  if (raw.stats) {
+    // Update article stats from dashboard
+    if (raw.stats.article_stats) {
+      for (const stat of raw.stats.article_stats) {
+        if (!stat.article_url) continue;
+        const existing = await dbGetAll('articles');
+        const match = existing.find(e => e.article_url === stat.article_url);
+        if (match) {
+          match.views = Math.max(stat.views || 0, match.views);
+          match.likes_total = Math.max(stat.likes || 0, match.likes_total);
+          if (stat.title_jp && !match.title_jp) match.title_jp = stat.title_jp;
+          await dbPut('articles', match);
+          importedStats++;
+        } else {
+          await dbPut('articles', {
+            article_url: stat.article_url,
+            title_jp: stat.title_jp || '',
+            title_en: '',
+            published_date_jst: '',
+            article_type: '',
+            tags: [],
+            views: stat.views || 0,
+            likes_total: stat.likes || 0,
+          });
+          importedStats++;
+        }
+      }
+    }
+    // Daily views could be stored for trend analysis (future)
+    if (raw.stats.daily_views && raw.stats.daily_views.length > 0) {
+      importedStats += raw.stats.daily_views.length;
+    }
+  }
+
+  await dbPut('imports', {
+    timestamp: new Date().toISOString(),
+    source: source,
+    events_added: importedEvents,
+    articles_added: importedArticles,
+    stats_added: importedStats,
+  });
+
+  return { events: importedEvents, articles: importedArticles, stats: importedStats };
+}
+
+/* ================================================================
+   SEED DATA
+   ================================================================ */
+const SEED_DATA = {"articles":[{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","title_en":"Self-introduction (8 years strategy consulting)","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","published_date_jst":"2026-03-17T17:40:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":126,"likes_total":14},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","title_en":"What strategy consultants actually do","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","published_date_jst":"2026-03-18T18:29:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","note\u66f8\u304d\u521d\u3081","\u30ad\u30e3\u30ea\u30a2\u30a2\u30c3\u30d7","\u30b3\u30f3\u30b5\u30eb\u30bf\u30f3\u30c8"],"views":34,"likes_total":3},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","title_en":"The rewards and struggles of strategy consulting","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","published_date_jst":"2026-03-19T20:12:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30ad\u30e3\u30ea\u30a2","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","\u30b3\u30f3\u30b5\u30eb"],"views":26,"likes_total":3},{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","title_en":"Self-introduction\u2461\u3011Work is going well, but I questioned this path","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","published_date_jst":"2026-03-21T22:26:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":37,"likes_total":7},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","title_en":"What I learned about working in strategy consulting","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","published_date_jst":"2026-03-25T19:21:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30d3\u30b8\u30cd\u30b9","\u8ee2\u8077","\u30d3\u30b8\u30cd\u30b9\u30b9\u30ad\u30eb","\u30b3\u30f3\u30b5\u30eb","\u30b3\u30f3\u30b5\u30eb\u8ee2\u8077"],"views":31,"likes_total":9},{"title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","title_en":"Why problem-solving fails (problem decomposition)","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","published_date_jst":"2026-03-26T18:00:00+09:00","article_type":"Work Know-how","tags":[],"views":0,"likes_total":0}],"events":[{"id":"quento|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"tabibito_jiro||follow","kind":"follow","who":"\u3058\u308d\u30fc","slug":"tabibito_jiro","who_url":"https://note.com/tabibito_jiro","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"quento||follow","kind":"follow","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt||follow","kind":"follow","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"byonyk|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"byonyk","slug":"byonyk","who_url":"https://note.com/byonyk","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"brisk_lily7639||follow","kind":"follow","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-18T08:44:56.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-18T14:03:29.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-18T18:29:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"excel_seed"},{"id":"mio_ko|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Miik","slug":"mio_ko","who_url":"https://note.com/mio_ko","timestamp_jst":"2026-03-19T02:07:54.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-19T20:12:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"excel_seed"},{"id":"seiya_1||follow","kind":"follow","who":"SI","slug":"seiya_1","who_url":"https://note.com/seiya_1","timestamp_jst":"2026-03-20T09:05:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-20T09:29:54.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"kin_mac_md|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30aa\u30e2\u30a4\u30ab\u30cd","slug":"kin_mac_md","who_url":"https://note.com/kin_mac_md","timestamp_jst":"2026-03-21T10:36:48.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"noble_sedum9692||follow","kind":"follow","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T10:59:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-21T22:26:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"excel_seed"},{"id":"tori_english|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Tori_Englis\u2026","slug":"tori_english","who_url":"https://note.com/tori_english","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"to_make_u_happy|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Cody","slug":"to_make_u_happy","who_url":"https://note.com/to_make_u_happy","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"koilavo4suc|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"taropon123|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"shu","slug":"taropon123","who_url":"https://note.com/taropon123","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"koilavo4suc||follow","kind":"follow","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T12:08:35.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T16:35:47.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"royal0708|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Royal0708","slug":"royal0708","who_url":"https://note.com/royal0708","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"oyazi_kosodate|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u4e21\u9ebb\u75fa\u3067\u3059\u304c\u3001\u4f55\u304b\uff1f|\u2026","slug":"oyazi_kosodate","who_url":"https://note.com/oyazi_kosodate","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-25T19:21:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"excel_seed"},{"id":"nomadic_sidejob|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u99d0\u5728\u54e1\u306e\u672c\u97f3\uff5c\u6226\u7565\u4f01\u753b\u2026","slug":"nomadic_sidejob","who_url":"https://note.com/nomadic_sidejob","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"rio_ai_bootcamp|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Rio\uff5c\u85e4\u4e95\u4ea8\u5b50 @\u975e\u2026","slug":"rio_ai_bootcamp","who_url":"https://note.com/rio_ai_bootcamp","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:29.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"tora_nari_gogo|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3068\u3089\u306a\u308a\u306a\u308a","slug":"tora_nari_gogo","who_url":"https://note.com/tora_nari_gogo","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"nisson_cons||follow","kind":"follow","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"yu0412||follow","kind":"follow","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"akino12|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Akino","slug":"akino12","who_url":"https://note.com/akino12","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"nisson_cons|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"yu0412|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"flower_index|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"Kyo","slug":"flower_index","who_url":"https://note.com/flower_index","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"haihaihaii|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"\u3053\u3057\u3042\u3093 | \u30b0\u30ed\u30fc\u30d0\u2026","slug":"haihaihaii","who_url":"https://note.com/haihaihaii","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"brisk_lily7639|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-26T20:49:37.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"ronxworks|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Ron","slug":"ronxworks","who_url":"https://note.com/ronxworks","timestamp_jst":"2026-03-26T20:55:27.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"}]};
+
+/* ================================================================
+   RULES ENGINE
+   ================================================================ */
+function computeMetrics(events, articles) {
+  const likes = events.filter(e => e.kind === 'like');
+  const follows = events.filter(e => e.kind === 'follow');
+  const uniqueUsers = new Set(events.map(e => e.slug));
+  const followSlugs = new Set(follows.map(e => e.slug));
+
+  // Repeat likers
+  const userArticles = {};
+  for (const e of likes) {
+    if (!userArticles[e.slug]) userArticles[e.slug] = new Set();
+    if (e.article_url) userArticles[e.slug].add(e.article_url);
+  }
+  const repeatLikers = Object.entries(userArticles).filter(([, arts]) => arts.size > 1);
+
+  // Activity by hour
+  const hourCounts = new Array(24).fill(0);
+  const hourLikes = new Array(24).fill(0);
+  const hourFollows = new Array(24).fill(0);
+  for (const e of events) {
+    const ts = e.timestamp_jst || '';
+    const m = ts.match(/T(\d{2}):/);
+    if (m) {
+      const h = parseInt(m[1]);
+      hourCounts[h]++;
+      if (e.kind === 'like') hourLikes[h]++;
+      else if (e.kind === 'follow') hourFollows[h]++;
+    }
+  }
+
+  // Peak hours (top 3)
+  const peakHours = hourCounts
+    .map((c, i) => ({ hour: i, count: c }))
+    .sort((a, b) => b.count - a.count)
+    .filter(h => h.count > 0)
+    .slice(0, 3)
+    .map(h => h.hour)
+    .sort((a, b) => a - b);
+
+  // Tag reach
+  const tagLikes = {};
+  const tagRepeat = {};
+  const tagArticles = {};
+  for (const art of articles) {
+    if (!art.tags) continue;
+    const artLikes = likes.filter(e => e.article_url === art.article_url);
+    for (const tag of art.tags) {
+      if (!tagLikes[tag]) { tagLikes[tag] = 0; tagRepeat[tag] = 0; tagArticles[tag] = new Set(); }
+      tagLikes[tag] += artLikes.length;
+      tagArticles[tag].add(art.article_url);
+      for (const lk of artLikes) {
+        if (userArticles[lk.slug] && userArticles[lk.slug].size > 1) tagRepeat[tag]++;
+      }
+    }
+  }
+  const tagData = Object.keys(tagLikes)
+    .map(tag => ({
+      tag,
+      likes: tagLikes[tag],
+      repeat: tagRepeat[tag],
+      onetime: tagLikes[tag] - tagRepeat[tag],
+      articles: tagArticles[tag].size,
+    }))
+    .sort((a, b) => b.likes - a.likes);
+
+  // Article metrics
+  const articleMetrics = articles.map(art => {
+    const artLikes = likes.filter(e => e.article_url === art.article_url);
+    const artFollowsNearby = follows.filter(f => {
+      const ft = new Date(f.timestamp_jst).getTime();
+      const pt = new Date(art.published_date_jst).getTime();
+      return ft >= pt && ft <= pt + 48 * 3600 * 1000;
+    });
+    const observed = artLikes.length;
+    const reported = art.likes_total;
+    const bestLikes = Math.max(observed, reported);
+    return {
+      ...art,
+      observed_likes: observed,
+      likes_total: bestLikes,
+      gap: reported > observed ? reported - observed : 0,
+      nearby_follows: artFollowsNearby.length,
+    };
+  });
+
+  // Days span
+  const sortedArticles = [...articles].sort((a, b) => a.published_date_jst.localeCompare(b.published_date_jst));
+  let daySpan = 0;
+  if (sortedArticles.length >= 2) {
+    const first = new Date(sortedArticles[0].published_date_jst);
+    const last = new Date(sortedArticles[sortedArticles.length - 1].published_date_jst);
+    daySpan = Math.round((last - first) / (1000 * 60 * 60 * 24));
+  }
+
+  // Latest article velocity
+  const latestArt = sortedArticles[sortedArticles.length - 1];
+  let latestVelocityHours = null;
+  if (latestArt) {
+    const latestLikes = likes
+      .filter(e => e.article_url === latestArt.article_url)
+      .map(e => new Date(e.timestamp_jst).getTime())
+      .sort();
+    if (latestLikes.length > 0) {
+      const pubTime = new Date(latestArt.published_date_jst).getTime();
+      const lastLike = latestLikes[latestLikes.length - 1];
+      latestVelocityHours = Math.round((lastLike - pubTime) / (1000 * 60 * 60));
+    }
+  }
+
+  // Follower journeys
+  const journeys = [];
+  for (const fe of follows) {
+    const userLikes = likes
+      .filter(e => e.slug === fe.slug)
+      .sort((a, b) => (a.timestamp_jst || '').localeCompare(b.timestamp_jst || ''));
+    journeys.push({
+      slug: fe.slug,
+      who: fe.who,
+      follow_time: fe.timestamp_jst,
+      likes: userLikes.map(l => ({
+        article: l.article_title_jp,
+        article_en: l.article_title_en || '',
+        article_url: l.article_url,
+        time: l.timestamp_jst,
+      })),
+    });
+  }
+  journeys.sort((a, b) => (a.follow_time || '').localeCompare(b.follow_time || ''));
+
+  // Day-of-week analysis
+  const DOW_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dowLikes = new Array(7).fill(0);
+  const dowFollows = new Array(7).fill(0);
+  const dowPublish = new Array(7).fill(0);
+  for (const e of events) {
+    const ts = e.timestamp_jst;
+    if (!ts) continue;
+    const d = new Date(ts);
+    const dow = d.getDay();
+    if (e.kind === 'like') dowLikes[dow]++;
+    else if (e.kind === 'follow') dowFollows[dow]++;
+  }
+  for (const art of sortedArticles) {
+    if (!art.published_date_jst) continue;
+    const d = new Date(art.published_date_jst);
+    dowPublish[d.getDay()]++;
+  }
+
+  // Content mix: article type breakdown
+  const typeGroups = {};
+  for (const art of articleMetrics) {
+    const tp = art.article_type || 'Unknown';
+    if (!typeGroups[tp]) typeGroups[tp] = { count: 0, views: 0, likes: 0, observed: 0 };
+    typeGroups[tp].count++;
+    typeGroups[tp].views += art.views;
+    typeGroups[tp].likes += art.likes_total;
+    typeGroups[tp].observed += art.observed_likes;
+  }
+  const contentMix = Object.entries(typeGroups).map(([type, g]) => ({
+    type,
+    count: g.count,
+    pct: sortedArticles.length > 0 ? Math.round(g.count / sortedArticles.length * 100) : 0,
+    avgViews: g.count > 0 ? Math.round(g.views / g.count) : 0,
+    avgLikes: g.count > 0 ? (g.likes / g.count).toFixed(1) : '0',
+    likeRate: g.views > 0 ? (g.likes / g.views * 100).toFixed(1) : '0',
+  }));
+
+  // Publish hours for annotation on activity chart
+  const publishHours = sortedArticles
+    .filter(a => a.published_date_jst)
+    .map(a => {
+      const d = new Date(a.published_date_jst);
+      return { hour: d.getHours(), title_jp: a.title_jp, title_en: a.title_en };
+    });
+
+  // Best and worst performing articles by like rate
+  const ranked = [...articleMetrics]
+    .filter(a => a.views > 0)
+    .sort((a, b) => (b.likes_total / b.views) - (a.likes_total / a.views));
+  const bestArticle = ranked[0] || null;
+  const worstArticle = ranked[ranked.length - 1] || null;
+
+  // Tags unique to best performers vs shared everywhere
+  const uniqueTags = {};
+  const sharedTags = {};
+  for (const art of articleMetrics) {
+    if (!art.tags) continue;
+    for (const tag of art.tags) {
+      if (!uniqueTags[tag]) uniqueTags[tag] = [];
+      uniqueTags[tag].push(art.views > 0 ? art.likes_total / art.views : 0);
+    }
+  }
+
+  return {
+    totalLikes: likes.length,
+    totalFollows: follows.length,
+    uniqueUsers: uniqueUsers.size,
+    followSlugs,
+    repeatLikers,
+    hourLikes,
+    hourFollows,
+    peakHours,
+    tagData,
+    articleMetrics,
+    articles: sortedArticles,
+    daySpan,
+    latestVelocityHours,
+    latestArticle: latestArt,
+    journeys,
+    totalViews: articles.reduce((s, a) => s + a.views, 0),
+    totalLikesReported: articles.reduce((s, a) => s + a.likes_total, 0),
+    events,
+    dowLikes,
+    dowFollows,
+    dowPublish,
+    DOW_NAMES,
+    contentMix,
+    publishHours,
+    bestArticle,
+    worstArticle,
+  };
+}
+
+/* ================================================================
+   RENDER — Briefing
+   ================================================================ */
+let chartTimeline = null;
+let chartActivity = null;
+let chartTags = null;
+let chartDow = null;
+let chartArticlePerf = null;
+let chartJourneys = null;
+let timelineMode = 'article';
+
+const ARTICLE_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'];
+
+function getArticleColor(idx) { return ARTICLE_COLORS[idx % ARTICLE_COLORS.length]; }
+
+function artTitle(art, maxLen) {
+  if (!art) return '';
+  const raw = currentLang === 'ja' ? (art.title_jp || art.title_en) : (art.title_en || art.title_jp);
+  return shortTitle(raw, maxLen);
+}
+
+function shortTitle(title, maxLen) {
+  if (!title) return '';
+  maxLen = maxLen || 20;
+  return title.length > maxLen ? title.slice(0, maxLen) + '...' : title;
+}
+
+function jstToUk(jstHour) { return (jstHour - 9 + 24) % 24; }
+
+const TAG_EN = {
+  '\u4ed5\u4e8b': 'Work', '\u81ea\u5df1\u7d39\u4ecb': 'Self-intro', '\u751f\u304d\u65b9': 'Lifestyle',
+  '\u30ad\u30e3\u30ea\u30a2': 'Career', '\u30b3\u30f3\u30b5\u30eb': 'Consulting',
+  '\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046': 'Work talk', 'note\u66f8\u304d\u521d\u3081': 'First note',
+  '\u30ad\u30e3\u30ea\u30a2\u30a2\u30c3\u30d7': 'Career up', '\u30b3\u30f3\u30b5\u30eb\u30bf\u30f3\u30c8': 'Consultant',
+  '\u30d3\u30b8\u30cd\u30b9': 'Business', '\u8ee2\u8077': 'Job change',
+  '\u30d3\u30b8\u30cd\u30b9\u30b9\u30ad\u30eb': 'Biz skills', '\u30b3\u30f3\u30b5\u30eb\u8ee2\u8077': 'Consulting career',
+};
+function translateTag(tag) { return currentLang === 'en' && TAG_EN[tag] ? TAG_EN[tag] : tag; }
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return mm + '/' + dd + ' ' + hh + ':' + min;
+}
+
+function renderSummary(m) {
+  const el = document.getElementById('summaryBlock');
+  const isJa = currentLang === 'ja';
+  const artCount = m.articles.length || 1;
+  const totalViews = m.totalViews;
+  const totalLikes = m.totalLikesReported;
+
+  // Computed rates
+  const likeRate = totalViews > 0 ? (totalLikes / totalViews * 100) : 0;
+  const avgViewsPerArt = Math.round(totalViews / artCount);
+  const avgLikesPerArt = (totalLikes / artCount).toFixed(1);
+  const followRate = m.uniqueUsers > 0 ? (m.totalFollows / m.uniqueUsers * 100) : 0;
+  const returnPct = m.uniqueUsers > 0 ? (m.repeatLikers.length / m.uniqueUsers * 100) : 0;
+
+  function rateColour(rate, good, ok) { return rate >= good ? 'green' : rate >= ok ? 'amber' : 'red'; }
+
+  // Colour meaning: green = strong, amber = room to grow, red = needs attention
+  let html = '<div class="kpi-grid">';
+
+  html += '<div class="kpi-item"><div class="kpi-value neutral">' + m.articles.length + '</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u6570' : 'Articles Published') + '</div>';
+  if (m.daySpan > 0) html += '<div class="kpi-sub">' + (isJa ? m.daySpan + '\u65e5\u9593\u306b\u516c\u958b' : 'over ' + m.daySpan + ' days') + '</div>';
+  html += '</div>';
+
+  html += '<div class="kpi-item"><div class="kpi-value neutral">' + avgViewsPerArt + '</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u95b2\u89a7\u6570' : 'Avg. Views per Article') + '</div>';
+  html += '<div class="kpi-sub">' + totalViews.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u95b2\u89a7' : 'total views') + '</div></div>';
+
+  html += '<div class="kpi-item"><div class="kpi-value neutral">' + avgLikesPerArt + '</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u3044\u3044\u306d' : 'Avg. Likes per Article') + '</div>';
+  html += '<div class="kpi-sub">' + totalLikes.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u3044\u3044\u306d' : 'total likes') + '</div></div>';
+
+  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(likeRate, 15, 8) + '">' + likeRate.toFixed(1) + '%</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u30b9\u30ad\u7387' : 'Like Rate') + '</div>';
+  html += '<div class="kpi-sub">' + (isJa ? '\u95b2\u89a7\u8005\u306e\u3046\u3061\u3044\u3044\u306d\u3057\u305f\u5272\u5408' : '% of viewers who liked') + '</div></div>';
+
+  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(followRate, 30, 15) + '">' + followRate.toFixed(0) + '%</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u7387' : 'Follow Rate') + '</div>';
+  html += '<div class="kpi-sub">' + m.totalFollows + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\uff08\u3044\u3044\u306d\u3057\u305f' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' followed out of ' + m.uniqueUsers + ' who liked') + '</div></div>';
+
+  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(returnPct, 20, 10) + '">' + returnPct.toFixed(0) + '%</div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u518d\u8a2a\u7387' : 'Return Rate') + '</div>';
+  html += '<div class="kpi-sub">' + m.repeatLikers.length + (isJa ? '\u4eba\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\uff08' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' came back to like another article (of ' + m.uniqueUsers + ')') + '</div></div>';
+
+  html += '</div>';
+
+  // Colour legend for rates
+  html += '<div style="font-size:10px;color:var(--ink-muted);margin-top:4px;text-align:right;">';
+  html += '<span style="color:var(--green);">\u25cf</span> ' + (isJa ? '\u826f\u597d' : 'strong') + ' &nbsp; ';
+  html += '<span style="color:var(--amber);">\u25cf</span> ' + (isJa ? '\u6210\u9577\u4f59\u5730\u3042\u308a' : 'room to grow') + ' &nbsp; ';
+  html += '<span style="color:var(--red);">\u25cf</span> ' + (isJa ? '\u8981\u6539\u5584' : 'needs attention') + '';
+  html += '</div>';
+
+  el.innerHTML = html;
+
+  // Populate floating article key
+  renderArticleKey(m);
+
+  // Section headings — McKinsey-style: state the finding, not the label
+  document.getElementById('sectionTimelineHeading').textContent =
+    isJa ? '\u2460 \u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u63a8\u79fb' : '\u2460 How engagement built over time';
+  document.getElementById('sectionWhenHeading').textContent =
+    isJa ? '\u2461 \u3044\u3064\u8aad\u8005\u304c\u53cd\u5fdc\u3057\u305f\u304b' : '\u2461 When readers respond';
+  document.getElementById('sectionAudienceHeading').textContent =
+    isJa ? '\u2462 \u3069\u306e\u8a18\u4e8b\u304c\u8aad\u8005\u3092\u5f15\u304d\u4ed8\u3051\u305f\u304b' : '\u2462 Which articles attract and retain readers';
+  document.getElementById('sectionInsightsHeading').textContent =
+    isJa ? '\u2463 \u6b21\u306e\u30a2\u30af\u30b7\u30e7\u30f3' : '\u2463 What to do next';
+
+  // Chart titles — descriptive: tell the reader what to look for
+  document.getElementById('timelineTitle').textContent =
+    isJa ? '\u3044\u3044\u306d\u3068\u30d5\u30a9\u30ed\u30fc\u306e\u767a\u751f\u30bf\u30a4\u30df\u30f3\u30b0' : 'When each like and follow happened';
+  document.getElementById('activityTitle').textContent =
+    isJa ? '\u6642\u9593\u5e2f\u5225\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u96c6\u4e2d\u5ea6' : 'Which hours drive the most engagement';
+  document.getElementById('dayOfWeekTitle').textContent =
+    isJa ? '\u66dc\u65e5\u5225\u306e\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u5206\u5e03' : 'Which days of the week readers are most active';
+  document.getElementById('articlePerfTitle').textContent =
+    isJa ? '\u8a18\u4e8b\u5225\u306e\u95b2\u89a7\u6570\u30fb\u3044\u3044\u306d\u6570\u30fb\u30b9\u30ad\u7387' : 'Views, likes, and conversion rate by article';
+  document.getElementById('tagsTitle').textContent =
+    isJa ? '\u3069\u306e\u30bf\u30b0\u304c\u3044\u3044\u306d\u3092\u96c6\u3081\u308b\u304b' : 'Which tags attract the most likes';
+  document.getElementById('journeysTitle').textContent =
+    isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3069\u306e\u3088\u3046\u306b\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u304b' : 'How followers discovered and converted';
+
+  // Clear bridge elements (no narrative filler)
+  document.getElementById('bridgeAfterTimeline').textContent = '';
+  document.getElementById('bridgeAfterWhen').textContent = '';
+}
+
+function renderTimeline(m) {
+  const canvas = document.getElementById('chartTimeline');
+  if (chartTimeline) chartTimeline.destroy();
+
+  // Chart key
+  const isJa = currentLang === 'ja';
+  document.getElementById('timelineKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (isJa ? '\u3044\u3044\u306d' : 'Like') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-tri" style="border-bottom-color:#059669;"></div> ' + (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:#99999980;"></div> ' +
+    (isJa ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article publish date') + '</div>' +
+    (timelineMode === 'article'
+      ? '<div class="chart-key-item" style="color:var(--ink-muted);">' + (isJa ? '\u5404\u884c = 1\u3064\u306e\u8a18\u4e8b' : 'Each row represents one article') + '</div>'
+      : '<div class="chart-key-item" style="color:var(--ink-muted);">' + (isJa ? '\u5404\u884c = 1\u4eba\u306e\u30e6\u30fc\u30b6\u30fc' : 'Each row represents one user') + '</div>');
+
+  if (timelineMode === 'article') {
+    renderTimelineByArticle(m, canvas);
+  } else {
+    renderTimelineByUser(m, canvas);
+  }
+}
+
+function renderTimelineByArticle(m, canvas) {
+  canvas.style.display = '';
+  const articles = m.articles;
+  const likes = m.events.filter(e => e.kind === 'like');
+  const follows = m.events.filter(e => e.kind === 'follow');
+
+  // Short labels: "A1", "A2", etc. Full title in tooltip.
+  const shortLabels = articles.map((_, i) => 'A' + (i + 1));
+  const allLabels = [...shortLabels, t('follow')];
+
+  const datasets = [];
+
+  // All likes as one dataset — row position (Y) identifies the article
+  const allLikeData = [];
+  for (let i = 0; i < articles.length; i++) {
+    const art = articles[i];
+    const artLikes = likes.filter(e => e.article_url === art.article_url);
+    for (const e of artLikes) {
+      allLikeData.push({ x: new Date(e.timestamp_jst), y: i, who: e.who, artIdx: i });
+    }
+  }
+  datasets.push({
+    label: isJa ? '\u3044\u3044\u306d' : 'Like',
+    data: allLikeData,
+    backgroundColor: '#2563eb',
+    borderColor: '#ffffff',
+    borderWidth: 1.5,
+    pointRadius: 5,
+    pointHoverRadius: 7,
+    showLine: false,
+    type: 'scatter',
+  });
+
+  // All follows on a separate row
+  datasets.push({
+    label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow',
+    data: follows.map(e => ({ x: new Date(e.timestamp_jst), y: articles.length, who: e.who })),
+    backgroundColor: '#059669',
+    borderColor: '#059669',
+    pointRadius: 7,
+    pointStyle: 'triangle',
+    pointHoverRadius: 9,
+    showLine: false,
+    type: 'scatter',
+  });
+
+  // Publish markers — dashed vertical lines
+  const annotations = {};
+  articles.forEach((art, i) => {
+    annotations['pub' + i] = {
+      type: 'line',
+      xMin: new Date(art.published_date_jst),
+      xMax: new Date(art.published_date_jst),
+      borderColor: '#9ca3af60',
+      borderWidth: 1.5,
+      borderDash: [6, 3],
+    };
+  });
+
+  // Publish dates are shown in the floating article key sidebar
+
+  chartTimeline = new Chart(canvas, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 16, top: 20 } },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'day', displayFormats: { day: 'MM/dd', hour: 'MM/dd HH:mm' } },
+          title: { display: false },
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 11 } },
+        },
+        y: {
+          min: -0.5,
+          max: articles.length + 0.5,
+          reverse: false,
+          ticks: {
+            callback: (val) => allLabels[val] || '',
+            stepSize: 1,
+            font: { size: 11, weight: 'bold' },
+            padding: 4,
+          },
+          grid: { color: '#f8f8f8' },
+          afterFit: (axis) => { axis.width = 60; },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a2eee',
+          titleFont: { size: 12, family: "'Noto Sans JP', 'Inter', sans-serif" },
+          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
+          padding: 10,
+          cornerRadius: 6,
+          callbacks: {
+            title: (items) => {
+              const pt = items[0].raw;
+              if (pt.artIdx !== undefined) {
+                const art = articles[pt.artIdx];
+                return 'A' + (pt.artIdx + 1) + ': ' + (currentLang === 'ja' ? art.title_jp : art.title_en);
+              }
+              return t('follow');
+            },
+            label: (ctx) => {
+              const pt = ctx.raw;
+              return (pt.who || '') + ' | ' + formatDate(pt.x);
+            },
+          },
+        },
+        annotation: { annotations },
+      },
+    },
+  });
+
+  canvas.parentElement.style.height = Math.max(280, (articles.length + 2) * 50) + 'px';
+
+  const altEl = document.getElementById('timelineAlt');
+  const isJa2 = currentLang === 'ja';
+  altEl.innerHTML = isJa2
+    ? articles.length + '\u8a18\u4e8b\u306b\u5bfe\u3057\u3066 ' + m.totalLikes + '\u4ef6\u306e\u3044\u3044\u306d\u3068 ' + m.totalFollows + '\u4ef6\u306e\u30d5\u30a9\u30ed\u30fc\u3002\u5404\u70b9\u306f1\u4eba\u306e\u30e6\u30fc\u30b6\u30fc\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u793a\u3057\u307e\u3059\u3002'
+    : m.totalLikes + ' likes and ' + m.totalFollows + ' follows across ' + articles.length + ' articles. Each dot is one user action.';
+  altEl.style.fontStyle = 'italic';
+  altEl.style.fontSize = '11px';
+}
+
+function renderTimelineByUser(m, canvas) {
+  // Hide the chart canvas, show formatted journey list instead
+  canvas.style.display = 'none';
+  canvas.parentElement.style.height = 'auto';
+
+  const follows = m.events.filter(e => e.kind === 'follow');
+  const likes = m.events.filter(e => e.kind === 'like');
+  const isJa = currentLang === 'ja';
+
+  // Show followers and repeat likers
+  const relevantSlugs = new Set();
+  for (const f of follows) relevantSlugs.add(f.slug);
+  for (const [slug] of m.repeatLikers) relevantSlugs.add(slug);
+  const slugs = [...relevantSlugs].sort();
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;">';
+
+  for (const slug of slugs) {
+    const name = m.events.find(e => e.slug === slug)?.who || slug;
+    const userLikes = likes.filter(e => e.slug === slug);
+    const userFollow = follows.find(e => e.slug === slug);
+    const artCount = new Set(userLikes.map(e => e.article_url)).size;
+
+    html += '<div style="background:var(--bg);border-radius:6px;padding:10px 12px;font-size:12px;">';
+    html += '<div style="font-weight:600;color:var(--ink);margin-bottom:4px;">' + escapeHtml(name) + '</div>';
+
+    // What they did
+    const actions = [];
+    if (userLikes.length > 0) {
+      actions.push(userLikes.length + (isJa ? '\u4ef6\u306e\u3044\u3044\u306d' : (userLikes.length === 1 ? ' like' : ' likes')) +
+        (artCount > 1 ? (isJa ? ' (' + artCount + '\u8a18\u4e8b)' : ' (' + artCount + ' articles)') : ''));
+    }
+    if (userFollow) {
+      actions.push('<span style="color:var(--green);font-weight:600;">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u6e08' : 'Followed') + '</span>');
+    }
+    html += '<div style="color:var(--ink-light);">' + actions.join(' \u2192 ') + '</div>';
+    html += '</div>';
+  }
+
+  if (slugs.length === 0) {
+    html += '<div style="color:var(--ink-muted);padding:20px;text-align:center;">' +
+      (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u307e\u305f\u306f\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u306f\u307e\u3060\u3044\u307e\u305b\u3093' : 'No followers or repeat readers yet') +
+      '</div>';
+  }
+
+  html += '</div>';
+
+  const altEl = document.getElementById('timelineAlt');
+  altEl.innerHTML = html;
+  altEl.style.fontStyle = 'normal';
+  altEl.style.fontSize = 'inherit';
+  altEl.style.lineHeight = 'inherit';
+}
+
+function toggleTimelineView() {
+  timelineMode = timelineMode === 'article' ? 'user' : 'article';
+  const btn = document.getElementById('timelineToggle');
+  btn.querySelector('span').setAttribute('data-i18n', timelineMode === 'article' ? 'toggle_by_user' : 'toggle_by_article');
+  btn.querySelector('span').textContent = t(timelineMode === 'article' ? 'toggle_by_user' : 'toggle_by_article');
+  btn.classList.toggle('active', timelineMode === 'user');
+  renderTimeline(currentMetrics);
+}
+
+function renderActivity(m) {
+  const canvas = document.getElementById('chartActivity');
+  if (chartActivity) chartActivity.destroy();
+
+  // Dual timezone labels: JST primary, UK secondary
+  const labels = Array.from({ length: 24 }, (_, i) => {
+    const jst = String(i).padStart(2, '0');
+    const uk = String(jstToUk(i)).padStart(2, '0');
+    return jst + '\n(' + uk + ')';
+  });
+
+  // Publish hour annotations — dashed lines only, explained in legend
+  const pubAnnotations = {};
+  m.publishHours.forEach((ph, i) => {
+    pubAnnotations['pub' + i] = {
+      type: 'line',
+      xMin: ph.hour,
+      xMax: ph.hour,
+      borderColor: '#dc262640',
+      borderWidth: 2,
+      borderDash: [4, 4],
+    };
+  });
+
+  // Chart key
+  document.getElementById('activityKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Likes') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#059669;"></div> ' + (currentLang === 'ja' ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:#dc2626;"></div> ' +
+    (currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Time article was published') + '</div>' +
+    '<div class="chart-key-item" style="color:var(--ink-muted);">' +
+    (currentLang === 'ja' ? 'JST\u6642\u9593 (\u62ec\u5f27\u5185\u306fUK)' : 'JST hours (UK in brackets)') + '</div>';
+
+  chartActivity = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: t('like'), data: m.hourLikes, backgroundColor: '#2563eb90', hoverBackgroundColor: '#2563eb', borderRadius: 3 },
+        { label: t('follow'), data: m.hourFollows, backgroundColor: '#05966990', hoverBackgroundColor: '#059669', borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8,
+          callbacks: {
+            title: (items) => {
+              const h = items[0].dataIndex;
+              return 'JST ' + String(h).padStart(2, '0') + ':00 / UK ' + String(jstToUk(h)).padStart(2, '0') + ':00';
+            },
+          },
+        },
+        annotation: { annotations: pubAnnotations },
+      },
+    },
+  });
+
+  // Dynamic takeaway
+  const peakH = m.hourLikes.indexOf(Math.max(...m.hourLikes));
+  const peakUk = jstToUk(peakH);
+  document.getElementById('activityAlt').textContent =
+    currentLang === 'ja'
+    ? '\u2192 \u6700\u3082\u6d3b\u767a\u306a\u6642\u9593\u5e2f: JST ' + String(peakH).padStart(2,'0') + ':00 (UK ' + String(peakUk).padStart(2,'0') + ':00)\u3002\u8d64\u7834\u7dda\u306f\u8a18\u4e8b\u516c\u958b\u6642\u523b\u3002'
+    : '\u2192 Most active hour: JST ' + String(peakH).padStart(2,'0') + ':00 (UK ' + String(peakUk).padStart(2,'0') + ':00). Red dashed lines show when articles were published.';
+}
+
+function renderDow(m) {
+  const canvas = document.getElementById('chartDow');
+  if (chartDow) chartDow.destroy();
+
+  document.getElementById('dowKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + t('like') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#059669;"></div> ' + t('follow') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#dc262640;width:10px;height:10px;border-radius:0;"></div> ' +
+    (currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Day article was published') + '</div>';
+
+  chartDow = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: m.DOW_NAMES,
+      datasets: [
+        { label: t('like'), data: m.dowLikes, backgroundColor: '#2563eb90', borderRadius: 3 },
+        { label: t('follow'), data: m.dowFollows, backgroundColor: '#05966990', borderRadius: 3 },
+        { label: currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article published', data: m.dowPublish, backgroundColor: '#dc262630', borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8 },
+      },
+    },
+  });
+
+  const bestDowIdx = m.dowLikes.indexOf(Math.max(...m.dowLikes));
+  const bestDowCount = m.dowLikes[bestDowIdx];
+  document.getElementById('dowAlt').textContent =
+    (currentLang === 'ja'
+    ? '\u2192 ' + m.DOW_NAMES[bestDowIdx] + '\u304c\u6700\u3082\u6d3b\u767a (' + bestDowCount + '\u4ef6\u306e\u3044\u3044\u306d)\u3002\u8d64\u306f\u8a18\u4e8b\u516c\u958b\u65e5\u3002'
+    : '\u2192 ' + m.DOW_NAMES[bestDowIdx] + ' is the most active day (' + bestDowCount + ' likes). Red bars show days articles were published.');
+}
+
+function renderArticlePerf(m) {
+  const canvas = document.getElementById('chartArticlePerf');
+  if (chartArticlePerf) chartArticlePerf.destroy();
+
+  const arts = m.articleMetrics.filter(a => a.views > 0);
+  const labels = arts.map(a => artTitle(a, 18));
+
+  chartArticlePerf = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: currentLang === 'ja' ? '\u95b2\u89a7\u6570' : 'Views',
+          data: arts.map(a => a.views),
+          backgroundColor: '#2563eb30',
+          borderColor: '#2563eb',
+          borderWidth: 1,
+          borderRadius: 3,
+          yAxisID: 'y',
+        },
+        {
+          label: currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Likes',
+          data: arts.map(a => a.likes_total),
+          backgroundColor: '#7c3aed90',
+          borderRadius: 3,
+          yAxisID: 'y',
+        },
+        {
+          label: currentLang === 'ja' ? '\u30b9\u30ad\u7387 %' : 'Like Rate %',
+          data: arts.map(a => a.views > 0 ? parseFloat((a.likes_total / a.views * 100).toFixed(1)) : 0),
+          type: 'line',
+          borderColor: '#dc2626',
+          backgroundColor: '#dc262620',
+          pointBackgroundColor: '#dc2626',
+          pointRadius: 4,
+          borderWidth: 2,
+          fill: false,
+          yAxisID: 'y1',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" }, maxRotation: 45 } },
+        y: { beginAtZero: true, position: 'left', grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 } },
+          title: { display: true, text: currentLang === 'ja' ? '\u95b2\u89a7\u6570 / \u3044\u3044\u306d\u6570' : 'Views / Likes', font: { size: 10 } } },
+        y1: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, callback: (v) => v + '%' },
+          title: { display: true, text: currentLang === 'ja' ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)', font: { size: 10 } } },
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 } },
+        tooltip: {
+          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8,
+          bodyFont: { family: "'Noto Sans JP', 'Inter', sans-serif" },
+        },
+      },
+    },
+  });
+
+  if (m.bestArticle && m.worstArticle && m.bestArticle !== m.worstArticle) {
+    const bestRate = (m.bestArticle.likes_total / m.bestArticle.views * 100).toFixed(1);
+    const worstRate = (m.worstArticle.likes_total / m.worstArticle.views * 100).toFixed(1);
+    const bestName = currentLang === 'ja' ? (m.bestArticle.title_jp || m.bestArticle.title_en) : (m.bestArticle.title_en || m.bestArticle.title_jp);
+    document.getElementById('articlePerfAlt').textContent =
+      (currentLang === 'ja'
+      ? '\u2192 \u30b9\u30ad\u7387\u306f ' + worstRate + '% \u301c ' + bestRate + '%\u3002\u300c' + shortTitle(bestName, 25) + '\u300d\u304c\u6700\u3082\u9ad8\u3044\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3\u3002'
+      : '\u2192 Like rates range from ' + worstRate + '% to ' + bestRate + '%. "' + shortTitle(bestName, 25) + '" converts the most readers to likers.');
+  }
+}
+
+function renderTags(m) {
+  const canvas = document.getElementById('chartTags');
+  if (chartTags) chartTags.destroy();
+
+  const top = m.tagData.slice(0, 10);
+
+  document.getElementById('tagsKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#7c3aed;"></div> ' +
+    (currentLang === 'ja' ? '\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3057\u305f\u8aad\u8005' : 'Readers who liked multiple articles') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb80;"></div> ' +
+    (currentLang === 'ja' ? '1\u8a18\u4e8b\u306e\u307f\u306e\u8aad\u8005' : 'Readers who liked one article only') + '</div>';
+
+  chartTags = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: top.map(t => translateTag(t.tag)),
+      datasets: [
+        { label: currentLang === 'ja' ? '\u30ea\u30d4\u30fc\u30c8' : 'Repeat', data: top.map(t => t.repeat), backgroundColor: '#7c3aed90', borderRadius: 3 },
+        { label: currentLang === 'ja' ? '\u521d\u56de' : 'One-time', data: top.map(t => t.onetime), backgroundColor: '#2563eb50', borderRadius: 3 },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' },
+          title: { display: true, text: currentLang === 'ja' ? '\u3044\u3044\u306d\u6570' : 'Total Likes', font: { size: 10 } } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8 },
+      },
+    },
+  });
+
+  const topTag = m.tagData.length > 0 ? translateTag(m.tagData[0].tag) : '';
+  document.getElementById('tagsAlt').textContent =
+    currentLang === 'ja'
+    ? '\u2192 \u300c' + topTag + '\u300d\u304c\u6700\u3082\u591a\u304f\u306e\u3044\u3044\u306d\u3092\u7372\u5f97\u3002\u6fc3\u3044\u8272 = \u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3057\u305f\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u3002\u8584\u3044\u8272 = 1\u8a18\u4e8b\u306e\u307f\u306e\u8aad\u8005\u3002'
+    : '\u2192 "' + topTag + '" draws the most likes. Dark bars = readers who liked multiple articles. Light bars = one-time readers.';
+}
+
+function renderJourneys(m) {
+  const canvas = document.getElementById('chartJourneys');
+  if (chartJourneys) chartJourneys.destroy();
+
+  // Build as a scatter/line chart: Y = follower, X = time, dots = events
+  const datasets = [];
+  const slugs = m.journeys.map(j => j.who || j.slug);
+
+  document.getElementById('journeysKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Like') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-tri" style="border-bottom-color:#059669;"></div> ' + (currentLang === 'ja' ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow') + '</div>' +
+    '<div class="chart-key-item" style="color:var(--ink-muted);">' +
+    (currentLang === 'ja' ? '\u7dda\u306f\u540c\u3058\u4eba\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u6642\u7cfb\u5217\u3067\u63a5\u7d9a' : 'Lines connect the same person\'s actions over time') + '</div>';
+
+  for (let i = 0; i < m.journeys.length; i++) {
+    const j = m.journeys[i];
+    const allEvents = [];
+    for (const lk of j.likes) {
+      allEvents.push({ x: new Date(lk.time), y: i, kind: 'like', article: lk.article, who: j.who });
+    }
+    allEvents.push({ x: new Date(j.follow_time), y: i, kind: 'follow', article: null, who: j.who });
+    allEvents.sort((a, b) => a.x - b.x);
+
+    datasets.push({
+      label: j.who || j.slug,
+      data: allEvents,
+      backgroundColor: allEvents.map(e => e.kind === 'follow' ? '#059669' : '#2563eb'),
+      borderColor: '#2563eb30',
+      pointRadius: allEvents.map(e => e.kind === 'follow' ? 8 : 5),
+      pointStyle: allEvents.map(e => e.kind === 'follow' ? 'triangle' : 'circle'),
+      showLine: true,
+      borderWidth: 1,
+      tension: 0,
+      fill: false,
+    });
+  }
+
+  chartJourneys = new Chart(canvas, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 16 } },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'day', displayFormats: { day: 'MM/dd' } },
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 11 } },
+        },
+        y: {
+          min: -0.5,
+          max: m.journeys.length - 0.5,
+          ticks: {
+            callback: (val) => slugs[val] || '',
+            stepSize: 1,
+            font: { size: 10 },
+          },
+          grid: { color: '#f8f8f8' },
+          afterFit: (axis) => { axis.width = 130; },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 10,
+          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
+          callbacks: {
+            label: (ctx) => {
+              const pt = ctx.raw;
+              let lbl = t(pt.kind);
+              if (pt.article) lbl += ': ' + shortTitle(pt.article, 25);
+              lbl += ' (' + formatDate(pt.x) + ')';
+              return lbl;
+            },
+          },
+        },
+      },
+    },
+  });
+
+  canvas.parentElement.style.height = Math.max(200, (m.journeys.length + 1) * 35) + 'px';
+  document.getElementById('journeysAlt').textContent =
+    currentLang === 'ja'
+    ? '\u2192 ' + m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u884c\u52d5\u7d4c\u8def\u3002\u4e38 = \u3044\u3044\u306d\u3001\u25b2 = \u30d5\u30a9\u30ed\u30fc\u3002\u7dda\u306f\u540c\u4e00\u30e6\u30fc\u30b6\u30fc\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u63a5\u7d9a\u3002'
+    : '\u2192 ' + m.journeys.length + ' followers tracked. Circles = likes, triangles = follows. Lines connect the same person\u2019s actions over time.';
+}
+
+function renderInsights(m) {
+  const isJa = currentLang === 'ja';
+
+  // SECTION 1 SIDE PANEL: Momentum
+  let tl = '';
+  if (m.latestArticle && m.latestVelocityHours !== null) {
+    const latestLikes = m.events.filter(e => e.kind === 'like' && e.article_url === m.latestArticle.article_url).length;
+    tl += '<div class="si-label">' + (isJa ? '\u6700\u65b0\u8a18\u4e8b\u306e\u53cd\u5fdc\u901f\u5ea6' : 'HOW FAST THE LATEST ARTICLE GAINED TRACTION') + '</div>';
+    tl += '<div class="si-value">' +
+      (isJa
+        ? '\u6700\u65b0\u8a18\u4e8b\u306f\u516c\u958b\u304b\u3089 <strong>' + m.latestVelocityHours + '\u6642\u9593\u4ee5\u5185</strong>\u306b <strong>' + latestLikes + '\u4ef6</strong>\u306e\u3044\u3044\u306d\u3092\u7372\u5f97\u3002\u3053\u308c\u306f\u8a18\u4e8b\u304c\u3069\u306e\u304f\u3089\u3044\u65e9\u304f\u8aad\u8005\u306b\u5c4a\u304f\u304b\u3092\u793a\u3057\u307e\u3059\u3002'
+        : 'The latest article picked up <strong>' + latestLikes + ' likes</strong> within <strong>' + m.latestVelocityHours + ' hours</strong> of being published. This shows how quickly your content reaches readers.') +
+      '</div>';
+  }
+  const avgLikes = m.articles.length > 0 ? (m.totalLikesReported / m.articles.length).toFixed(1) : '0';
+  tl += '<div class="si-label">' + (isJa ? '\u8a18\u4e8b\u30bf\u30a4\u30d7\u5225\u306e\u53cd\u5fdc' : 'PERFORMANCE BY ARTICLE TYPE') + '</div>';
+  for (const cm of m.contentMix) {
+    tl += '<div class="si-value">' +
+      (isJa
+        ? '<strong>' + escapeHtml(cm.type) + '</strong>: ' + cm.count + '\u8a18\u4e8b\u3001\u30b9\u30ad\u7387 ' + cm.likeRate + '%'
+        : '<strong>' + escapeHtml(cm.type) + '</strong>: ' + cm.count + (cm.count === 1 ? ' article' : ' articles') + ' with a ' + cm.likeRate + '% like rate') +
+      '</div>';
+  }
+  document.getElementById('insightTimeline').innerHTML = tl;
+
+  // SECTION 2 SIDE PANEL: When to publish
+  const peakStart = m.peakHours.length > 0 ? String(m.peakHours[0]).padStart(2, '0') : '??';
+  const peakEnd = m.peakHours.length > 0 ? String(m.peakHours[m.peakHours.length - 1]).padStart(2, '0') : '??';
+  const peakStartUk = m.peakHours.length > 0 ? String(jstToUk(m.peakHours[0])).padStart(2, '0') : '??';
+  const peakEndUk = m.peakHours.length > 0 ? String(jstToUk(m.peakHours[m.peakHours.length - 1])).padStart(2, '0') : '??';
+  const bestDowVal = m.DOW_NAMES[m.dowLikes.indexOf(Math.max(...m.dowLikes))];
+
+  let tm = '<div class="si-label">' + (isJa ? '\u6700\u3082\u53cd\u5fdc\u304c\u591a\u3044\u6642\u9593\u5e2f' : 'WHEN READERS ARE MOST ACTIVE') + '</div>';
+  tm += '<div class="si-value">' +
+    (isJa
+      ? 'JST <strong>' + peakStart + ':00\u301c' + peakEnd + ':00</strong>\uff08UK ' + peakStartUk + ':00\u301c' + peakEndUk + ':00\uff09\u306b\u3044\u3044\u306d\u304c\u96c6\u4e2d\u3002\u3053\u306e\u6642\u9593\u5e2f\u306b\u8a18\u4e8b\u304c\u8aad\u307e\u308c\u308b\u3088\u3046\u516c\u958b\u3059\u308b\u3068\u52b9\u679c\u7684\u3002'
+      : 'Likes concentrate between <strong>JST ' + peakStart + ':00\u2013' + peakEnd + ':00</strong> (UK ' + peakStartUk + ':00\u2013' + peakEndUk + ':00). Publishing so articles land in this window could increase engagement.') +
+    '</div>';
+  tm += '<div class="si-label">' + (isJa ? '\u6700\u3082\u53cd\u5fdc\u304c\u591a\u3044\u66dc\u65e5' : 'BEST DAY OF THE WEEK') + '</div>';
+  tm += '<div class="si-value"><strong>' + bestDowVal + '</strong>' +
+    (isJa ? ' \u306b\u6700\u3082\u591a\u304f\u306e\u3044\u3044\u306d\u304c\u767a\u751f' : ' sees the most likes') + '</div>';
+
+  if (m.publishHours.length > 0) {
+    const pubHours = m.publishHours.map(p => p.hour);
+    const avgPubHour = Math.round(pubHours.reduce((a, b) => a + b, 0) / pubHours.length);
+    tm += '<div class="si-label">' + (isJa ? '\u73fe\u5728\u306e\u516c\u958b\u30d1\u30bf\u30fc\u30f3' : 'YOUR CURRENT PUBLISH PATTERN') + '</div>';
+    tm += '<div class="si-value">' +
+      (isJa
+        ? '\u5e73\u5747 JST <strong>' + String(avgPubHour).padStart(2, '0') + ':00</strong>\uff08UK ' + String(jstToUk(avgPubHour)).padStart(2, '0') + ':00\uff09\u306b\u516c\u958b'
+        : 'You typically publish around <strong>JST ' + String(avgPubHour).padStart(2, '0') + ':00</strong> (UK ' + String(jstToUk(avgPubHour)).padStart(2, '0') + ':00)') +
+      '</div>';
+  }
+  document.getElementById('insightTiming').innerHTML = tm;
+
+  // SECTION 3 SIDE PANEL: Audience quality
+  const followRate = m.uniqueUsers > 0 ? ((m.totalFollows / m.uniqueUsers) * 100).toFixed(0) : '0';
+  let au = '<div class="si-label">' + (isJa ? '\u8aad\u8005\u898f\u6a21' : 'AUDIENCE SIZE') + '</div>';
+  au += '<div class="si-value">' +
+    (isJa
+      ? '<strong>' + m.uniqueUsers + '\u4eba</strong>\u304c\u3044\u3044\u306d\u307e\u305f\u306f\u30d5\u30a9\u30ed\u30fc\u3067\u53cd\u5fdc'
+      : '<strong>' + m.uniqueUsers + ' people</strong> have liked or followed your content') +
+    '</div>';
+  au += '<div class="si-label">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u5272\u5408' : 'HOW MANY BECAME FOLLOWERS') + '</div>';
+  au += '<div class="si-value">' +
+    (isJa
+      ? '\u3044\u3044\u306d\u3057\u305f <strong>' + m.uniqueUsers + '\u4eba\u4e2d ' + m.totalFollows + '\u4eba</strong>\uff08' + followRate + '%\uff09\u304c\u30d5\u30a9\u30ed\u30fc\u306b\u8ee2\u63db'
+      : 'Of the <strong>' + m.uniqueUsers + '</strong> people who liked, <strong>' + m.totalFollows + '</strong> (' + followRate + '%) went on to follow') +
+    '</div>';
+  au += '<div class="si-label">' + (isJa ? '\u30ea\u30d4\u30fc\u30c8\u8aad\u8005' : 'READERS WHO CAME BACK') + '</div>';
+  au += '<div class="si-value">' +
+    (isJa
+      ? '<strong>' + m.repeatLikers.length + '\u4eba</strong>\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3002\u3053\u308c\u306f\u7d99\u7d9a\u7684\u306a\u8208\u5473\u3092\u793a\u3059\u30b7\u30b0\u30ca\u30eb\u3002'
+      : '<strong>' + m.repeatLikers.length + '</strong> liked more than one article. This signals genuine, ongoing interest rather than one-off discovery.') +
+    '</div>';
+  document.getElementById('insightAudience').innerHTML = au;
+}
+
+/* ================================================================
+   RENDER — Data Tab
+   ================================================================ */
+let tableSortCol = 0;
+let tableSortAsc = false;
+
+function renderEventsTable(events) {
+  const tbody = document.getElementById('eventsBody');
+  const sorted = [...events].sort((a, b) => {
+    const aVal = getTableVal(a, tableSortCol);
+    const bVal = getTableVal(b, tableSortCol);
+    if (aVal < bVal) return tableSortAsc ? -1 : 1;
+    if (aVal > bVal) return tableSortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const search = (document.getElementById('tableSearch').value || '').toLowerCase();
+  const filtered = search
+    ? sorted.filter(e =>
+        (e.timestamp_jst || '').toLowerCase().includes(search) ||
+        (e.kind || '').toLowerCase().includes(search) ||
+        (e.who || '').toLowerCase().includes(search) ||
+        (e.slug || '').toLowerCase().includes(search) ||
+        (e.article_title_jp || '').toLowerCase().includes(search) ||
+        (e.source || '').toLowerCase().includes(search)
+      )
+    : sorted;
+
+  tbody.innerHTML = filtered.map(e =>
+    '<tr>' +
+    '<td>' + escapeHtml(formatDate(e.timestamp_jst)) + '</td>' +
+    '<td>' + escapeHtml(e.kind) + '</td>' +
+    '<td title="' + escapeHtml(e.slug) + '">' + escapeHtml(e.who || e.slug) + '</td>' +
+    '<td title="' + escapeHtml(e.article_title_jp || '') + '">' + escapeHtml(shortTitle(e.article_title_jp, 30) || '-') + '</td>' +
+    '<td>' + escapeHtml(e.source || '') + '</td>' +
+    '</tr>'
+  ).join('');
+}
+
+function getTableVal(e, col) {
+  switch (col) {
+    case 0: return e.timestamp_jst || '';
+    case 1: return e.kind || '';
+    case 2: return e.who || e.slug || '';
+    case 3: return e.article_title_jp || '';
+    case 4: return e.source || '';
+    default: return '';
+  }
+}
+
+function sortTable(col) {
+  if (tableSortCol === col) tableSortAsc = !tableSortAsc;
+  else { tableSortCol = col; tableSortAsc = true; }
+  renderEventsTable(currentMetrics.events);
+}
+
+function filterTable() { renderEventsTable(currentMetrics.events); }
+
+async function renderImportHistory() {
+  const imports = await dbGetAll('imports');
+  const list = document.getElementById('importHistoryList');
+  if (imports.length === 0) {
+    list.innerHTML = '<div class="import-history-item" style="color:var(--ink-muted);">No imports yet</div>';
+    return;
+  }
+  list.innerHTML = imports
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp))
+    .map(imp =>
+      '<div class="import-history-item">' +
+      formatDate(imp.timestamp) + ' | ' +
+      imp.events_added + ' events, ' + imp.articles_added + ' articles' +
+      '</div>'
+    ).join('');
+}
+
+/* ================================================================
+   RENDER — Dictionary Tab
+   ================================================================ */
+function renderDictionary() {
+  const grid = document.getElementById('definitionsGrid');
+  const defs = [
+    ['Like / \u30b9\u30ad', 'def_like'],
+    ['Follow / \u30d5\u30a9\u30ed\u30fc', 'def_follow'],
+    ['Views / \u95b2\u89a7\u6570', 'def_views'],
+    ['Like Rate / \u30b9\u30ad\u7387', 'def_like_rate'],
+    ['Repeat Liker / \u30ea\u30d4\u30fc\u30c8', 'def_repeat'],
+    ['Timestamp / \u30bf\u30a4\u30e0\u30b9\u30bf\u30f3\u30d7', 'def_timestamp'],
+    ['Source / \u30bd\u30fc\u30b9', 'def_source'],
+    ['Gap / \u5dee\u5206', 'def_gap'],
+  ];
+
+  grid.innerHTML = defs.map(([term, key]) =>
+    '<div class="def-term">' + term + '</div><div class="def-desc">' + t(key) + '</div>'
+  ).join('');
+
+  const limList = document.getElementById('limitationsList');
+  limList.innerHTML = [
+    'lim_views', 'lim_batch', 'lim_coverage', 'lim_friends'
+  ].map(key => '<li>' + t(key) + '</li>').join('');
+}
+
+/* ================================================================
+   RENDER — Status Bar
+   ================================================================ */
+function renderStatusBar(m) {
+  const bar = document.getElementById('statusBar');
+  const isJa = currentLang === 'ja';
+  if (!m || m.events.length === 0) {
+    bar.innerHTML = '<span>' + t('status_no_data') + '</span>';
+    return;
+  }
+
+  const lastImport = m.events.length > 0
+    ? m.events.map(e => e.timestamp_jst).filter(Boolean).sort().pop()
+    : null;
+  const dateStr = lastImport ? formatDate(lastImport) : '';
+
+  let html = '<span>' + m.articles.length + (isJa ? '\u8a18\u4e8b' : ' articles') +
+    ', ' + m.uniqueUsers + (isJa ? '\u4eba\u306e\u8aad\u8005' : ' readers') + '</span>';
+  if (dateStr) {
+    html += '<span>' + (isJa ? '\u6700\u65b0: ' : 'Latest: ') + dateStr + '</span>';
+  }
+  bar.innerHTML = html;
+}
+
+/* ================================================================
+   IMPORT HANDLERS
+   ================================================================ */
+function showImportResult(msg, isError) {
+  const el = document.getElementById('importResult');
+  el.textContent = msg;
+  el.className = 'import-result ' + (isError ? 'error' : 'success');
+  setTimeout(() => { el.className = 'import-result'; }, 5000);
+}
+
+async function processImport(jsonStr) {
+  try {
+    const raw = JSON.parse(jsonStr);
+    const result = await importData(raw);
+    let msg = 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
+    if (result.stats > 0) msg += ', ' + result.stats + ' stats';
+    showImportResult(msg, false);
+    await loadAndRender();
+  } catch (err) {
+    showImportResult('Import failed: ' + err.message, true);
+  }
+}
+
+async function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  await processImport(text);
+  e.target.value = '';
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    await processImport(text);
+  } catch (err) {
+    showImportResult('Clipboard read failed: ' + err.message, true);
+  }
+}
+
+async function exportData() {
+  const events = await dbGetAll('events');
+  const articles = await dbGetAll('articles');
+  const imports = await dbGetAll('imports');
+  const data = { articles, events, imports, exported_at: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'note-analytics-export-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function copyScript(id) {
+  const pre = document.getElementById(id);
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const btn = pre.parentElement.querySelector('.script-copy');
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+}
+
+// Drag and drop
+const importZone = document.getElementById('importZone');
+importZone.addEventListener('dragover', (e) => { e.preventDefault(); importZone.classList.add('dragover'); });
+importZone.addEventListener('dragleave', () => importZone.classList.remove('dragover'));
+importZone.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  importZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const text = await file.text();
+    await processImport(text);
+  }
+});
+
+/* ================================================================
+   MAIN
+   ================================================================ */
+let currentMetrics = null;
+
+async function loadAndRender() {
+  const events = await dbGetAll('events');
+  const articles = await dbGetAll('articles');
+
+  currentMetrics = computeMetrics(events, articles);
+
+  renderStatusBar(currentMetrics);
+  renderSummary(currentMetrics);
+  renderTimeline(currentMetrics);
+  renderActivity(currentMetrics);
+  renderTags(currentMetrics);
+  renderArticlePerf(currentMetrics);
+  renderDow(currentMetrics);
+  renderJourneys(currentMetrics);
+  renderInsights(currentMetrics);
+  renderEventsTable(currentMetrics.events);
+  renderImportHistory();
+  renderDictionary();
+}
+
+async function seedIfEmpty() {
+  const existing = await dbGetAll('events');
+  if (existing.length > 0) return;
+
+  for (const art of SEED_DATA.articles) await dbPut('articles', art);
+  for (const ev of SEED_DATA.events) await dbPut('events', ev);
+  await dbPut('imports', {
+    timestamp: new Date().toISOString(),
+    events_added: SEED_DATA.events.length,
+    articles_added: SEED_DATA.articles.length,
+  });
+}
+
+async function init() {
+  try {
+    await openDB();
+  } catch (err) {
+    console.error('IndexedDB failed, using in-memory fallback:', err);
+    // Minimal fallback: render from seed data directly
+    currentMetrics = computeMetrics(SEED_DATA.events, SEED_DATA.articles);
+    renderAll();
+    return;
+  }
+  await seedIfEmpty();
+  applyI18n();
+  await loadAndRender();
+}
+
+function renderAll() {
+  applyI18n();
+  if (currentMetrics) {
+    renderStatusBar(currentMetrics);
+    renderSummary(currentMetrics);
+    renderTimeline(currentMetrics);
+    renderActivity(currentMetrics);
+    renderTags(currentMetrics);
+    renderArticlePerf(currentMetrics);
+    renderDow(currentMetrics);
+    renderJourneys(currentMetrics);
+    renderInsights(currentMetrics);
+    renderEventsTable(currentMetrics.events);
+    renderImportHistory();
+    renderDictionary();
+  }
+}
+
+// Chart.js needs time adapter for time scale
+// Load date-fns adapter from CDN
+const adapterScript = document.createElement('script');
+adapterScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js';
+adapterScript.onload = () => init();
+document.head.appendChild(adapterScript);
+</script>
+</body>
+</html>
