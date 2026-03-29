@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>note Analytics</title>
+<title>Note.com Analytics</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
 <style>
@@ -21,8 +21,10 @@
   --ink: #1a1a2e;
   --ink-light: #4b5563;
   --ink-muted: #9ca3af;
-  --accent: #2563eb;
-  --accent-light: #dbeafe;
+  --accent: #1e40af;
+  --accent-border: #1e3a8a;
+  --accent-zone: #dbeafe;
+  --grey-bar: #d1d5db;
   --green: #059669;
   --green-light: #d1fae5;
   --amber: #d97706;
@@ -148,12 +150,7 @@ body {
 .kpi-item { text-align: center; padding: 8px 4px; }
 .kpi-item + .kpi-item { border-left: 1px solid var(--border); }
 .kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
-.kpi-value.green { color: var(--green); }
-.kpi-value.amber { color: var(--amber); }
-.kpi-value.red { color: var(--red); }
-.kpi-value.blue { color: var(--accent); }
-.kpi-value.purple { color: var(--purple); }
-.kpi-value.neutral { color: var(--ink); }
+.kpi-trend { display: inline; font-size: 12px; color: var(--ink-muted); margin-left: 4px; }
 .kpi-label { font-size: 10px; font-weight: 600; color: var(--ink-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
 .kpi-sub { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
 
@@ -630,7 +627,7 @@ body {
      HEADER
      ============================================================ -->
 <header class="app-header">
-  <div class="app-title">note Analytics</div>
+  <div class="app-title">Note.com Analytics</div>
   <div class="header-controls">
     <div class="status-bar" id="statusBar"></div>
     <button class="lang-toggle" id="langToggle" onclick="toggleLang()">EN</button>
@@ -1354,7 +1351,7 @@ function renderArticleKey(m) {
     const likes = art.likes_total || 0;
     const rate = views > 0 ? (likes / views * 100).toFixed(0) : '0';
     html += '<div class="article-key-item">';
-    html += '<span class="article-key-num" style="color:' + getArticleColor(i) + '">A' + (i + 1) + '</span>';
+    html += '<span class="article-key-num" style="color:' + getArticleColour(i) + '">A' + (i + 1) + '</span>';
     html += '<span class="article-key-title" title="' + escapeHtml(title) + '">' + escapeHtml(shortTitle(title, 36)) + '</span>';
     html += '<span class="article-key-stats">' + views + (isJa ? '\u95b2\u89a7' : ' views') + ', ' + rate + '% ' + (isJa ? '\u30b9\u30ad\u7387' : 'like rate') + '</span>';
     html += '</div>';
@@ -1372,7 +1369,7 @@ function switchTab(tabId) {
    STORE — IndexedDB
    ================================================================ */
 const DB_NAME = 'noteAnalytics';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let db = null;
 
 function openDB() {
@@ -1388,6 +1385,9 @@ function openDB() {
       }
       if (!d.objectStoreNames.contains('imports')) {
         d.createObjectStore('imports', { keyPath: 'timestamp' });
+      }
+      if (!d.objectStoreNames.contains('metrics_snapshot')) {
+        d.createObjectStore('metrics_snapshot', { keyPath: 'id' });
       }
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -1581,6 +1581,52 @@ const SEED_DATA = {"articles":[{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011
 /* ================================================================
    RULES ENGINE
    ================================================================ */
+/* Action title generators */
+function generateTimelineTitle(articles, likes, follows, isJa) {
+  if (articles.length === 0) return isJa ? 'まだデータがありません' : 'No data yet';
+  let within48h = 0;
+  for (const art of articles) {
+    const pubTime = new Date(art.published_date_jst).getTime();
+    within48h += likes.filter(e => e.article_url === art.article_url).filter(e => {
+      return (new Date(e.timestamp_jst).getTime() - pubTime) <= 48 * 3600000;
+    }).length;
+  }
+  const pct = likes.length > 0 ? Math.round(within48h / likes.length * 100) : 0;
+  if (pct >= 60) return isJa ? 'いいねの' + pct + '%は公開後48時間以内に発生' : pct + '% of likes arrived within 48 hours of publish';
+  return isJa ? articles.length + '記事に' + likes.length + '件のいいねと' + follows.length + '件のフォロー' : likes.length + ' likes and ' + follows.length + ' follows across ' + articles.length + ' articles';
+}
+function generateActivityTitle(peakStart, peakEnd, isJa) {
+  if (peakStart === null) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
+  const s = String(peakStart).padStart(2, '0'), e = String(peakEnd).padStart(2, '0');
+  return isJa ? 'いいねの多くはJST ' + s + ':00から' + e + ':00の間に集中' : 'Most likes arrive between ' + s + ':00 and ' + e + ':00 JST';
+}
+function generateDowTitle(DOW_NAMES, dowLikes, isJa) {
+  const maxVal = Math.max(...dowLikes);
+  if (maxVal === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
+  const topDays = DOW_NAMES.filter((_, i) => dowLikes[i] === maxVal);
+  const dayStr = topDays.join(isJa ? 'と' : ' and ');
+  return isJa ? dayStr + 'に最もエンゲージメントが集中' : dayStr + (topDays.length > 1 ? ' see' : ' sees') + ' the most engagement';
+}
+function generateArticlePerfTitle(articleMetrics, isJa) {
+  const withViews = articleMetrics.filter(a => a.views > 0);
+  if (withViews.length === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
+  const best = withViews.reduce((a, b) => (b.likes_total / b.views) > (a.likes_total / a.views) ? b : a);
+  const idx = articleMetrics.indexOf(best);
+  const rate = (best.likes_total / best.views * 100).toFixed(0);
+  return isJa ? 'A' + (idx + 1) + 'のスキ率が' + rate + '%で最も高い' : 'A' + (idx + 1) + ' has the highest like rate at ' + rate + '%';
+}
+function generateTagsTitle(tagData, isJa) {
+  if (tagData.length === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
+  const top = tagData[0];
+  const tagName = currentLang === 'en' && TAG_EN[top.tag] ? TAG_EN[top.tag] : top.tag;
+  return isJa ? '「' + top.tag + '」タグが最もいいねを集めている' : 'Articles tagged "' + tagName + '" attract the most likes';
+}
+function generateJourneysTitle(journeys, isJa) {
+  if (journeys.length === 0) return isJa ? 'まだフォロワーデータがありません' : 'No follower data yet';
+  const likedFirst = journeys.filter(j => j.likes.length > 0).length;
+  return isJa ? likedFirst + '人のフォロワーがフォロー前にいいね' : likedFirst + (likedFirst === 1 ? ' follower' : ' followers') + ' liked before they followed';
+}
+
 function computeMetrics(events, articles) {
   const likes = events.filter(e => e.kind === 'like');
   const follows = events.filter(e => e.kind === 'follow');
@@ -1773,6 +1819,28 @@ function computeMetrics(events, articles) {
     }
   }
 
+  // Peak zone: hours above 75th percentile
+  const allHourCounts = hourLikes.map((l, i) => l + hourFollows[i]);
+  const sortedHourCounts = [...allHourCounts].filter(c => c > 0).sort((a, b) => a - b);
+  const p75 = sortedHourCounts.length > 0 ? sortedHourCounts[Math.floor(sortedHourCounts.length * 0.75)] : 0;
+  const peakHoursSet = [];
+  for (let h = 0; h < 24; h++) {
+    if (allHourCounts[h] >= p75 && allHourCounts[h] > 0) peakHoursSet.push(h);
+  }
+  const peakStart = peakHoursSet.length > 0 ? peakHoursSet[0] : null;
+  const peakEnd = peakHoursSet.length > 0 ? peakHoursSet[peakHoursSet.length - 1] : null;
+
+  // Action titles
+  const isJa = currentLang === 'ja';
+  const actionTitles = {
+    timeline: generateTimelineTitle(sortedArticles, likes, follows, isJa),
+    activity: generateActivityTitle(peakStart, peakEnd, isJa),
+    dow: generateDowTitle(DOW_NAMES, dowLikes, isJa),
+    articlePerf: generateArticlePerfTitle(articleMetrics, isJa),
+    tags: generateTagsTitle(tagData, isJa),
+    journeys: generateJourneysTitle(journeys, isJa),
+  };
+
   return {
     totalLikes: likes.length,
     totalFollows: follows.length,
@@ -1782,6 +1850,8 @@ function computeMetrics(events, articles) {
     hourLikes,
     hourFollows,
     peakHours,
+    peakStart,
+    peakEnd,
     tagData,
     articleMetrics,
     articles: sortedArticles,
@@ -1800,6 +1870,7 @@ function computeMetrics(events, articles) {
     publishHours,
     bestArticle,
     worstArticle,
+    actionTitles,
   };
 }
 
@@ -1814,9 +1885,32 @@ let chartArticlePerf = null;
 let chartJourneys = null;
 let timelineMode = 'article';
 
-const ARTICLE_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'];
+const COLOURS = {
+  accent: '#1e40af',
+  accentBorder: '#1e3a8a',
+  accentZone: '#dbeafe',
+  grey: '#d1d5db',
+  green: '#059669',
+  red: '#dc2626',
+  purple: '#7c3aed',
+  ink: '#1a1a2e',
+  inkLight: '#4b5563',
+  inkMuted: '#9ca3af',
+};
+const ARTICLE_COLOURS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2'];
+const THRESHOLDS = {
+  publishTickMax: 10,
+  timelineScrollAt: 15,
+  timelineMaxHeight: 600,
+  articleKeyInlineMax: 15,
+  articleKeySearchAt: 10,
+  journeyScrollAt: 15,
+  journeyAggregateAt: 50,
+  peopleAggregateAt: 100,
+  tagMax: 10,
+};
 
-function getArticleColor(idx) { return ARTICLE_COLORS[idx % ARTICLE_COLORS.length]; }
+function getArticleColour(idx) { return ARTICLE_COLOURS[idx % ARTICLE_COLOURS.length]; }
 
 function artTitle(art, maxLen) {
   if (!art) return '';
@@ -1830,7 +1924,7 @@ function shortTitle(title, maxLen) {
   return title.length > maxLen ? title.slice(0, maxLen) + '...' : title;
 }
 
-function jstToUk(jstHour) { return (jstHour - 9 + 24) % 24; }
+function jstToGmt(h) { return (h - 9 + 24) % 24; }
 
 const TAG_EN = {
   '\u4ed5\u4e8b': 'Work', '\u81ea\u5df1\u7d39\u4ecb': 'Self-intro', '\u751f\u304d\u65b9': 'Lifestyle',
@@ -1852,89 +1946,82 @@ function formatDate(iso) {
   return mm + '/' + dd + ' ' + hh + ':' + min;
 }
 
-function renderSummary(m) {
+async function renderSummary(m) {
   const el = document.getElementById('summaryBlock');
   const isJa = currentLang === 'ja';
   const artCount = m.articles.length || 1;
   const totalViews = m.totalViews;
   const totalLikes = m.totalLikesReported;
-
-  // Computed rates
   const likeRate = totalViews > 0 ? (totalLikes / totalViews * 100) : 0;
   const avgViewsPerArt = Math.round(totalViews / artCount);
   const avgLikesPerArt = (totalLikes / artCount).toFixed(1);
   const followRate = m.uniqueUsers > 0 ? (m.totalFollows / m.uniqueUsers * 100) : 0;
   const returnPct = m.uniqueUsers > 0 ? (m.repeatLikers.length / m.uniqueUsers * 100) : 0;
 
-  function rateColour(rate, good, ok) { return rate >= good ? 'green' : rate >= ok ? 'amber' : 'red'; }
+  // Load previous snapshot for trend arrows
+  let prev = null;
+  try { const all = await dbGetAll('metrics_snapshot'); prev = all.find(s => s.id === 'latest'); } catch(e) {}
 
-  // Colour meaning: green = strong, amber = room to grow, red = needs attention
+  function trend(current, prevVal) {
+    if (!prev || prevVal === undefined || prevVal === null) return '';
+    if (current > prevVal) return ' <span class="kpi-trend">\u2191</span>';
+    if (current < prevVal) return ' <span class="kpi-trend">\u2193</span>';
+    return '';
+  }
+
+  // No colour coding on values. All neutral.
   let html = '<div class="kpi-grid">';
 
-  html += '<div class="kpi-item"><div class="kpi-value neutral">' + m.articles.length + '</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + m.articles.length + trend(m.articles.length, prev && prev.articles) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u6570' : 'Articles Published') + '</div>';
   if (m.daySpan > 0) html += '<div class="kpi-sub">' + (isJa ? m.daySpan + '\u65e5\u9593\u306b\u516c\u958b' : 'over ' + m.daySpan + ' days') + '</div>';
   html += '</div>';
 
-  html += '<div class="kpi-item"><div class="kpi-value neutral">' + avgViewsPerArt + '</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + avgViewsPerArt + trend(totalViews / artCount, prev && prev.avgViews) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u95b2\u89a7\u6570' : 'Avg. Views per Article') + '</div>';
   html += '<div class="kpi-sub">' + totalViews.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u95b2\u89a7' : 'total views') + '</div></div>';
 
-  html += '<div class="kpi-item"><div class="kpi-value neutral">' + avgLikesPerArt + '</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + avgLikesPerArt + trend(totalLikes / artCount, prev && prev.avgLikes) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u3044\u3044\u306d' : 'Avg. Likes per Article') + '</div>';
   html += '<div class="kpi-sub">' + totalLikes.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u3044\u3044\u306d' : 'total likes') + '</div></div>';
 
-  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(likeRate, 15, 8) + '">' + likeRate.toFixed(1) + '%</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + likeRate.toFixed(1) + '%' + trend(likeRate, prev && prev.likeRate) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u30b9\u30ad\u7387' : 'Like Rate') + '</div>';
   html += '<div class="kpi-sub">' + (isJa ? '\u95b2\u89a7\u8005\u306e\u3046\u3061\u3044\u3044\u306d\u3057\u305f\u5272\u5408' : '% of viewers who liked') + '</div></div>';
 
-  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(followRate, 30, 15) + '">' + followRate.toFixed(0) + '%</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + followRate.toFixed(0) + '%' + trend(followRate, prev && prev.followRate) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u7387' : 'Follow Rate') + '</div>';
   html += '<div class="kpi-sub">' + m.totalFollows + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\uff08\u3044\u3044\u306d\u3057\u305f' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' followed out of ' + m.uniqueUsers + ' who liked') + '</div></div>';
 
-  html += '<div class="kpi-item"><div class="kpi-value ' + rateColour(returnPct, 20, 10) + '">' + returnPct.toFixed(0) + '%</div>';
+  html += '<div class="kpi-item"><div class="kpi-value">' + returnPct.toFixed(0) + '%' + trend(returnPct, prev && prev.returnRate) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u518d\u8a2a\u7387' : 'Return Rate') + '</div>';
   html += '<div class="kpi-sub">' + m.repeatLikers.length + (isJa ? '\u4eba\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\uff08' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' came back to like another article (of ' + m.uniqueUsers + ')') + '</div></div>';
 
   html += '</div>';
 
-  // Colour legend for rates
-  html += '<div style="font-size:10px;color:var(--ink-muted);margin-top:4px;text-align:right;">';
-  html += '<span style="color:var(--green);">\u25cf</span> ' + (isJa ? '\u826f\u597d' : 'strong') + ' &nbsp; ';
-  html += '<span style="color:var(--amber);">\u25cf</span> ' + (isJa ? '\u6210\u9577\u4f59\u5730\u3042\u308a' : 'room to grow') + ' &nbsp; ';
-  html += '<span style="color:var(--red);">\u25cf</span> ' + (isJa ? '\u8981\u6539\u5584' : 'needs attention') + '';
-  html += '</div>';
-
   el.innerHTML = html;
 
-  // Populate floating article key
   renderArticleKey(m);
 
-  // Section headings — McKinsey-style: state the finding, not the label
+  // Section headings
   document.getElementById('sectionTimelineHeading').textContent =
-    isJa ? '\u2460 \u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u63a8\u79fb' : '\u2460 How engagement built over time';
+    isJa ? '1. \u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u63a8\u79fb' : '1. How engagement built over time';
   document.getElementById('sectionWhenHeading').textContent =
-    isJa ? '\u2461 \u3044\u3064\u8aad\u8005\u304c\u53cd\u5fdc\u3057\u305f\u304b' : '\u2461 When readers respond';
+    isJa ? '2. \u3044\u3064\u8aad\u8005\u304c\u53cd\u5fdc\u3057\u305f\u304b' : '2. When readers respond';
   document.getElementById('sectionAudienceHeading').textContent =
-    isJa ? '\u2462 \u3069\u306e\u8a18\u4e8b\u304c\u8aad\u8005\u3092\u5f15\u304d\u4ed8\u3051\u305f\u304b' : '\u2462 Which articles attract and retain readers';
+    isJa ? '3. \u3069\u306e\u8a18\u4e8b\u304c\u8aad\u8005\u3092\u5f15\u304d\u4ed8\u3051\u305f\u304b' : '3. Which articles attract and retain readers';
   document.getElementById('sectionInsightsHeading').textContent =
-    isJa ? '\u2463 \u6b21\u306e\u30a2\u30af\u30b7\u30e7\u30f3' : '\u2463 What to do next';
+    isJa ? '4. \u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3069\u306e\u3088\u3046\u306b\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u304b' : '4. How followers discovered and converted';
 
-  // Chart titles — descriptive: tell the reader what to look for
-  document.getElementById('timelineTitle').textContent =
-    isJa ? '\u3044\u3044\u306d\u3068\u30d5\u30a9\u30ed\u30fc\u306e\u767a\u751f\u30bf\u30a4\u30df\u30f3\u30b0' : 'When each like and follow happened';
-  document.getElementById('activityTitle').textContent =
-    isJa ? '\u6642\u9593\u5e2f\u5225\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u96c6\u4e2d\u5ea6' : 'Which hours drive the most engagement';
-  document.getElementById('dayOfWeekTitle').textContent =
-    isJa ? '\u66dc\u65e5\u5225\u306e\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u5206\u5e03' : 'Which days of the week readers are most active';
-  document.getElementById('articlePerfTitle').textContent =
-    isJa ? '\u8a18\u4e8b\u5225\u306e\u95b2\u89a7\u6570\u30fb\u3044\u3044\u306d\u6570\u30fb\u30b9\u30ad\u7387' : 'Views, likes, and conversion rate by article';
-  document.getElementById('tagsTitle').textContent =
-    isJa ? '\u3069\u306e\u30bf\u30b0\u304c\u3044\u3044\u306d\u3092\u96c6\u3081\u308b\u304b' : 'Which tags attract the most likes';
-  document.getElementById('journeysTitle').textContent =
-    isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3069\u306e\u3088\u3046\u306b\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u304b' : 'How followers discovered and converted';
+  // Chart titles: computed action titles from data
+  document.getElementById('timelineTitle').textContent = m.actionTitles.timeline;
+  document.getElementById('activityTitle').textContent = m.actionTitles.activity;
+  document.getElementById('dayOfWeekTitle').textContent = m.actionTitles.dow;
+  document.getElementById('articlePerfTitle').textContent = m.actionTitles.articlePerf;
+  document.getElementById('tagsTitle').textContent = m.actionTitles.tags;
+  document.getElementById('journeysTitle').textContent = m.actionTitles.journeys;
 
-  // Clear bridge elements (no narrative filler)
+  // Clear bridge elements
   document.getElementById('bridgeAfterTimeline').textContent = '';
   document.getElementById('bridgeAfterWhen').textContent = '';
 }
@@ -2157,10 +2244,10 @@ function renderActivity(m) {
   const canvas = document.getElementById('chartActivity');
   if (chartActivity) chartActivity.destroy();
 
-  // Dual timezone labels: JST primary, UK secondary
+  // Dual timezone labels: JST primary, GMT secondary
   const labels = Array.from({ length: 24 }, (_, i) => {
     const jst = String(i).padStart(2, '0');
-    const uk = String(jstToUk(i)).padStart(2, '0');
+    const uk = String(jstToGmt(i)).padStart(2, '0');
     return jst + '\n(' + uk + ')';
   });
 
@@ -2184,7 +2271,7 @@ function renderActivity(m) {
     '<div class="chart-key-item"><div class="chart-key-line" style="border-color:#dc2626;"></div> ' +
     (currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Time article was published') + '</div>' +
     '<div class="chart-key-item" style="color:var(--ink-muted);">' +
-    (currentLang === 'ja' ? 'JST\u6642\u9593 (\u62ec\u5f27\u5185\u306fUK)' : 'JST hours (UK in brackets)') + '</div>';
+    (currentLang === 'ja' ? 'JST\u6642\u9593 (\u62ec\u5f27\u5185\u306fGMT)' : 'JST hours (GMT in brackets)') + '</div>';
 
   chartActivity = new Chart(canvas, {
     type: 'bar',
@@ -2208,7 +2295,7 @@ function renderActivity(m) {
           callbacks: {
             title: (items) => {
               const h = items[0].dataIndex;
-              return 'JST ' + String(h).padStart(2, '0') + ':00 / UK ' + String(jstToUk(h)).padStart(2, '0') + ':00';
+              return 'JST ' + String(h).padStart(2, '0') + ':00 / GMT' + String(jstToGmt(h)).padStart(2, '0') + ':00';
             },
           },
         },
@@ -2219,11 +2306,11 @@ function renderActivity(m) {
 
   // Dynamic takeaway
   const peakH = m.hourLikes.indexOf(Math.max(...m.hourLikes));
-  const peakUk = jstToUk(peakH);
+  const peakUk = jstToGmt(peakH);
   document.getElementById('activityAlt').textContent =
     currentLang === 'ja'
-    ? '\u2192 \u6700\u3082\u6d3b\u767a\u306a\u6642\u9593\u5e2f: JST ' + String(peakH).padStart(2,'0') + ':00 (UK ' + String(peakUk).padStart(2,'0') + ':00)\u3002\u8d64\u7834\u7dda\u306f\u8a18\u4e8b\u516c\u958b\u6642\u523b\u3002'
-    : '\u2192 Most active hour: JST ' + String(peakH).padStart(2,'0') + ':00 (UK ' + String(peakUk).padStart(2,'0') + ':00). Red dashed lines show when articles were published.';
+    ? '\u2192 \u6700\u3082\u6d3b\u767a\u306a\u6642\u9593\u5e2f: JST ' + String(peakH).padStart(2,'0') + ':00 (GMT' + String(peakUk).padStart(2,'0') + ':00)\u3002\u8d64\u7834\u7dda\u306f\u8a18\u4e8b\u516c\u958b\u6642\u523b\u3002'
+    : '\u2192 Most active hour: JST ' + String(peakH).padStart(2,'0') + ':00 (GMT' + String(peakUk).padStart(2,'0') + ':00). Red dashed lines show when articles were published.';
 }
 
 function renderDow(m) {
@@ -2499,15 +2586,15 @@ function renderInsights(m) {
   // SECTION 2 SIDE PANEL: When to publish
   const peakStart = m.peakHours.length > 0 ? String(m.peakHours[0]).padStart(2, '0') : '??';
   const peakEnd = m.peakHours.length > 0 ? String(m.peakHours[m.peakHours.length - 1]).padStart(2, '0') : '??';
-  const peakStartUk = m.peakHours.length > 0 ? String(jstToUk(m.peakHours[0])).padStart(2, '0') : '??';
-  const peakEndUk = m.peakHours.length > 0 ? String(jstToUk(m.peakHours[m.peakHours.length - 1])).padStart(2, '0') : '??';
+  const peakStartUk = m.peakHours.length > 0 ? String(jstToGmt(m.peakHours[0])).padStart(2, '0') : '??';
+  const peakEndUk = m.peakHours.length > 0 ? String(jstToGmt(m.peakHours[m.peakHours.length - 1])).padStart(2, '0') : '??';
   const bestDowVal = m.DOW_NAMES[m.dowLikes.indexOf(Math.max(...m.dowLikes))];
 
   let tm = '<div class="si-label">' + (isJa ? '\u6700\u3082\u53cd\u5fdc\u304c\u591a\u3044\u6642\u9593\u5e2f' : 'WHEN READERS ARE MOST ACTIVE') + '</div>';
   tm += '<div class="si-value">' +
     (isJa
       ? 'JST <strong>' + peakStart + ':00\u301c' + peakEnd + ':00</strong>\uff08UK ' + peakStartUk + ':00\u301c' + peakEndUk + ':00\uff09\u306b\u3044\u3044\u306d\u304c\u96c6\u4e2d\u3002\u3053\u306e\u6642\u9593\u5e2f\u306b\u8a18\u4e8b\u304c\u8aad\u307e\u308c\u308b\u3088\u3046\u516c\u958b\u3059\u308b\u3068\u52b9\u679c\u7684\u3002'
-      : 'Likes concentrate between <strong>JST ' + peakStart + ':00\u2013' + peakEnd + ':00</strong> (UK ' + peakStartUk + ':00\u2013' + peakEndUk + ':00). Publishing so articles land in this window could increase engagement.') +
+      : 'Likes concentrate between <strong>JST ' + peakStart + ':00\u2013' + peakEnd + ':00</strong> (GMT' + peakStartUk + ':00\u2013' + peakEndUk + ':00). Publishing so articles land in this window could increase engagement.') +
     '</div>';
   tm += '<div class="si-label">' + (isJa ? '\u6700\u3082\u53cd\u5fdc\u304c\u591a\u3044\u66dc\u65e5' : 'BEST DAY OF THE WEEK') + '</div>';
   tm += '<div class="si-value"><strong>' + bestDowVal + '</strong>' +
@@ -2519,8 +2606,8 @@ function renderInsights(m) {
     tm += '<div class="si-label">' + (isJa ? '\u73fe\u5728\u306e\u516c\u958b\u30d1\u30bf\u30fc\u30f3' : 'YOUR CURRENT PUBLISH PATTERN') + '</div>';
     tm += '<div class="si-value">' +
       (isJa
-        ? '\u5e73\u5747 JST <strong>' + String(avgPubHour).padStart(2, '0') + ':00</strong>\uff08UK ' + String(jstToUk(avgPubHour)).padStart(2, '0') + ':00\uff09\u306b\u516c\u958b'
-        : 'You typically publish around <strong>JST ' + String(avgPubHour).padStart(2, '0') + ':00</strong> (UK ' + String(jstToUk(avgPubHour)).padStart(2, '0') + ':00)') +
+        ? '\u5e73\u5747 JST <strong>' + String(avgPubHour).padStart(2, '0') + ':00</strong>\uff08UK ' + String(jstToGmt(avgPubHour)).padStart(2, '0') + ':00\uff09\u306b\u516c\u958b'
+        : 'You typically publish around <strong>JST ' + String(avgPubHour).padStart(2, '0') + ':00</strong> (GMT' + String(jstToGmt(avgPubHour)).padStart(2, '0') + ':00)') +
       '</div>';
   }
   document.getElementById('insightTiming').innerHTML = tm;
@@ -2666,7 +2753,7 @@ function renderStatusBar(m) {
   const dateStr = lastImport ? formatDate(lastImport) : '';
 
   let html = '<span>' + m.articles.length + (isJa ? '\u8a18\u4e8b' : ' articles') +
-    ', ' + m.uniqueUsers + (isJa ? '\u4eba\u306e\u8aad\u8005' : ' readers') + '</span>';
+    ', ' + m.uniqueUsers + (isJa ? '\u4eba\u306e\u8aad\u8005' : ' total readers') + '</span>';
   if (dateStr) {
     html += '<span>' + (isJa ? '\u6700\u65b0: ' : 'Latest: ') + dateStr + '</span>';
   }
