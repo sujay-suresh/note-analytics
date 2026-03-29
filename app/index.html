@@ -2250,74 +2250,97 @@ function toggleTimelineView() {
 function renderActivity(m) {
   const canvas = document.getElementById('chartActivity');
   if (chartActivity) chartActivity.destroy();
+  const isJa = currentLang === 'ja';
 
-  // Dual timezone labels: JST primary, GMT secondary
-  const labels = Array.from({ length: 24 }, (_, i) => {
-    const jst = String(i).padStart(2, '0');
-    const uk = String(jstToGmt(i)).padStart(2, '0');
-    return jst + '\n(' + uk + ')';
-  });
+  // JST labels (GMT shown in tooltip)
+  const labels = Array.from({ length: 24 }, (_, i) => String(i));
 
-  // Publish hour annotations — dashed lines only, explained in legend
-  const pubAnnotations = {};
+  // Grey-out/colour-in: peak hours get accent, rest get grey
+  const peakS = m.peakStart, peakE = m.peakEnd;
+  const barColours = Array.from({ length: 24 }, (_, h) =>
+    (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.accent : COLOURS.grey
+  );
+
+  // Annotations: peak zone background + publish ticks
+  const annotations = {};
+  if (peakS !== null) {
+    annotations['peakZone'] = {
+      type: 'box',
+      xMin: peakS - 0.5, xMax: peakE + 0.5,
+      backgroundColor: COLOURS.accentZone,
+      borderWidth: 0,
+      z: -1,
+    };
+  }
   m.publishHours.forEach((ph, i) => {
-    pubAnnotations['pub' + i] = {
-      type: 'line',
-      xMin: ph.hour,
-      xMax: ph.hour,
-      borderColor: '#dc262640',
-      borderWidth: 2,
-      borderDash: [4, 4],
+    annotations['pub' + i] = {
+      type: 'line', xMin: ph.hour, xMax: ph.hour,
+      borderColor: COLOURS.red + '40', borderWidth: 2, borderDash: [4, 4],
     };
   });
 
   // Chart key
   document.getElementById('activityKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Likes') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#059669;"></div> ' + (currentLang === 'ja' ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:#dc2626;"></div> ' +
-    (currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Time article was published') + '</div>' +
-    '<div class="chart-key-item" style="color:var(--ink-muted);">' +
-    (currentLang === 'ja' ? 'JST\u6642\u9593 (\u62ec\u5f27\u5185\u306fGMT)' : 'JST hours (GMT in brackets)') + '</div>';
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30d4\u30fc\u30af\u6642\u9593\u5e2f' : 'Peak hours') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u305d\u306e\u4ed6' : 'Other hours') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:' + COLOURS.red + ';"></div> ' +
+    (isJa ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Article publish time') + '</div>';
 
   chartActivity = new Chart(canvas, {
     type: 'bar',
     data: {
       labels,
       datasets: [
-        { label: t('like'), data: m.hourLikes, backgroundColor: '#2563eb90', hoverBackgroundColor: '#2563eb', borderRadius: 3 },
-        { label: t('follow'), data: m.hourFollows, backgroundColor: '#05966990', hoverBackgroundColor: '#059669', borderRadius: 3 },
+        {
+          label: isJa ? '\u3044\u3044\u306d' : 'Likes',
+          data: m.hourLikes,
+          backgroundColor: barColours,
+          borderRadius: 3,
+        },
+        {
+          label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows',
+          data: m.hourFollows,
+          backgroundColor: m.hourFollows.map((_, h) =>
+            (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.green : COLOURS.green + '60'
+          ),
+          borderRadius: 3,
+        },
       ],
     },
     options: {
       responsive: true,
       scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 9 }, maxRotation: 0 } },
+        x: {
+          stacked: true, grid: { display: false },
+          ticks: { font: { size: 10, weight: 500 }, color: COLOURS.ink, maxRotation: 0 },
+          title: { display: true, text: 'JST', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
+        },
         y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8,
+          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8, z: 9999,
           callbacks: {
-            title: (items) => {
+            title: function(items) {
               const h = items[0].dataIndex;
-              return 'JST ' + String(h).padStart(2, '0') + ':00 / GMT' + String(jstToGmt(h)).padStart(2, '0') + ':00';
+              return 'JST ' + String(h).padStart(2, '0') + ':00 / GMT ' + String(jstToGmt(h)).padStart(2, '0') + ':00';
             },
           },
         },
-        annotation: { annotations: pubAnnotations },
+        annotation: { annotations },
       },
     },
   });
 
-  // Dynamic takeaway
-  const peakH = m.hourLikes.indexOf(Math.max(...m.hourLikes));
-  const peakUk = jstToGmt(peakH);
+  // Alt text: observation
+  const peakLikes = (peakS !== null) ? m.hourLikes.slice(peakS, peakE + 1).reduce((a, b) => a + b, 0) : 0;
+  const totalLikes = m.hourLikes.reduce((a, b) => a + b, 0);
+  const peakPct = totalLikes > 0 ? Math.round(peakLikes / totalLikes * 100) : 0;
   document.getElementById('activityAlt').textContent =
-    currentLang === 'ja'
-    ? '\u2192 \u6700\u3082\u6d3b\u767a\u306a\u6642\u9593\u5e2f: JST ' + String(peakH).padStart(2,'0') + ':00 (GMT' + String(peakUk).padStart(2,'0') + ':00)\u3002\u8d64\u7834\u7dda\u306f\u8a18\u4e8b\u516c\u958b\u6642\u523b\u3002'
-    : '\u2192 Most active hour: JST ' + String(peakH).padStart(2,'0') + ':00 (GMT' + String(peakUk).padStart(2,'0') + ':00). Red dashed lines show when articles were published.';
+    isJa
+    ? peakPct + '%\u306e\u3044\u3044\u306d\u304c\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u96c6\u4e2d\u3002'
+    : peakPct + '% of all likes arrived during peak hours.';
 }
 
 function renderDow(m) {
