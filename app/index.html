@@ -126,6 +126,7 @@ body {
   max-width: 1080px;
   margin: 0 auto;
   padding: 24px;
+  padding-bottom: 48px;
 }
 .tab-content.active { display: block; }
 
@@ -542,73 +543,49 @@ body {
 .limitation-list .warn { color: var(--amber); font-weight: 500; }
 
 /* ================================================================
-   ARTICLE KEY (collapsible panel)
+   ARTICLE KEY: sticky bottom bar
    ================================================================ */
-.article-key {
+.article-key-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  margin-bottom: 20px;
-  overflow: hidden;
-}
-.article-key-toggle {
+  border-top: 1px solid var(--border);
+  padding: 6px 16px;
+  z-index: 100;
+  font-size: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--ink-light);
-  background: none;
-  border: none;
   cursor: pointer;
-  width: 100%;
-  text-align: left;
+  transition: all 0.2s;
 }
-.article-key-toggle:hover { color: var(--accent); }
-.article-key-toggle .chevron {
-  font-size: 10px;
-  transition: transform 0.2s;
-  flex-shrink: 0;
-}
-.article-key.expanded .article-key-toggle .chevron { transform: rotate(90deg); }
-.article-key-list {
+.article-key-bar.hidden { display: none; }
+.article-key-bar .key-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.article-key-bar .key-label { font-weight: 600; color: var(--ink-light); white-space: nowrap; }
+.article-key-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+  z-index: 101;
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 16px 24px;
   display: none;
-  padding: 0 16px 12px;
 }
-.article-key.expanded .article-key-list { display: block; }
-.article-key-grid {
+.article-key-panel.open { display: block; }
+.article-key-search {
+  width: 100%; padding: 6px 10px; font-size: 12px;
+  border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px;
+}
+.ak-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 4px 24px;
 }
-.article-key-item {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 4px 0;
-  font-size: 12px;
-  line-height: 1.5;
-}
-.article-key-num {
-  font-weight: 700;
-  font-size: 11px;
-  min-width: 24px;
-  flex-shrink: 0;
-}
-.article-key-title {
-  color: var(--ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1;
-}
-.article-key-stats {
-  color: var(--ink-muted);
-  font-size: 11px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+.ak-item { display: flex; align-items: baseline; gap: 8px; padding: 4px 0; font-size: 12px; }
+.ak-num { font-weight: 700; font-size: 11px; min-width: 24px; flex-shrink: 0; }
+.ak-title { color: var(--ink); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ak-stat { color: var(--ink-muted); font-size: 11px; white-space: nowrap; }
 
 /* ================================================================
    RESPONSIVE
@@ -655,16 +632,6 @@ body {
 <div class="tab-content active" id="tab-briefing">
   <!-- NARRATIVE SUMMARY -->
   <div class="summary-block" id="summaryBlock"></div>
-
-  <!-- ARTICLE KEY -->
-  <div class="article-key" id="articleKey">
-    <button class="article-key-toggle" onclick="toggleArticleKey()">
-      <span class="chevron">&#9654;</span>
-      <span id="articleKeyLabel">Article Key</span>
-      <span style="margin-left:auto;font-weight:400;font-size:11px;color:var(--ink-muted);" id="articleKeyCount"></span>
-    </button>
-    <div class="article-key-list" id="articleKeyList"></div>
-  </div>
 
   <!-- SECTION 1: WHAT HAPPENED -->
   <div class="section-heading" id="sectionTimelineHeading"></div>
@@ -1164,6 +1131,10 @@ body {
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
+<!-- ARTICLE KEY: sticky bottom bar -->
+<div class="article-key-bar hidden" id="articleKeyBar" onclick="toggleArticleKeyPanel()"></div>
+<div class="article-key-panel" id="articleKeyPanel"></div>
+
 <script>
 /* ================================================================
    I18N — String Tables
@@ -1330,39 +1301,75 @@ function applyI18n() {
 /* ================================================================
    TABS
    ================================================================ */
-function toggleArticleKey() {
-  document.getElementById('articleKey').classList.toggle('expanded');
+function toggleArticleKeyPanel() {
+  const panel = document.getElementById('articleKeyPanel');
+  panel.classList.toggle('open');
 }
 
 function renderArticleKey(m) {
+  const bar = document.getElementById('articleKeyBar');
+  const panel = document.getElementById('articleKeyPanel');
   const isJa = currentLang === 'ja';
-  const list = document.getElementById('articleKeyList');
-  document.getElementById('articleKeyLabel').textContent =
-    isJa ? '\u8a18\u4e8b\u4e00\u89a7 \u2014 \u30c1\u30e3\u30fc\u30c8\u306e\u8272\u306f\u3053\u306e\u8a18\u4e8b\u306b\u5bfe\u5fdc' : 'Article Key \u2014 colours in charts correspond to these articles';
-  document.getElementById('articleKeyCount').textContent =
-    m.articles.length + (isJa ? '\u8a18\u4e8b' : ' articles');
 
-  let html = '<div class="article-key-grid">';
+  if (!m || m.articles.length === 0) {
+    bar.classList.add('hidden');
+    panel.classList.remove('open');
+    return;
+  }
+  bar.classList.remove('hidden');
+
+  // Collapsed bar: colour dots + A-numbers
+  let barHtml = '<span class="key-label">' + (isJa ? '\u8a18\u4e8b\u4e00\u89a7' : 'Article Key') + '</span>';
+  const maxInline = Math.min(m.articles.length, THRESHOLDS.articleKeyInlineMax);
+  for (let i = 0; i < maxInline; i++) {
+    barHtml += '<span class="key-dot" style="background:' + getArticleColour(i) + ';" title="A' + (i + 1) + '"></span>';
+    barHtml += '<span style="font-size:10px;color:var(--ink-light);margin-right:4px;">A' + (i + 1) + '</span>';
+  }
+  if (m.articles.length > THRESHOLDS.articleKeyInlineMax) {
+    barHtml += '<span style="font-size:10px;color:var(--ink-muted);">+' + (m.articles.length - maxInline) + ' more</span>';
+  }
+  bar.innerHTML = barHtml;
+
+  // Expanded panel
+  let panelHtml = '';
+  if (m.articles.length >= THRESHOLDS.articleKeySearchAt) {
+    panelHtml += '<input class="article-key-search" placeholder="' + (isJa ? '\u8a18\u4e8b\u3092\u691c\u7d22...' : 'Search articles...') + '" oninput="filterArticleKey(this.value)">';
+  }
+  panelHtml += '<div class="ak-grid" id="akGrid">';
   for (let i = 0; i < m.articles.length; i++) {
     const art = m.articles[i];
     const title = isJa ? (art.title_jp || art.title_en) : (art.title_en || art.title_jp);
-    const pubDate = art.published_date_jst ? formatDate(art.published_date_jst) : '';
     const views = art.views || 0;
     const likes = art.likes_total || 0;
-    const rate = views > 0 ? (likes / views * 100).toFixed(0) : '0';
-    html += '<div class="article-key-item">';
-    html += '<span class="article-key-num" style="color:' + getArticleColour(i) + '">A' + (i + 1) + '</span>';
-    html += '<span class="article-key-title" title="' + escapeHtml(title) + '">' + escapeHtml(shortTitle(title, 36)) + '</span>';
-    html += '<span class="article-key-stats">' + views + (isJa ? '\u95b2\u89a7' : ' views') + ', ' + rate + '% ' + (isJa ? '\u30b9\u30ad\u7387' : 'like rate') + '</span>';
-    html += '</div>';
+    const rate = views > 0 ? (likes / views * 100).toFixed(0) + '%' : '';
+    panelHtml += '<div class="ak-item" data-search="' + escapeHtml(title).toLowerCase() + '">';
+    panelHtml += '<span class="ak-num" style="color:' + getArticleColour(i) + '">A' + (i + 1) + '</span>';
+    panelHtml += '<span class="ak-title" title="' + escapeHtml(title) + '">' + escapeHtml(shortTitle(title, 36)) + '</span>';
+    panelHtml += '<span class="ak-stat">' + views + (isJa ? '\u95b2\u89a7' : ' views') + (rate ? ', ' + rate + (isJa ? '\u30b9\u30ad\u7387' : ' like rate') : '') + '</span>';
+    panelHtml += '</div>';
   }
-  html += '</div>';
-  list.innerHTML = html;
+  panelHtml += '</div>';
+  panel.innerHTML = panelHtml;
+}
+
+function filterArticleKey(query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#akGrid .ak-item').forEach(function(el) {
+    el.style.display = el.dataset.search.includes(q) ? '' : 'none';
+  });
 }
 
 function switchTab(tabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tabId));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tabId));
+  const bar = document.getElementById('articleKeyBar');
+  const panel = document.getElementById('articleKeyPanel');
+  if (tabId !== 'briefing') {
+    bar.classList.add('hidden');
+    panel.classList.remove('open');
+  } else if (currentMetrics && currentMetrics.articles.length > 0) {
+    bar.classList.remove('hidden');
+  }
 }
 
 /* ================================================================
