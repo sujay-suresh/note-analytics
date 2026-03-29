@@ -2079,7 +2079,7 @@ function renderTimelineByArticle(m, canvas) {
   datasets.push({
     label: isJa ? '\u3044\u3044\u306d' : 'Like',
     data: allLikeData,
-    backgroundColor: '#2563eb',
+    backgroundColor: COLOURS.accent,
     borderColor: '#ffffff',
     borderWidth: 1.5,
     pointRadius: 5,
@@ -2092,8 +2092,8 @@ function renderTimelineByArticle(m, canvas) {
   datasets.push({
     label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow',
     data: follows.map(e => ({ x: new Date(e.timestamp_jst), y: articles.length, who: e.who })),
-    backgroundColor: '#059669',
-    borderColor: '#059669',
+    backgroundColor: COLOURS.green,
+    borderColor: COLOURS.green,
     pointRadius: 7,
     pointStyle: 'triangle',
     pointHoverRadius: 9,
@@ -2101,14 +2101,14 @@ function renderTimelineByArticle(m, canvas) {
     type: 'scatter',
   });
 
-  // Publish markers — dashed vertical lines
+  // Publish markers: dashed vertical lines in muted grey
   const annotations = {};
   articles.forEach((art, i) => {
     annotations['pub' + i] = {
       type: 'line',
       xMin: new Date(art.published_date_jst),
       xMax: new Date(art.published_date_jst),
-      borderColor: '#9ca3af60',
+      borderColor: COLOURS.inkMuted + '50',
       borderWidth: 1.5,
       borderDash: [6, 3],
     };
