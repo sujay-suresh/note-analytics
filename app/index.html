@@ -2358,8 +2358,8 @@ function renderDow(m) {
     data: {
       labels: m.DOW_NAMES,
       datasets: [
-        { label: t('like'), data: m.dowLikes, backgroundColor: '#2563eb90', borderRadius: 3 },
-        { label: t('follow'), data: m.dowFollows, backgroundColor: '#05966990', borderRadius: 3 },
+        { label: t('like'), data: m.dowLikes, backgroundColor: COLOURS.accent + '90', borderRadius: 3 },
+        { label: t('follow'), data: m.dowFollows, backgroundColor: COLOURS.green + '90', borderRadius: 3 },
         { label: currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article published', data: m.dowPublish, backgroundColor: '#dc262630', borderRadius: 3 },
       ],
     },
@@ -2399,8 +2399,8 @@ function renderArticlePerf(m) {
         {
           label: currentLang === 'ja' ? '\u95b2\u89a7\u6570' : 'Views',
           data: arts.map(a => a.views),
-          backgroundColor: '#2563eb30',
-          borderColor: '#2563eb',
+          backgroundColor: COLOURS.accent + '30',
+          borderColor: COLOURS.accent,
           borderWidth: 1,
           borderRadius: 3,
           yAxisID: 'y',
@@ -2408,7 +2408,7 @@ function renderArticlePerf(m) {
         {
           label: currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Likes',
           data: arts.map(a => a.likes_total),
-          backgroundColor: '#7c3aed90',
+          backgroundColor: COLOURS.purple + '90',
           borderRadius: 3,
           yAxisID: 'y',
         },
@@ -2473,8 +2473,8 @@ function renderTags(m) {
     data: {
       labels: top.map(t => translateTag(t.tag)),
       datasets: [
-        { label: currentLang === 'ja' ? '\u30ea\u30d4\u30fc\u30c8' : 'Repeat', data: top.map(t => t.repeat), backgroundColor: '#7c3aed90', borderRadius: 3 },
-        { label: currentLang === 'ja' ? '\u521d\u56de' : 'One-time', data: top.map(t => t.onetime), backgroundColor: '#2563eb50', borderRadius: 3 },
+        { label: currentLang === 'ja' ? '\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3057\u305f\u8aad\u8005' : 'Readers who liked multiple articles', data: top.map(t => t.repeat), backgroundColor: COLOURS.purple + '90', borderRadius: 3 },
+        { label: currentLang === 'ja' ? '1\u8a18\u4e8b\u306e\u307f\u306e\u8aad\u8005' : 'Readers who liked one article only', data: top.map(t => t.onetime), backgroundColor: COLOURS.accent + '50', borderRadius: 3 },
       ],
     },
     options: {
@@ -2525,8 +2525,8 @@ function renderJourneys(m) {
     datasets.push({
       label: j.who || j.slug,
       data: allEvents,
-      backgroundColor: allEvents.map(e => e.kind === 'follow' ? '#059669' : '#2563eb'),
-      borderColor: '#2563eb30',
+      backgroundColor: allEvents.map(e => e.kind === 'follow' ? COLOURS.green : COLOURS.accent),
+      borderColor: COLOURS.accent + '30',
       pointRadius: allEvents.map(e => e.kind === 'follow' ? 8 : 5),
       pointStyle: allEvents.map(e => e.kind === 'follow' ? 'triangle' : 'circle'),
       showLine: true,
