@@ -1404,6 +1404,7 @@ function openDB() {
 
 function dbPut(storeName, item) {
   return new Promise((resolve, reject) => {
+    if (!db.objectStoreNames.contains(storeName)) { resolve(); return; }
     const tx = db.transaction(storeName, 'readwrite');
     tx.objectStore(storeName).put(item);
     tx.oncomplete = () => resolve();
@@ -1413,6 +1414,7 @@ function dbPut(storeName, item) {
 
 function dbGetAll(storeName) {
   return new Promise((resolve, reject) => {
+    if (!db.objectStoreNames.contains(storeName)) { resolve([]); return; }
     const tx = db.transaction(storeName, 'readonly');
     const req = tx.objectStore(storeName).getAll();
     req.onsuccess = () => resolve(req.result);
@@ -1634,6 +1636,20 @@ function generateJourneysTitle(journeys, isJa) {
   return isJa ? likedFirst + '人のフォロワーがフォロー前にいいね' : likedFirst + (likedFirst === 1 ? ' follower' : ' followers') + ' liked before they followed';
 }
 
+function getActionTitles(m) {
+  const isJa = currentLang === 'ja';
+  const likes = m.events.filter(e => e.kind === 'like');
+  const follows = m.events.filter(e => e.kind === 'follow');
+  return {
+    timeline: generateTimelineTitle(m.articles, likes, follows, isJa),
+    activity: generateActivityTitle(m.peakStart, m.peakEnd, isJa),
+    dow: generateDowTitle(m.DOW_NAMES, m.dowLikes, isJa),
+    articlePerf: generateArticlePerfTitle(m.articleMetrics, isJa),
+    tags: generateTagsTitle(m.tagData, isJa),
+    journeys: generateJourneysTitle(m.journeys, isJa),
+  };
+}
+
 function computeMetrics(events, articles) {
   const likes = events.filter(e => e.kind === 'like');
   const follows = events.filter(e => e.kind === 'follow');
@@ -1837,16 +1853,8 @@ function computeMetrics(events, articles) {
   const peakStart = peakHoursSet.length > 0 ? peakHoursSet[0] : null;
   const peakEnd = peakHoursSet.length > 0 ? peakHoursSet[peakHoursSet.length - 1] : null;
 
-  // Action titles
-  const isJa = currentLang === 'ja';
-  const actionTitles = {
-    timeline: generateTimelineTitle(sortedArticles, likes, follows, isJa),
-    activity: generateActivityTitle(peakStart, peakEnd, isJa),
-    dow: generateDowTitle(DOW_NAMES, dowLikes, isJa),
-    articlePerf: generateArticlePerfTitle(articleMetrics, isJa),
-    tags: generateTagsTitle(tagData, isJa),
-    journeys: generateJourneysTitle(journeys, isJa),
-  };
+  // Action titles: generated at render time via getActionTitles()
+  // so they respond to language changes
 
   return {
     totalLikes: likes.length,
@@ -1877,7 +1885,6 @@ function computeMetrics(events, articles) {
     publishHours,
     bestArticle,
     worstArticle,
-    actionTitles,
   };
 }
 
@@ -1953,7 +1960,7 @@ function formatDate(iso) {
   return mm + '/' + dd + ' ' + hh + ':' + min;
 }
 
-async function renderSummary(m) {
+function renderSummary(m, prevSnapshot) {
   const el = document.getElementById('summaryBlock');
   const isJa = currentLang === 'ja';
   const artCount = m.articles.length || 1;
@@ -1965,9 +1972,7 @@ async function renderSummary(m) {
   const followRate = m.uniqueUsers > 0 ? (m.totalFollows / m.uniqueUsers * 100) : 0;
   const returnPct = m.uniqueUsers > 0 ? (m.repeatLikers.length / m.uniqueUsers * 100) : 0;
 
-  // Load previous snapshot for trend arrows
-  let prev = null;
-  try { const all = await dbGetAll('metrics_snapshot'); prev = all.find(s => s.id === 'latest'); } catch(e) {}
+  const prev = prevSnapshot || null;
 
   function trend(current, prevVal) {
     if (!prev || prevVal === undefined || prevVal === null) return '';
@@ -2020,13 +2025,14 @@ async function renderSummary(m) {
   document.getElementById('sectionInsightsHeading').textContent =
     isJa ? '4. \u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3069\u306e\u3088\u3046\u306b\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u304b' : '4. How followers discovered and converted';
 
-  // Chart titles: computed action titles from data
-  document.getElementById('timelineTitle').textContent = m.actionTitles.timeline;
-  document.getElementById('activityTitle').textContent = m.actionTitles.activity;
-  document.getElementById('dayOfWeekTitle').textContent = m.actionTitles.dow;
-  document.getElementById('articlePerfTitle').textContent = m.actionTitles.articlePerf;
-  document.getElementById('tagsTitle').textContent = m.actionTitles.tags;
-  document.getElementById('journeysTitle').textContent = m.actionTitles.journeys;
+  // Chart titles: computed at render time so they respond to language changes
+  const titles = getActionTitles(m);
+  document.getElementById('timelineTitle').textContent = titles.timeline;
+  document.getElementById('activityTitle').textContent = titles.activity;
+  document.getElementById('dayOfWeekTitle').textContent = titles.dow;
+  document.getElementById('articlePerfTitle').textContent = titles.articlePerf;
+  document.getElementById('tagsTitle').textContent = titles.tags;
+  document.getElementById('journeysTitle').textContent = titles.journeys;
 
   // Clear bridge elements
   document.getElementById('bridgeAfterTimeline').textContent = '';
@@ -2878,8 +2884,15 @@ async function loadAndRender() {
 
   currentMetrics = computeMetrics(events, articles);
 
+  // Load previous snapshot for trend arrows
+  let prevSnapshot = null;
+  try {
+    const snaps = await dbGetAll('metrics_snapshot');
+    prevSnapshot = snaps.find(s => s.id === 'latest') || null;
+  } catch(e) {}
+
   renderStatusBar(currentMetrics);
-  renderSummary(currentMetrics);
+  renderSummary(currentMetrics, prevSnapshot);
   renderTimeline(currentMetrics);
   renderActivity(currentMetrics);
   renderTags(currentMetrics);
@@ -2924,7 +2937,7 @@ function renderAll() {
   applyI18n();
   if (currentMetrics) {
     renderStatusBar(currentMetrics);
-    renderSummary(currentMetrics);
+    renderSummary(currentMetrics, null);
     renderTimeline(currentMetrics);
     renderActivity(currentMetrics);
     renderTags(currentMetrics);
