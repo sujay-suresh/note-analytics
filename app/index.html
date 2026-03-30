@@ -2063,6 +2063,7 @@ function renderTimeline(m) {
 
 function renderTimelineByArticle(m, canvas) {
   canvas.style.display = '';
+  const isJa = currentLang === 'ja';
   const articles = m.articles;
   const likes = m.events.filter(e => e.kind === 'like');
   const follows = m.events.filter(e => e.kind === 'follow');
