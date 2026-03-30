@@ -1654,6 +1654,290 @@ function generateJourneysTitle(journeys, isJa) {
   return isJa ? likedFirst + '人のフォロワーがフォロー前にいいね' : likedFirst + (likedFirst === 1 ? ' follower' : ' followers') + ' liked before they followed';
 }
 
+/* ================================================================
+   OBSERVATIONS ENGINE
+   Each function returns an array of { score, text } objects.
+   Score: 0-100. Higher = more important/surprising.
+   Render function picks top 3 per section.
+   Rules:
+   - Don't state mathematically guaranteed facts
+   - Don't state the obvious (tag on every article will always win)
+   - Prefer relative comparisons (vs your average) over absolutes
+   - Include significance gate: skip if difference is trivial
+   ================================================================ */
+
+function computeTimelineObs(m, prevSnapshot) {
+  const isJa = currentLang === 'ja';
+  const obs = [];
+  const likes = m.events.filter(e => e.kind === 'like');
+  if (likes.length === 0) return obs;
+
+  // 1. 48h velocity
+  let within48h = 0;
+  for (const art of m.articles) {
+    const pubTime = new Date(art.published_date_jst).getTime();
+    within48h += likes.filter(e => e.article_url === art.article_url)
+      .filter(e => (new Date(e.timestamp_jst).getTime() - pubTime) <= 48 * 3600000).length;
+  }
+  const pct48 = Math.round(within48h / likes.length * 100);
+  obs.push({
+    score: pct48 >= 70 ? 80 : pct48 >= 50 ? 60 : 40,
+    text: isJa
+      ? '<strong>' + pct48 + '%</strong>\u306e\u3044\u3044\u306d\u304c\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u767a\u751f\u3002'
+      : '<strong>' + pct48 + '%</strong> of likes arrived within 48 hours of publish.'
+  });
+
+  // 2. Latest article velocity (only if meaningfully different from average)
+  if (m.latestArticle && m.latestVelocityHours !== null) {
+    const latestLikes = likes.filter(e => e.article_url === m.latestArticle.article_url).length;
+    const avgLikesPerArt = m.totalLikesReported / (m.articles.length || 1);
+    const ratio = avgLikesPerArt > 0 ? latestLikes / avgLikesPerArt : 0;
+    if (ratio >= 1.3 || ratio <= 0.7) {
+      const dir = ratio >= 1.3;
+      obs.push({
+        score: Math.abs(ratio - 1) * 60 + 30,
+        text: isJa
+          ? '\u6700\u65b0\u8a18\u4e8b\u306f <strong>' + latestLikes + '</strong> \u4ef6\u306e\u3044\u3044\u306d\u3092\u7372\u5f97\u3002\u5e73\u5747(' + avgLikesPerArt.toFixed(0) + '\u4ef6)\u3088\u308a' + (dir ? '\u9ad8\u3044' : '\u4f4e\u3044') + '\u3002'
+          : 'Latest article received <strong>' + latestLikes + '</strong> likes, ' + (dir ? 'above' : 'below') + ' your average of ' + avgLikesPerArt.toFixed(0) + '.'
+      });
+    }
+  }
+
+  // 3. Trend comparison (if previous snapshot exists)
+  if (prevSnapshot) {
+    const currRate = m.totalViews > 0 ? (m.totalLikesReported / m.totalViews * 100) : 0;
+    const prevRate = prevSnapshot.likeRate || 0;
+    const diff = currRate - prevRate;
+    if (Math.abs(diff) >= 1) {
+      obs.push({
+        score: Math.abs(diff) * 5 + 20,
+        text: isJa
+          ? '\u30b9\u30ad\u7387\u304c ' + (diff > 0 ? '+' : '') + diff.toFixed(1) + '%\u30dd\u30a4\u30f3\u30c8\u5909\u5316\uff08' + prevRate.toFixed(1) + '% \u2192 ' + currRate.toFixed(1) + '%\uff09'
+          : 'Like rate shifted ' + (diff > 0 ? '+' : '') + diff.toFixed(1) + ' points (' + prevRate.toFixed(1) + '% to ' + currRate.toFixed(1) + '%)'
+      });
+    }
+  }
+
+  // 4. Content type comparison (only if types differ meaningfully)
+  if (m.contentMix.length >= 2) {
+    const sorted = [...m.contentMix].sort((a, b) => parseFloat(b.likeRate) - parseFloat(a.likeRate));
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+    const diff = parseFloat(best.likeRate) - parseFloat(worst.likeRate);
+    if (diff >= 5) {
+      obs.push({
+        score: diff * 2 + 20,
+        text: isJa
+          ? '<strong>' + escapeHtml(best.type) + '</strong>\u8a18\u4e8b\u306e\u30b9\u30ad\u7387(' + best.likeRate + '%)\u304c<strong>' + escapeHtml(worst.type) + '</strong>(' + worst.likeRate + '%)\u3088\u308a\u9ad8\u3044\u3002'
+          : '<strong>' + escapeHtml(best.type) + '</strong> articles have a ' + best.likeRate + '% like rate vs <strong>' + escapeHtml(worst.type) + '</strong> at ' + worst.likeRate + '%.'
+      });
+    }
+  }
+
+  return obs.sort((a, b) => b.score - a.score).slice(0, 3);
+}
+
+function computeTimingObs(m) {
+  const isJa = currentLang === 'ja';
+  const obs = [];
+
+  // 1. Peak concentration (only if peak exists and is tight)
+  if (m.peakStart !== null) {
+    const peakLikes = m.hourLikes.slice(m.peakStart, m.peakEnd + 1).reduce((a, b) => a + b, 0);
+    const totalLikes = m.hourLikes.reduce((a, b) => a + b, 0);
+    const pct = totalLikes > 0 ? Math.round(peakLikes / totalLikes * 100) : 0;
+    obs.push({
+      score: pct >= 50 ? 80 : 50,
+      text: isJa
+        ? '\u3044\u3044\u306d\u306e<strong>' + pct + '%</strong>\u304cJST ' + String(m.peakStart).padStart(2,'0') + ':00\u304b\u3089' + String(m.peakEnd).padStart(2,'0') + ':00\u306b\u96c6\u4e2d\u3002'
+        : '<strong>' + pct + '%</strong> of likes fall between JST ' + String(m.peakStart).padStart(2,'0') + ':00 and ' + String(m.peakEnd).padStart(2,'0') + ':00.'
+    });
+
+    // 2. How publish times relate to peak
+    let beforePeak = 0, duringPeak = 0;
+    for (const ph of m.publishHours) {
+      if (ph.hour < m.peakStart) beforePeak++;
+      else if (ph.hour <= m.peakEnd) duringPeak++;
+    }
+    if (m.articles.length >= 3 && (beforePeak > duringPeak * 2 || duringPeak > beforePeak * 2)) {
+      obs.push({
+        score: 60,
+        text: isJa
+          ? m.articles.length + '\u8a18\u4e8b\u4e2d<strong>' + duringPeak + '</strong>\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u4e2d\u306b\u516c\u958b\u3001<strong>' + beforePeak + '</strong>\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u524d\u306b\u516c\u958b\u3002'
+          : '<strong>' + duringPeak + '</strong> of ' + m.articles.length + ' articles published during peak, <strong>' + beforePeak + '</strong> before it.'
+      });
+    }
+  }
+
+  // 3. Day of week (only if one day is clearly dominant: >2x the median)
+  const nonZeroDays = m.dowLikes.filter(d => d > 0);
+  if (nonZeroDays.length >= 3) {
+    const median = nonZeroDays.sort((a, b) => a - b)[Math.floor(nonZeroDays.length / 2)];
+    const maxLikes = Math.max(...m.dowLikes);
+    const bestDay = m.DOW_NAMES[m.dowLikes.indexOf(maxLikes)];
+    if (maxLikes >= median * 1.8) {
+      obs.push({
+        score: 50,
+        text: isJa
+          ? '<strong>' + bestDay + '</strong>\u306e\u3044\u3044\u306d\u6570(' + maxLikes + '\u4ef6)\u304c\u4ed6\u306e\u66dc\u65e5\u3088\u308a\u7a81\u51fa\u3057\u3066\u3044\u308b\u3002'
+          : '<strong>' + bestDay + '</strong> stands out with ' + maxLikes + ' likes, well above other days.'
+      });
+    }
+  }
+
+  // 4. Average publish time
+  if (m.publishHours.length >= 3) {
+    const hours = m.publishHours.map(p => p.hour);
+    const avg = Math.round(hours.reduce((a, b) => a + b, 0) / hours.length);
+    obs.push({
+      score: 30,
+      text: isJa
+        ? '\u5e73\u5747\u516c\u958b\u6642\u523b: JST <strong>' + String(avg).padStart(2,'0') + ':00</strong> (GMT ' + String(jstToGmt(avg)).padStart(2,'0') + ':00)'
+        : 'Average publish time: JST <strong>' + String(avg).padStart(2,'0') + ':00</strong> (GMT ' + String(jstToGmt(avg)).padStart(2,'0') + ':00)'
+    });
+  }
+
+  return obs.sort((a, b) => b.score - a.score).slice(0, 3);
+}
+
+function computeAudienceObs(m) {
+  const isJa = currentLang === 'ja';
+  const obs = [];
+  const withViews = m.articleMetrics.filter(a => a.views > 0);
+
+  // 1. Best vs worst article (only if gap is significant: >1.5x difference)
+  if (withViews.length >= 2) {
+    const sorted = [...withViews].sort((a, b) => (b.likes_total / b.views) - (a.likes_total / a.views));
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+    const bestRate = (best.likes_total / best.views * 100);
+    const worstRate = (worst.likes_total / worst.views * 100);
+    if (bestRate > worstRate * 1.5 && worstRate > 0) {
+      const bestIdx = m.articleMetrics.indexOf(best) + 1;
+      const worstIdx = m.articleMetrics.indexOf(worst) + 1;
+      obs.push({
+        score: 80,
+        text: isJa
+          ? 'A' + bestIdx + '\u306e\u30b9\u30ad\u7387(<strong>' + bestRate.toFixed(0) + '%</strong>)\u304cA' + worstIdx + '(<strong>' + worstRate.toFixed(0) + '%</strong>)\u306e' + (bestRate / worstRate).toFixed(1) + '\u500d\u3002'
+          : 'A' + bestIdx + ' converts at <strong>' + bestRate.toFixed(0) + '%</strong>, ' + (bestRate / worstRate).toFixed(1) + 'x higher than A' + worstIdx + ' at <strong>' + worstRate.toFixed(0) + '%</strong>.'
+      });
+    }
+  }
+
+  // 2. Follow conversion rate (only state if notable)
+  if (m.uniqueUsers >= 5) {
+    const followRate = m.totalFollows / m.uniqueUsers * 100;
+    obs.push({
+      score: followRate >= 30 ? 70 : followRate >= 15 ? 50 : 40,
+      text: isJa
+        ? '\u3044\u3044\u306d\u3057\u305f<strong>' + m.uniqueUsers + '</strong>\u4eba\u4e2d<strong>' + m.totalFollows + '</strong>\u4eba(' + followRate.toFixed(0) + '%)\u304c\u30d5\u30a9\u30ed\u30fc\u306b\u8ee2\u63db\u3002'
+        : '<strong>' + m.totalFollows + '</strong> of <strong>' + m.uniqueUsers + '</strong> people who liked (' + followRate.toFixed(0) + '%) converted to followers.'
+    });
+  }
+
+  // 3. Non-obvious tag insight
+  const nonObvious = m.tagData.filter(t => t.articles < m.articles.length * 0.7);
+  if (nonObvious.length > 0 && m.articles.length >= 3) {
+    const top = nonObvious[0];
+    const avgAll = m.totalLikesReported / (m.articles.length || 1);
+    const avgTag = top.likes / top.articles;
+    if (avgTag > avgAll * 1.3) {
+      const tagName = isJa ? top.tag : (TAG_EN[top.tag] || top.tag);
+      obs.push({
+        score: 60,
+        text: isJa
+          ? '\u300c' + top.tag + '\u300d\u30bf\u30b0\u306e\u8a18\u4e8b\u306f\u5e73\u5747<strong>' + avgTag.toFixed(0) + '</strong>\u4ef6\u306e\u3044\u3044\u306d\u3002\u5168\u4f53\u5e73\u5747(' + avgAll.toFixed(0) + '\u4ef6)\u306e' + (avgTag / avgAll).toFixed(1) + '\u500d\u3002'
+          : 'Articles with "' + tagName + '" average <strong>' + avgTag.toFixed(0) + '</strong> likes, ' + (avgTag / avgAll).toFixed(1) + 'x the overall average of ' + avgAll.toFixed(0) + '.'
+      });
+    }
+  }
+
+  // 4. Repeat readers
+  if (m.repeatLikers.length > 0 && m.uniqueUsers >= 5) {
+    const repeatPct = Math.round(m.repeatLikers.length / m.uniqueUsers * 100);
+    obs.push({
+      score: repeatPct >= 20 ? 60 : 35,
+      text: isJa
+        ? '\u8aad\u8005\u306e<strong>' + repeatPct + '%</strong>(' + m.repeatLikers.length + '\u4eba)\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3002'
+        : '<strong>' + repeatPct + '%</strong> of readers (' + m.repeatLikers.length + ') liked more than one article.'
+    });
+  }
+
+  return obs.sort((a, b) => b.score - a.score).slice(0, 3);
+}
+
+function computeJourneyObs(m) {
+  const isJa = currentLang === 'ja';
+  const obs = [];
+  if (m.journeys.length === 0) return obs;
+
+  // 1. Pre-follow behaviour pattern
+  const likedMultiple = m.journeys.filter(j => j.likes.length > 1).length;
+  const likedOne = m.journeys.filter(j => j.likes.length === 1).length;
+  const likedNone = m.journeys.filter(j => j.likes.length === 0).length;
+  const total = m.journeys.length;
+
+  if (likedMultiple > likedOne && likedMultiple > likedNone) {
+    obs.push({
+      score: 70,
+      text: isJa
+        ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u904e\u534a\u6570(' + likedMultiple + '/' + total + '\u4eba)\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3057\u3066\u304b\u3089\u30d5\u30a9\u30ed\u30fc\u3002'
+        : 'Most followers (' + likedMultiple + ' of ' + total + ') liked multiple articles before following.'
+    });
+  } else if (likedOne >= likedMultiple) {
+    obs.push({
+      score: 60,
+      text: isJa
+        ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u591a\u304f(' + likedOne + '/' + total + '\u4eba)\u304c1\u8a18\u4e8b\u3060\u3051\u3067\u30d5\u30a9\u30ed\u30fc\u3092\u6c7a\u3081\u305f\u3002'
+        : 'Most followers (' + likedOne + ' of ' + total + ') decided to follow after just one article.'
+    });
+  }
+
+  // 2. Which article drives the most follows (entry point)
+  if (m.journeys.length >= 3) {
+    const entryArticles = {};
+    for (const j of m.journeys) {
+      if (j.likes.length > 0) {
+        const first = j.likes[0].article_url;
+        entryArticles[first] = (entryArticles[first] || 0) + 1;
+      }
+    }
+    const entries = Object.entries(entryArticles).sort((a, b) => b[1] - a[1]);
+    if (entries.length > 0 && entries[0][1] >= 2) {
+      const topUrl = entries[0][0];
+      const topCount = entries[0][1];
+      const artIdx = m.articles.findIndex(a => a.article_url === topUrl);
+      if (artIdx >= 0) {
+        obs.push({
+          score: 65,
+          text: isJa
+            ? 'A' + (artIdx + 1) + '\u304c\u6700\u3082\u591a\u304f\u306e\u30d5\u30a9\u30ed\u30ef\u30fc(' + topCount + '\u4eba)\u306e\u6700\u521d\u306e\u63a5\u70b9\u3002'
+            : 'A' + (artIdx + 1) + ' was the first point of contact for ' + topCount + ' followers.'
+        });
+      }
+    }
+  }
+
+  // 3. Time to follow (if data supports it)
+  if (m.journeys.length >= 2) {
+    const spans = m.journeys.filter(j => j.likes.length > 0).map(j => {
+      const firstLike = new Date(j.likes[0].time).getTime();
+      const followTime = new Date(j.follow_time).getTime();
+      return (followTime - firstLike) / (1000 * 3600);
+    }).filter(h => h >= 0);
+    if (spans.length >= 2) {
+      const median = spans.sort((a, b) => a - b)[Math.floor(spans.length / 2)];
+      const unit = median < 24 ? Math.round(median) + (isJa ? '\u6642\u9593' : ' hours') : Math.round(median / 24) + (isJa ? '\u65e5' : ' days');
+      obs.push({
+        score: 50,
+        text: isJa
+          ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u306f\u6700\u521d\u306e\u3044\u3044\u306d\u304b\u3089\u4e2d\u592e\u5024\u3067<strong>' + unit + '</strong>\u5f8c\u306b\u30d5\u30a9\u30ed\u30fc\u3002'
+          : 'Median time from first like to follow: <strong>' + unit + '</strong>.'
+      });
+    }
+  }
+
+  return obs.sort((a, b) => b.score - a.score).slice(0, 3);
+}
+
 function getActionTitles(m) {
   const isJa = currentLang === 'ja';
   const likes = m.events.filter(e => e.kind === 'like');
@@ -2618,98 +2902,25 @@ function renderJourneys(m) {
     : '\u2192 ' + m.journeys.length + ' followers tracked. Circles = likes, triangles = follows. Lines connect the same person\u2019s actions over time.';
 }
 
-function renderObservations(m) {
-  const isJa = currentLang === 'ja';
-  const likes = m.events.filter(e => e.kind === 'like');
-
-  // SECTION 1: Timeline observations
-  let tl = '<div class="obs-box">';
-  // 48h velocity
-  let within48h = 0;
-  for (const art of m.articles) {
-    const pubTime = new Date(art.published_date_jst).getTime();
-    within48h += likes.filter(e => e.article_url === art.article_url).filter(e =>
-      (new Date(e.timestamp_jst).getTime() - pubTime) <= 48 * 3600000
-    ).length;
-  }
-  const pct48 = likes.length > 0 ? Math.round(within48h / likes.length * 100) : 0;
-  tl += '<p><strong>' + pct48 + '%</strong> ' + (isJa ? '\u306e\u3044\u3044\u306d\u304c\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u767a\u751f\u3002' : 'of likes arrived within 48 hours of publish.') + '</p>';
-  // Content type breakdown
-  for (const cm of m.contentMix) {
-    tl += '<p><strong>' + escapeHtml(cm.type) + '</strong>: ' + cm.count + (isJa ? '\u8a18\u4e8b' : (cm.count === 1 ? ' article' : ' articles')) + ', ' + cm.likeRate + '% ' + (isJa ? '\u30b9\u30ad\u7387' : 'like rate') + '</p>';
-  }
-  tl += '</div>';
-  if (m.latestArticle && m.latestVelocityHours !== null) {
-    const latestLikes = likes.filter(e => e.article_url === m.latestArticle.article_url).length;
-    tl += '<div class="obs-extra">' + (isJa ? '\u6700\u65b0\u8a18\u4e8b: ' : 'Latest article: ') + '<strong>' + latestLikes + '</strong> ' + (isJa ? '\u4ef6\u306e\u3044\u3044\u306d (' + m.latestVelocityHours + '\u6642\u9593\u4ee5\u5185)' : 'likes within ' + m.latestVelocityHours + ' hours') + '</div>';
-  }
-  document.getElementById('obsTimeline').innerHTML = tl;
-
-  // SECTION 2: Timing observations
-  const peakS = m.peakStart, peakE = m.peakEnd;
-  let tm = '<div class="obs-box">';
-  if (peakS !== null) {
-    let beforePeak = 0, duringPeak = 0;
-    for (const ph of m.publishHours) {
-      if (ph.hour < peakS) beforePeak++;
-      else if (ph.hour <= peakE) duringPeak++;
+function renderObservations(m, prevSnapshot) {
+  function renderObsPanel(elementId, observations) {
+    const el = document.getElementById(elementId);
+    if (observations.length === 0) {
+      el.innerHTML = '<div class="obs-box"><p style="color:var(--ink-muted);">' +
+        (currentLang === 'ja' ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093\u3002' : 'Not enough data for observations yet.') +
+        '</p></div>';
+      return;
     }
-    tm += '<p><strong>' + beforePeak + ' of ' + m.articles.length + '</strong> ' + (isJa ? '\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u524d\u306b\u516c\u958b\u3002' : 'articles published before the peak zone.') + '</p>';
-    tm += '<p><strong>' + duringPeak + ' of ' + m.articles.length + '</strong> ' + (isJa ? '\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u4e2d\u306b\u516c\u958b\u3002' : 'published during it.') + '</p>';
+    let html = '<div class="obs-box">';
+    html += observations.map(o => '<p>' + o.text + '</p>').join('');
+    html += '</div>';
+    el.innerHTML = html;
   }
-  const bestDowIdx = m.dowLikes.indexOf(Math.max(...m.dowLikes));
-  tm += '<p>' + (isJa ? '\u6700\u3082\u6d3b\u767a\u306a\u66dc\u65e5: ' : 'Most active day: ') + '<strong>' + m.DOW_NAMES[bestDowIdx] + '</strong></p>';
-  tm += '</div>';
-  if (peakS !== null) {
-    const peakLikes = m.hourLikes.slice(peakS, peakE + 1).reduce((a, b) => a + b, 0);
-    const totalLikes = m.hourLikes.reduce((a, b) => a + b, 0);
-    const peakPct = totalLikes > 0 ? Math.round(peakLikes / totalLikes * 100) : 0;
-    tm += '<div class="obs-extra">' + peakPct + '% ' + (isJa ? '\u306e\u3044\u3044\u306d\u304c\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u96c6\u4e2d\u3002' : 'of all likes arrived during peak hours.') + '</div>';
-  }
-  if (m.publishHours.length > 0) {
-    const pubHours = m.publishHours.map(p => p.hour);
-    const avgPubHour = Math.round(pubHours.reduce((a, b) => a + b, 0) / pubHours.length);
-    tm += '<div class="obs-extra">' + (isJa ? '\u5e73\u5747\u516c\u958b\u6642\u523b: JST ' : 'Average publish time: JST ') + '<strong>' + String(avgPubHour).padStart(2, '0') + ':00</strong> (GMT ' + String(jstToGmt(avgPubHour)).padStart(2, '0') + ':00)</div>';
-  }
-  document.getElementById('obsTiming').innerHTML = tm;
 
-  // SECTION 3: Article and tag observations
-  const withViews = m.articleMetrics.filter(a => a.views > 0);
-  let au = '<div class="obs-box">';
-  if (withViews.length >= 2) {
-    const sorted = [...withViews].sort((a, b) => (b.likes_total / b.views) - (a.likes_total / a.views));
-    const best = sorted[0], worst = sorted[sorted.length - 1];
-    const bestIdx = m.articleMetrics.indexOf(best), worstIdx = m.articleMetrics.indexOf(worst);
-    const bestRate = (best.likes_total / best.views * 100).toFixed(0);
-    const worstRate = (worst.likes_total / worst.views * 100).toFixed(0);
-    au += '<p>' + (isJa ? '\u30b9\u30ad\u7387\u306e\u7bc4\u56f2: ' : 'Like rates range from ') + '<strong>' + worstRate + '%</strong> (A' + (worstIdx + 1) + ') ' + (isJa ? '\u304b\u3089 ' : 'to ') + '<strong>' + bestRate + '%</strong> (A' + (bestIdx + 1) + ')</p>';
-  }
-  au += '<p><strong>' + m.uniqueUsers + '</strong> ' + (isJa ? '\u4eba\u304c\u3044\u3044\u306d\u307e\u305f\u306f\u30d5\u30a9\u30ed\u30fc\u3002' : 'people liked or followed.') + '</p>';
-  const followRate = m.uniqueUsers > 0 ? ((m.totalFollows / m.uniqueUsers) * 100).toFixed(0) : '0';
-  au += '<p><strong>' + m.totalFollows + '</strong> ' + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc (' + followRate + '%)' : 'followed (' + followRate + '%)') + '</p>';
-  au += '</div>';
-  // Show non-obvious top tag (exclude ubiquitous ones)
-  const nonObviousTags = m.tagData.filter(t => t.articles < m.articles.length * 0.7);
-  if (nonObviousTags.length > 0) {
-    const topTag = nonObviousTags[0];
-    const tagName = isJa ? topTag.tag : (TAG_EN[topTag.tag] || topTag.tag);
-    au += '<div class="obs-extra">' + (isJa ? '\u7279\u5fb4\u7684\u306a\u30bf\u30b0: ' : 'Distinctive tag: ') + '<strong>"' + escapeHtml(tagName) + '"</strong> (' + topTag.likes + ' ' + (isJa ? '\u4ef6\u306e\u3044\u3044\u306d' : 'likes') + ', ' + topTag.articles + ' ' + (isJa ? '\u8a18\u4e8b' : (topTag.articles === 1 ? 'article' : 'articles')) + ')</div>';
-  }
-  document.getElementById('obsAudience').innerHTML = au;
-
-  // SECTION 4: Journey observations
-  let jo = '<div class="obs-box">';
-  const likedMultiple = m.journeys.filter(j => j.likes.length > 1).length;
-  const likedOne = m.journeys.filter(j => j.likes.length === 1).length;
-  const likedNone = m.journeys.filter(j => j.likes.length === 0).length;
-  jo += '<p><strong>' + likedMultiple + '</strong> ' + (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u306b\u30d5\u30a9\u30ed\u30fc\u3002' : 'followers liked multiple articles before following.') + '</p>';
-  jo += '<p><strong>' + likedOne + '</strong> ' + (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u304c1\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u306b\u30d5\u30a9\u30ed\u30fc\u3002' : 'liked one article then followed.') + '</p>';
-  if (likedNone > 0) {
-    jo += '<p><strong>' + likedNone + '</strong> ' + (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc\u3002' : 'followed without liking first.') + '</p>';
-  }
-  jo += '</div>';
-  jo += '<div class="obs-extra">' + m.repeatLikers.length + ' ' + (isJa ? '\u4eba\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3002' : 'readers liked 2 or more articles.') + '</div>';
-  document.getElementById('obsJourneys').innerHTML = jo;
+  renderObsPanel('obsTimeline', computeTimelineObs(m, prevSnapshot));
+  renderObsPanel('obsTiming', computeTimingObs(m));
+  renderObsPanel('obsAudience', computeAudienceObs(m));
+  renderObsPanel('obsJourneys', computeJourneyObs(m));
 }
 
 /* ================================================================
@@ -2940,7 +3151,7 @@ async function loadAndRender() {
   renderArticlePerf(currentMetrics);
   renderDow(currentMetrics);
   renderJourneys(currentMetrics);
-  renderObservations(currentMetrics);
+  renderObservations(currentMetrics, prevSnapshot);
   renderEventsTable(currentMetrics.events);
   renderImportHistory();
   renderDictionary();
@@ -2985,7 +3196,7 @@ function renderAll() {
     renderArticlePerf(currentMetrics);
     renderDow(currentMetrics);
     renderJourneys(currentMetrics);
-    renderObservations(currentMetrics);
+    renderObservations(currentMetrics, null);
     renderEventsTable(currentMetrics.events);
     renderImportHistory();
     renderDictionary();
