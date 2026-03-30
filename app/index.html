@@ -783,11 +783,11 @@ body {
       Open your notifications page (note.com/notifications), scroll to load all, then run:
     </p>
     <div class="script-block">
-      <pre id="scriptNotifications">// note Analytics — Notifications Extractor
+      <pre id="scriptNotifications">// Note.com Analytics -Notifications Extractor
 // 1. Open https://note.com/notifications
 // 2. Scroll down to load ALL notifications you want
 // 3. Paste this entire script into the browser console
-// 4. JSON is copied to clipboard — paste into the app
+// 4. JSON is copied to clipboard -paste into the app
 
 (async () => {
   const rows = document.querySelectorAll(
@@ -823,7 +823,7 @@ body {
     } catch (e) { console.warn('__NEXT_DATA__ parse failed, falling back to DOM', e); }
   }
 
-  // Approach 2: DOM fallback — parse notification list items
+  // Approach 2: DOM fallback -parse notification list items
   if (notifications.length === 0) {
     const items = document.querySelectorAll('[class*="Notification"] > div, [role="listitem"]');
     for (const item of items) {
@@ -883,7 +883,7 @@ body {
   const json = JSON.stringify(output, null, 2);
   await navigator.clipboard.writeText(json);
   console.log('Extracted ' + notifications.length + ' notifications. Copied to clipboard.');
-  console.log('Paste into the note Analytics app (Data tab).');
+  console.log('Paste into the Note.com Analytics app (Data tab).');
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptNotifications')">Copy</button>
     </div>
@@ -893,11 +893,11 @@ body {
       Open your profile page (note.com/your_username), then run:
     </p>
     <div class="script-block">
-      <pre id="scriptProfile">// note Analytics — Profile &amp; Articles Extractor
+      <pre id="scriptProfile">// Note.com Analytics -Profile &amp; Articles Extractor
 // 1. Open your profile: https://note.com/YOUR_USERNAME
 // 2. Scroll down to load all articles
 // 3. Paste this entire script into the browser console
-// 4. JSON is copied to clipboard — paste into the app
+// 4. JSON is copied to clipboard -paste into the app
 
 (async () => {
   const articles = [];
@@ -1005,7 +1005,7 @@ body {
   const json = JSON.stringify(output, null, 2);
   await navigator.clipboard.writeText(json);
   console.log('Extracted ' + articles.length + ' articles. Followers: ' + followerCount);
-  console.log('Paste into the note Analytics app (Data tab).');
+  console.log('Paste into the Note.com Analytics app (Data tab).');
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptProfile')">Copy</button>
     </div>
@@ -1015,11 +1015,11 @@ body {
       Open your creator dashboard (note.com/dashboard), then run:
     </p>
     <div class="script-block">
-      <pre id="scriptDashboard">// note Analytics — Creator Dashboard Extractor
+      <pre id="scriptDashboard">// Note.com Analytics -Creator Dashboard Extractor
 // 1. Open https://note.com/dashboard (must be logged in)
 // 2. Navigate to the analytics/stats section if available
 // 3. Paste this entire script into the browser console
-// 4. JSON is copied to clipboard — paste into the app
+// 4. JSON is copied to clipboard -paste into the app
 //
 // NOTE: This script attempts to extract whatever analytics
 // data note.com exposes. The dashboard structure may vary.
@@ -1116,7 +1116,7 @@ body {
     console.log('No stats found. The dashboard structure may have changed.');
     console.log('Try navigating to the analytics section first.');
   }
-  console.log('Paste into the note Analytics app (Data tab).');
+  console.log('Paste into the Note.com Analytics app (Data tab).');
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptDashboard')">Copy</button>
     </div>
@@ -1137,7 +1137,7 @@ body {
 
 <script>
 /* ================================================================
-   I18N — String Tables
+   I18N -String Tables
    ================================================================ */
 const STRINGS = {
   en: {
@@ -1373,7 +1373,7 @@ function switchTab(tabId) {
 }
 
 /* ================================================================
-   STORE — IndexedDB
+   STORE -IndexedDB
    ================================================================ */
 const DB_NAME = 'noteAnalytics';
 const DB_VERSION = 2;
@@ -1430,7 +1430,7 @@ function dbClear(storeName) {
 }
 
 /* ================================================================
-   PARSE — Normalise raw imports
+   PARSE -Normalise raw imports
    ================================================================ */
 function escapeHtml(str) {
   if (!str) return '';
@@ -1882,7 +1882,7 @@ function computeMetrics(events, articles) {
 }
 
 /* ================================================================
-   RENDER — Briefing
+   RENDER -Briefing
    ================================================================ */
 let chartTimeline = null;
 let chartActivity = null;
@@ -2067,7 +2067,7 @@ function renderTimelineByArticle(m, canvas) {
 
   const datasets = [];
 
-  // All likes as one dataset — row position (Y) identifies the article
+  // All likes as one dataset -row position (Y) identifies the article
   const allLikeData = [];
   for (let i = 0; i < articles.length; i++) {
     const art = articles[i];
@@ -2666,7 +2666,7 @@ function renderInsights(m) {
 }
 
 /* ================================================================
-   RENDER — Data Tab
+   RENDER -Data Tab
    ================================================================ */
 let tableSortCol = 0;
 let tableSortAsc = false;
@@ -2741,7 +2741,7 @@ async function renderImportHistory() {
 }
 
 /* ================================================================
-   RENDER — Dictionary Tab
+   RENDER -Dictionary Tab
    ================================================================ */
 function renderDictionary() {
   const grid = document.getElementById('definitionsGrid');
@@ -2767,7 +2767,7 @@ function renderDictionary() {
 }
 
 /* ================================================================
-   RENDER — Status Bar
+   RENDER -Status Bar
    ================================================================ */
 function renderStatusBar(m) {
   const bar = document.getElementById('statusBar');
