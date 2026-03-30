@@ -1602,10 +1602,19 @@ function generateTimelineTitle(articles, likes, follows, isJa) {
   if (pct >= 60) return isJa ? 'いいねの' + pct + '%は公開後48時間以内に発生' : pct + '% of likes arrived within 48 hours of publish';
   return isJa ? articles.length + '記事に' + likes.length + '件のいいねと' + follows.length + '件のフォロー' : likes.length + ' likes and ' + follows.length + ' follows across ' + articles.length + ' articles';
 }
-function generateActivityTitle(peakStart, peakEnd, isJa) {
-  if (peakStart === null) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
-  const s = String(peakStart).padStart(2, '0'), e = String(peakEnd).padStart(2, '0');
-  return isJa ? 'いいねの多くはJST ' + s + ':00から' + e + ':00の間に集中' : 'Most likes arrive between ' + s + ':00 and ' + e + ':00 JST';
+function generateActivityTitle(m, isJa) {
+  if (m.peakStart === null) {
+    // No clear peak: engagement is spread evenly
+    return isJa ? '\u3044\u3044\u306d\u306f\u6642\u9593\u5e2f\u306b\u5927\u304d\u306a\u504f\u308a\u306a\u304f\u5206\u6563' : 'Likes are spread across the day with no strong peak';
+  }
+  const s = String(m.peakStart).padStart(2, '0'), e = String(m.peakEnd).padStart(2, '0');
+  // Calculate what % falls in the peak
+  const peakLikes = m.hourLikes.slice(m.peakStart, m.peakEnd + 1).reduce((a, b) => a + b, 0);
+  const totalLikes = m.hourLikes.reduce((a, b) => a + b, 0);
+  const pct = totalLikes > 0 ? Math.round(peakLikes / totalLikes * 100) : 0;
+  return isJa
+    ? '\u3044\u3044\u306d\u306e' + pct + '%\u304cJST ' + s + ':00\u304b\u3089' + e + ':00\u306b\u96c6\u4e2d'
+    : pct + '% of likes concentrate between ' + s + ':00 and ' + e + ':00 JST';
 }
 function generateDowTitle(DOW_NAMES, dowLikes, isJa) {
   const maxVal = Math.max(...dowLikes);
@@ -1622,11 +1631,22 @@ function generateArticlePerfTitle(articleMetrics, isJa) {
   const rate = (best.likes_total / best.views * 100).toFixed(0);
   return isJa ? 'A' + (idx + 1) + 'のスキ率が' + rate + '%で最も高い' : 'A' + (idx + 1) + ' has the highest like rate at ' + rate + '%';
 }
-function generateTagsTitle(tagData, isJa) {
-  if (tagData.length === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
-  const top = tagData[0];
-  const tagName = currentLang === 'en' && TAG_EN[top.tag] ? TAG_EN[top.tag] : top.tag;
-  return isJa ? '「' + top.tag + '」タグが最もいいねを集めている' : 'Articles tagged "' + tagName + '" attract the most likes';
+function generateTagsTitle(tagData, articleCount, isJa) {
+  if (tagData.length === 0) return isJa ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet';
+  // Filter out ubiquitous tags (on >70% of articles): they always win and that's not an insight
+  const nonObvious = tagData.filter(t => t.articles < articleCount * 0.7);
+  if (nonObvious.length > 0) {
+    const top = nonObvious[0];
+    const tagName = isJa ? top.tag : (TAG_EN[top.tag] || top.tag);
+    const avgLikesThisTag = top.articles > 0 ? (top.likes / top.articles).toFixed(1) : 0;
+    return isJa
+      ? '\u300c' + top.tag + '\u300d\u30bf\u30b0\u306e\u8a18\u4e8b\u306f\u5e73\u5747' + avgLikesThisTag + '\u4ef6\u306e\u3044\u3044\u306d\u3092\u7372\u5f97'
+      : 'Articles tagged "' + tagName + '" average ' + avgLikesThisTag + ' likes each';
+  }
+  // All tags are ubiquitous: state that
+  return isJa
+    ? '\u307b\u3068\u3093\u3069\u306e\u30bf\u30b0\u304c\u5168\u8a18\u4e8b\u306b\u5171\u901a\u3057\u3066\u304a\u308a\u3001\u5dee\u7570\u304c\u898b\u3048\u306b\u304f\u3044'
+    : 'Most tags are shared across all articles, making differentiation difficult';
 }
 function generateJourneysTitle(journeys, isJa) {
   if (journeys.length === 0) return isJa ? 'まだフォロワーデータがありません' : 'No follower data yet';
@@ -1640,10 +1660,10 @@ function getActionTitles(m) {
   const follows = m.events.filter(e => e.kind === 'follow');
   return {
     timeline: generateTimelineTitle(m.articles, likes, follows, isJa),
-    activity: generateActivityTitle(m.peakStart, m.peakEnd, isJa),
+    activity: generateActivityTitle(m, isJa),
     dow: generateDowTitle(m.DOW_NAMES, m.dowLikes, isJa),
     articlePerf: generateArticlePerfTitle(m.articleMetrics, isJa),
-    tags: generateTagsTitle(m.tagData, isJa),
+    tags: generateTagsTitle(m.tagData, m.articles.length, isJa),
     journeys: generateJourneysTitle(m.journeys, isJa),
   };
 }
@@ -1840,16 +1860,24 @@ function computeMetrics(events, articles) {
     }
   }
 
-  // Peak zone: hours above 75th percentile
+  // Peak zone: sliding window of 3-5 hours with highest concentration
   const allHourCounts = hourLikes.map((l, i) => l + hourFollows[i]);
-  const sortedHourCounts = [...allHourCounts].filter(c => c > 0).sort((a, b) => a - b);
-  const p75 = sortedHourCounts.length > 0 ? sortedHourCounts[Math.floor(sortedHourCounts.length * 0.75)] : 0;
-  const peakHoursSet = [];
-  for (let h = 0; h < 24; h++) {
-    if (allHourCounts[h] >= p75 && allHourCounts[h] > 0) peakHoursSet.push(h);
+  const totalEngagement = allHourCounts.reduce((a, b) => a + b, 0);
+  let peakStart = null, peakEnd = null;
+  if (totalEngagement > 0) {
+    let bestSum = 0, bestStart = 0;
+    const windowSize = Math.min(5, Math.max(3, Math.floor(24 * 0.2))); // 3-5 hours
+    for (let start = 0; start < 24; start++) {
+      let sum = 0;
+      for (let j = 0; j < windowSize; j++) sum += allHourCounts[(start + j) % 24];
+      if (sum > bestSum) { bestSum = sum; bestStart = start; }
+    }
+    // Only mark as peak if it contains at least 40% of engagement
+    if (bestSum / totalEngagement >= 0.4) {
+      peakStart = bestStart;
+      peakEnd = (bestStart + windowSize - 1) % 24;
+    }
   }
-  const peakStart = peakHoursSet.length > 0 ? peakHoursSet[0] : null;
-  const peakEnd = peakHoursSet.length > 0 ? peakHoursSet[peakHoursSet.length - 1] : null;
 
   // Action titles: generated at render time via getActionTitles()
   // so they respond to language changes
@@ -2660,10 +2688,12 @@ function renderObservations(m) {
   const followRate = m.uniqueUsers > 0 ? ((m.totalFollows / m.uniqueUsers) * 100).toFixed(0) : '0';
   au += '<p><strong>' + m.totalFollows + '</strong> ' + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc (' + followRate + '%)' : 'followed (' + followRate + '%)') + '</p>';
   au += '</div>';
-  if (m.tagData.length > 0) {
-    const topTag = m.tagData[0];
+  // Show non-obvious top tag (exclude ubiquitous ones)
+  const nonObviousTags = m.tagData.filter(t => t.articles < m.articles.length * 0.7);
+  if (nonObviousTags.length > 0) {
+    const topTag = nonObviousTags[0];
     const tagName = isJa ? topTag.tag : (TAG_EN[topTag.tag] || topTag.tag);
-    au += '<div class="obs-extra">' + (isJa ? '\u6700\u3082\u3044\u3044\u306d\u306e\u591a\u3044\u30bf\u30b0: ' : 'Top tag: ') + '<strong>"' + escapeHtml(tagName) + '"</strong> (' + topTag.total + ' ' + (isJa ? '\u4ef6' : 'total') + ')</div>';
+    au += '<div class="obs-extra">' + (isJa ? '\u7279\u5fb4\u7684\u306a\u30bf\u30b0: ' : 'Distinctive tag: ') + '<strong>"' + escapeHtml(tagName) + '"</strong> (' + topTag.likes + ' ' + (isJa ? '\u4ef6\u306e\u3044\u3044\u306d' : 'likes') + ', ' + topTag.articles + ' ' + (isJa ? '\u8a18\u4e8b' : (topTag.articles === 1 ? 'article' : 'articles')) + ')</div>';
   }
   document.getElementById('obsAudience').innerHTML = au;
 
