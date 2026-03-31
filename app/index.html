@@ -3049,29 +3049,30 @@ function renderTags(m) {
   const canvas = document.getElementById('chartTags');
   if (chartTags) chartTags.destroy();
 
-  // Filter out ubiquitous tags (on most articles) as they always dominate and add no insight
-  var nonUbiquitous = m.tagData.filter(function(t) { return t.articles <= m.articles.length * 0.5; });
-  var top = (nonUbiquitous.length > 0 ? nonUbiquitous : m.tagData).slice(0, THRESHOLDS.tagMax);
-
+  // Show all tags but mark ubiquitous ones differently
   var isJaTag = currentLang === 'ja';
+  var ubiqThreshold = m.articles.length * 0.5;
+  var allTags = m.tagData.slice(0, THRESHOLDS.tagMax);
+  var avg = m.totalLikesReported / (m.articles.length || 1);
+
   document.getElementById('tagsKey').innerHTML =
     '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' +
     (isJaTag ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
     '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' +
     (isJaTag ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>' +
-    '<div class="chart-key-item" style="color:var(--ink-muted);">' +
-    (isJaTag ? '(\u62ec\u5f27\u5185) = \u8a18\u4e8b\u6570' : '(n) = number of articles') + '</div>';
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#d97706;"></div> ' +
+    (isJaTag ? '\u307b\u307c\u5168\u8a18\u4e8b\u306b\u5171\u901a (\u5206\u6790\u5bfe\u8c61\u5916)' : 'On most articles (excluded from analysis)') + '</div>';
 
   chartTags = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: top.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; }),
+      labels: allTags.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; }),
       datasets: [
         {
-          label: currentLang === 'ja' ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article',
-          data: top.map(function(t) { return t.articles > 0 ? parseFloat((t.likes / t.articles).toFixed(1)) : 0; }),
-          backgroundColor: top.map(function(t) {
-            var avg = m.totalLikesReported / (m.articles.length || 1);
+          label: isJaTag ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article',
+          data: allTags.map(function(t) { return t.articles > 0 ? parseFloat((t.likes / t.articles).toFixed(1)) : 0; }),
+          backgroundColor: allTags.map(function(t) {
+            if (t.articles > ubiqThreshold) return '#d97706'; // amber for ubiquitous
             var tagAvg = t.articles > 0 ? t.likes / t.articles : 0;
             return tagAvg > avg ? COLOURS.accent : COLOURS.grey;
           }),
