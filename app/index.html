@@ -715,7 +715,7 @@ body {
   <div class="import-zone" id="importZone">
     <p data-i18n="import_instructions">Paste JSON from extraction script or drop a .json file</p>
     <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-      <span data-i18n="import_upload">Upload JSON</span>
+      <span data-i18n="import_upload">Upload JSON or CSV</span>
     </button>
     <button class="btn" onclick="pasteFromClipboard()">
       <span data-i18n="import_paste">Paste from Clipboard</span>
@@ -1144,8 +1144,8 @@ const STRINGS = {
     chart_journeys: 'Follower Journeys',
     toggle_by_user: 'Show People',
     toggle_by_article: 'Show Timeline',
-    import_instructions: 'Paste JSON from extraction script or drop a .json file',
-    import_upload: 'Upload JSON',
+    import_instructions: 'Upload a CSV or JSON file, or paste file contents below',
+    import_upload: 'Upload JSON or CSV',
     import_paste: 'Paste from Clipboard',
     import_export: 'Export All Data',
     table_events: 'Events',
@@ -1213,8 +1213,8 @@ const STRINGS = {
     chart_journeys: 'フォロワーの行動経路',
     toggle_by_user: '人別に表示',
     toggle_by_article: 'タイムライン表示',
-    import_instructions: '抽出スクリプトのJSONを貼り付けるか、.jsonファイルをドロップ',
-    import_upload: 'JSONアップロード',
+    import_instructions: 'CSVまたはJSONファイルをアップロード、またはファイルの中身を貼り付け',
+    import_upload: 'CSV/JSONアップロード',
     import_paste: 'クリップボードから貼り付け',
     import_export: '全データエクスポート',
     table_events: 'イベント',
@@ -1321,8 +1321,11 @@ function renderArticleKey(m) {
   }
   bar.innerHTML = barHtml;
 
-  // Expanded panel
-  let panelHtml = '';
+  // Expanded panel with close button
+  let panelHtml = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+  panelHtml += '<span style="font-size:12px;font-weight:600;color:var(--ink-light);">' + (isJa ? '\u8a18\u4e8b\u4e00\u89a7' : 'Article Key') + '</span>';
+  panelHtml += '<button onclick="toggleArticleKeyPanel()" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:var(--ink-muted);">' + (isJa ? '\u9589\u3058\u308b' : 'Close') + '</button>';
+  panelHtml += '</div>';
   if (m.articles.length >= THRESHOLDS.articleKeySearchAt) {
     panelHtml += '<input class="article-key-search" placeholder="' + (isJa ? '\u8a18\u4e8b\u3092\u691c\u7d22...' : 'Search articles...') + '" oninput="filterArticleKey(this.value)">';
   }
@@ -2757,7 +2760,9 @@ function renderTags(m) {
   const canvas = document.getElementById('chartTags');
   if (chartTags) chartTags.destroy();
 
-  const top = m.tagData.slice(0, 10);
+  // Filter out ubiquitous tags (on most articles) as they always dominate and add no insight
+  var nonUbiquitous = m.tagData.filter(function(t) { return t.articles < m.articles.length * 0.7; });
+  var top = (nonUbiquitous.length > 0 ? nonUbiquitous : m.tagData).slice(0, THRESHOLDS.tagMax);
 
   document.getElementById('tagsKey').innerHTML =
     '<div class="chart-key-item"><div class="chart-key-dot" style="background:#7c3aed;"></div> ' +
@@ -3080,17 +3085,46 @@ function isCSV(text) {
 }
 
 async function processImport(text) {
+  var isJa = currentLang === 'ja';
+
+  // Validate input
+  if (!text || text.trim().length === 0) {
+    showImportResult(isJa ? '\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u304c\u7a7a\u3067\u3059\u3002' : 'Nothing to import. Clipboard is empty.', true);
+    return;
+  }
+
+  var trimmed = text.trim();
+
+  // Check for common mistakes: pasting a filename instead of file contents
+  if (trimmed.length < 100 && !trimmed.startsWith('{') && !trimmed.startsWith('[') && !trimmed.includes(',')) {
+    showImportResult(
+      isJa ? '\u30d5\u30a1\u30a4\u30eb\u540d\u3067\u306f\u306a\u304f\u3001\u30d5\u30a1\u30a4\u30eb\u306e\u4e2d\u8eab\u3092\u8cbc\u308a\u4ed8\u3051\u3066\u304f\u3060\u3055\u3044\u3002\u307e\u305f\u306f\u30d5\u30a1\u30a4\u30eb\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3057\u3066\u304f\u3060\u3055\u3044\u3002'
+        : 'This looks like a filename, not file contents. Upload the file directly using the Upload button, or paste the actual file contents.',
+      true);
+    return;
+  }
+
   try {
     var raw;
-    if (isCSV(text)) {
-      // CSV notifications format: convert to JSON-compatible structure
-      var rows = parseCSV(text);
+    if (isCSV(trimmed)) {
+      var rows = parseCSV(trimmed);
+      if (rows.length === 0) {
+        showImportResult(isJa ? 'CSV\u306b\u30c7\u30fc\u30bf\u884c\u304c\u3042\u308a\u307e\u305b\u3093\u3002' : 'CSV has no data rows.', true);
+        return;
+      }
       raw = { events: rows };
     } else {
-      raw = JSON.parse(text);
+      try {
+        raw = JSON.parse(trimmed);
+      } catch (jsonErr) {
+        showImportResult(
+          isJa ? '\u30c7\u30fc\u30bf\u5f62\u5f0f\u3092\u8a8d\u8b58\u3067\u304d\u307e\u305b\u3093\u3002JSON\u307e\u305f\u306fCSV\u30d5\u30a1\u30a4\u30eb\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3059\u308b\u304b\u3001\u4e2d\u8eab\u3092\u8cbc\u308a\u4ed8\u3051\u3066\u304f\u3060\u3055\u3044\u3002'
+            : 'Could not read this data. Upload a JSON or CSV file, or paste the file contents directly.',
+          true);
+        return;
+      }
     }
     var result = await importData(raw);
-    var isJa = currentLang === 'ja';
     var msg = isJa
       ? result.events + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + result.articles + '\u4ef6\u306e\u8a18\u4e8b\u3092\u30a4\u30f3\u30dd\u30fc\u30c8'
       : 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
@@ -3100,7 +3134,9 @@ async function processImport(text) {
     showImportResult(msg, false);
     await loadAndRender();
   } catch (err) {
-    showImportResult('Import failed: ' + err.message, true);
+    showImportResult(
+      isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u5931\u6557: ' + err.message : 'Import failed: ' + err.message,
+      true);
   }
 }
 
