@@ -654,7 +654,7 @@ body {
     <div class="chart-main">
       <div class="action-title" id="articlePerfTitle"></div>
       <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
-      <div class="chart-alt" id="articlePerfAlt"></div>
+      <div class="chart-legend" id="articlePerfLegend"></div>
       <div style="margin-top:20px;">
         <div class="action-title" id="trendTitle"></div>
         <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
@@ -1683,7 +1683,7 @@ function generateArticlePerfTitle(articleMetrics, isJa) {
 function generateTagsTitle(tagData, articleCount, isJa) {
   if (tagData.length === 0) return isJa ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet';
   // Filter out ubiquitous tags (on >70% of articles): they always win and that's not an insight
-  const nonObvious = tagData.filter(t => t.articles < articleCount * 0.7);
+  var nonObvious = tagData.filter(function(t) { return t.articles <= articleCount * 0.5; });
   if (nonObvious.length > 0) {
     const top = nonObvious[0];
     const tagName = isJa ? top.tag : (TAG_EN[top.tag] || top.tag);
@@ -2939,12 +2939,11 @@ function renderArticlePerf(m) {
               label: {
                 display: true,
                 content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%',
-                position: 'start',
-                yAdjust: -10,
+                position: 'end',
                 font: { size: 9 },
                 color: COLOURS.inkMuted,
                 backgroundColor: '#ffffffee',
-                padding: 3,
+                padding: { top: 2, bottom: 2, left: 4, right: 4 },
               },
             },
           },
@@ -2953,11 +2952,11 @@ function renderArticlePerf(m) {
     },
   });
   // Legend
-  document.getElementById('articlePerfAlt').innerHTML =
-    '<div class="chart-legend">' +
+  document.getElementById('articlePerfLegend').innerHTML =
     '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
     '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>' +
-    '</div>';
+    '<div class="legend-item" style="border-left:1.5px dashed ' + COLOURS.inkMuted + '60;height:10px;width:0;margin:0 4px;"></div>' +
+    '<span style="color:' + COLOURS.inkMuted + ';font-size:11px;">' + (isJa ? '\u5e73\u5747\u30e9\u30a4\u30f3' : 'Average line') + '</span>';
 }
 
 var chartTrend = null;
