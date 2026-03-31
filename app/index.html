@@ -2329,8 +2329,12 @@ function renderSummary(m, prevSnapshot) {
     return '';
   }
 
-  // No colour coding on values. All neutral.
-  let html = '<div class="kpi-grid">';
+  // Narrative summary above KPIs
+  var summary = isJa
+    ? m.articles.length + '\u8a18\u4e8b\u3092' + m.daySpan + '\u65e5\u9593\u306b\u516c\u958b\u3002' + totalViews + '\u95b2\u89a7\u3001' + totalLikes + '\u3044\u3044\u306d\uff08' + likeRate.toFixed(0) + '%\u306e\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3\uff09\u3001' + m.totalFollows + '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\u3002'
+    : m.articles.length + ' articles over ' + m.daySpan + ' days. ' + totalViews + ' views, ' + totalLikes + ' likes (' + likeRate.toFixed(0) + '% conversion), ' + m.totalFollows + ' followers.';
+  let html = '<div style="font-size:13px;color:var(--ink-light);margin-bottom:12px;line-height:1.6;">' + summary + '</div>';
+  html += '<div class="kpi-grid">';
 
   html += '<div class="kpi-item"><div class="kpi-value">' + m.articles.length + trend(m.articles.length, prev && prev.articles) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u6570' : 'Articles Published') + '</div>';
@@ -2389,38 +2393,37 @@ function renderGrowth(m) {
   var isJa = currentLang === 'ja';
 
   var totalViews = m.totalViews;
-  var totalLikes = m.totalLikesReported;
+  var totalLikers = m.uniqueUsers;
   var organicLikes = m.organicLikes || m.totalLikes;
   var friendLikes = m.friendLikes || 0;
   var totalFollows = m.totalFollows;
-  var organicFollows = m.organicFollows || totalFollows;
-  var friendFollows = m.friendFollows || 0;
   var repeatCount = m.repeatLikers ? m.repeatLikers.length : 0;
 
-  // Title
-  var followPct = m.uniqueUsers > 0 ? Math.round(totalFollows / m.uniqueUsers * 100) : 0;
-  document.getElementById('growthTitle').textContent = isJa
-    ? m.uniqueUsers + '\u4eba\u304c\u3044\u3044\u306d\u3001' + totalFollows + '\u4eba(' + followPct + '%)\u304c\u30d5\u30a9\u30ed\u30fc'
-    : m.uniqueUsers + ' people liked, ' + totalFollows + ' (' + followPct + '%) followed';
+  // Conversion percentages (each step relative to previous)
+  var likeRate = totalViews > 0 ? (m.totalLikesReported / totalViews * 100) : 0;
+  var followRate = totalLikers > 0 ? (totalFollows / totalLikers * 100) : 0;
+  var repeatRate = totalLikers > 0 ? (repeatCount / totalLikers * 100) : 0;
+  var organicPct = m.totalLikes > 0 ? Math.round(organicLikes / m.totalLikes * 100) : 100;
 
-  // Funnel chart: horizontal bars showing the conversion steps
-  var funnelLabels = isJa
-    ? ['\u95b2\u89a7', '\u3044\u3044\u306d (\u30aa\u30fc\u30ac\u30cb\u30c3\u30af)', '\u3044\u3044\u306d (\u30d5\u30ec\u30f3\u30c9)', '\u30d5\u30a9\u30ed\u30fc', '\u30ea\u30d4\u30fc\u30c8\u8aad\u8005']
-    : ['Views', 'Likes (organic)', 'Likes (friends)', 'Followers', 'Repeat readers'];
+  // Title
+  document.getElementById('growthTitle').textContent = isJa
+    ? '\u95b2\u89a7\u304b\u3089\u30d5\u30a9\u30ed\u30fc\u307e\u3067\u306e\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3'
+    : 'Conversion from views to followers';
+
+  var labels = isJa
+    ? [totalViews + ' \u95b2\u89a7', m.totalLikesReported + ' \u3044\u3044\u306d (' + likeRate.toFixed(0) + '%)', totalFollows + ' \u30d5\u30a9\u30ed\u30fc (' + followRate.toFixed(0) + '%)', repeatCount + ' \u30ea\u30d4\u30fc\u30c8 (' + repeatRate.toFixed(0) + '%)']
+    : [totalViews + ' views', m.totalLikesReported + ' likes (' + likeRate.toFixed(0) + '%)', totalFollows + ' followers (' + followRate.toFixed(0) + '% of likers)', repeatCount + ' repeat (' + repeatRate.toFixed(0) + '% of likers)'];
+
+  var data = [totalViews, m.totalLikesReported, totalFollows, repeatCount];
+  var colours = [COLOURS.grey, COLOURS.accent, COLOURS.accent + '80', COLOURS.accent + '50'];
 
   chartGrowth = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels: funnelLabels,
+      labels: labels,
       datasets: [{
-        data: [totalViews, organicLikes, friendLikes, totalFollows, repeatCount],
-        backgroundColor: [
-          COLOURS.grey,
-          COLOURS.accent,
-          '#d97706',
-          COLOURS.accent + '80',
-          COLOURS.accent + '50',
-        ],
+        data: data,
+        backgroundColor: colours,
         borderRadius: 3,
       }],
     },
@@ -2428,27 +2431,18 @@ function renderGrowth(m) {
       indexAxis: 'y',
       responsive: true,
       scales: {
-        x: {
-          beginAtZero: true,
-          grid: { color: '#f3f4f6' },
-          ticks: { font: { size: 10 } },
-        },
-        y: {
-          grid: { display: false },
-          ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } },
-        },
+        x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: COLOURS.ink + 'ee',
-          cornerRadius: 6,
-          padding: 8,
+          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
           callbacks: {
             label: function(ctx) {
-              if (ctx.dataIndex === 0) return ctx.raw + (isJa ? ' \u95b2\u89a7' : ' views');
-              if (ctx.dataIndex <= 2) return ctx.raw + (isJa ? ' \u4ef6\u306e\u3044\u3044\u306d' : ' likes');
-              if (ctx.dataIndex === 3) return ctx.raw + (isJa ? ' \u4eba\u304c\u30d5\u30a9\u30ed\u30fc' : ' followers');
+              if (ctx.dataIndex === 0) return ctx.raw + (isJa ? ' \u95b2\u89a7' : ' total views');
+              if (ctx.dataIndex === 1) return ctx.raw + (isJa ? ' \u3044\u3044\u306d (\u30aa\u30fc\u30ac\u30cb\u30c3\u30af ' + organicLikes + ', \u30d5\u30ec\u30f3\u30c9 ' + friendLikes + ')' : ' likes (organic ' + organicLikes + ', friends ' + friendLikes + ')');
+              if (ctx.dataIndex === 2) return ctx.raw + (isJa ? ' \u30d5\u30a9\u30ed\u30ef\u30fc' : ' followers');
               return ctx.raw + (isJa ? ' \u4eba\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d' : ' liked 2+ articles');
             },
           },
