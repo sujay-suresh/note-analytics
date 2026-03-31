@@ -730,7 +730,7 @@ body {
     <button class="btn" onclick="exportData()">
       <span data-i18n="import_export">Export All Data</span>
     </button>
-    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleFileUpload(event)">
+    <input type="file" id="fileInput" accept=".json,.csv" style="display:none" onchange="handleFileUpload(event)">
     <div class="import-result" id="importResult"></div>
   </div>
 
@@ -1495,13 +1495,39 @@ async function importData(raw) {
   let importedEvents = 0;
   let importedArticles = 0;
   let importedStats = 0;
+  let skipped = 0;
   const source = raw.source || 'manual';
+
+  // Save pre-import metrics snapshot for trend comparison
+  const oldEvents = await dbGetAll('events');
+  const oldArticles = await dbGetAll('articles');
+  if (oldEvents.length > 0) {
+    const oldM = computeMetrics(oldEvents, oldArticles);
+    const artCount = oldM.articles.length || 1;
+    await dbPut('metrics_snapshot', {
+      id: 'latest',
+      articles: oldM.articles.length,
+      avgViews: oldM.totalViews / artCount,
+      avgLikes: oldM.totalLikesReported / artCount,
+      likeRate: oldM.totalViews > 0 ? oldM.totalLikesReported / oldM.totalViews * 100 : 0,
+      followRate: oldM.uniqueUsers > 0 ? oldM.totalFollows / oldM.uniqueUsers * 100 : 0,
+      returnRate: oldM.uniqueUsers > 0 ? oldM.repeatLikers.length / oldM.uniqueUsers * 100 : 0,
+      timestamp: new Date().toISOString(),
+    });
+  }
 
   // Notifications extract or generic events
   if (raw.events || raw.notifications || (Array.isArray(raw) && raw[0] && raw[0].kind)) {
     const events = parseNotifications(raw);
-    for (const ev of events) await dbPut('events', ev);
-    importedEvents = events.length;
+    const existingIds = new Set(oldEvents.map(function(e) { return e.id; }));
+    for (const ev of events) {
+      if (existingIds.has(ev.id)) {
+        skipped++;
+      } else {
+        importedEvents++;
+      }
+      await dbPut('events', ev);
+    }
   }
 
   // Articles from profile extract or direct
@@ -1577,7 +1603,7 @@ async function importData(raw) {
     stats_added: importedStats,
   });
 
-  return { events: importedEvents, articles: importedArticles, stats: importedStats };
+  return { events: importedEvents, articles: importedArticles, stats: importedStats, skipped: skipped };
 }
 
 /* ================================================================
@@ -3005,12 +3031,61 @@ function showImportResult(msg, isError) {
   setTimeout(() => { el.className = 'import-result'; }, 5000);
 }
 
-async function processImport(jsonStr) {
+function parseCSV(text) {
+  var lines = text.split('\n').filter(function(l) { return l.trim(); });
+  if (lines.length < 2) return [];
+  var headers = parseCSVRow(lines[0]);
+  var rows = [];
+  for (var i = 1; i < lines.length; i++) {
+    var values = parseCSVRow(lines[i]);
+    var obj = {};
+    headers.forEach(function(h, idx) { obj[h.trim()] = (values[idx] || '').trim(); });
+    rows.push(obj);
+  }
+  return rows;
+}
+
+function parseCSVRow(line) {
+  var result = [];
+  var current = '';
+  var inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function isCSV(text) {
+  var firstLine = text.split('\n')[0] || '';
+  return firstLine.includes('kind,') && firstLine.includes('who,');
+}
+
+async function processImport(text) {
   try {
-    const raw = JSON.parse(jsonStr);
-    const result = await importData(raw);
-    let msg = 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
-    if (result.stats > 0) msg += ', ' + result.stats + ' stats';
+    var raw;
+    if (isCSV(text)) {
+      // CSV notifications format: convert to JSON-compatible structure
+      var rows = parseCSV(text);
+      raw = { events: rows };
+    } else {
+      raw = JSON.parse(text);
+    }
+    var result = await importData(raw);
+    var isJa = currentLang === 'ja';
+    var msg = isJa
+      ? result.events + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + result.articles + '\u4ef6\u306e\u8a18\u4e8b\u3092\u30a4\u30f3\u30dd\u30fc\u30c8'
+      : 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
+    if (result.stats > 0) msg += (isJa ? '\u3001' + result.stats + '\u4ef6\u306e\u7d71\u8a08' : ', ' + result.stats + ' stats');
+    if (result.skipped > 0) msg += (isJa ? ' (' + result.skipped + '\u4ef6\u306f\u91cd\u8907)' : ' (' + result.skipped + ' duplicates skipped)');
     showImportResult(msg, false);
     await loadAndRender();
   } catch (err) {
