@@ -1100,29 +1100,6 @@ body {
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
-<!-- Hidden elements for backward compatibility -->
-<div style="display:none">
-<div id="growthAlt" style="display:none"></div>
-<canvas id="chartTimeline" style="display:none"></canvas>
-<div id="timelineKey" style="display:none"></div>
-<div id="timelineAlt" style="display:none"></div>
-<div id="timelineToggle" style="display:none"></div>
-<div id="activityAlt" style="display:none"></div>
-<canvas id="chartDow" style="display:none"></canvas>
-<div id="dayOfWeekTitle" style="display:none"></div>
-<div id="dowAlt" style="display:none"></div>
-<div id="dowKey" style="display:none"></div>
-<div id="articlePerfLegend" style="display:none"></div>
-<canvas id="chartTrend" style="display:none"></canvas>
-<div id="trendTitle" style="display:none"></div>
-<canvas id="chartTags" style="display:none"></canvas>
-<div id="tagsKey" style="display:none"></div>
-<div id="tagsAlt" style="display:none"></div>
-<canvas id="chartJourneys" style="display:none"></canvas>
-<div id="journeysKey" style="display:none"></div>
-<div id="journeysAlt" style="display:none"></div>
-</div>
-
 <!-- ARTICLE KEY: sticky bottom bar -->
 <div class="article-key-bar hidden" id="articleKeyBar" onclick="toggleArticleKeyPanel()"></div>
 <div class="article-key-panel" id="articleKeyPanel"></div>
@@ -2258,13 +2235,8 @@ function computeMetrics(events, articles) {
 /* ================================================================
    RENDER -Briefing
    ================================================================ */
-let chartTimeline = null;
 let chartActivity = null;
-let chartTags = null;
-let chartDow = null;
 let chartArticlePerf = null;
-let chartJourneys = null;
-let timelineMode = 'article';
 
 const COLOURS = {
   accent: '#1e40af',
@@ -2404,10 +2376,8 @@ function renderGrowth(m) {
   var canvas = document.getElementById('chartGrowth');
   if (chartGrowth) chartGrowth.destroy();
   var isJa = currentLang === 'ja';
-
   var events = m.events.filter(function(e) { return e.timestamp_jst; })
     .sort(function(a, b) { return a.timestamp_jst.localeCompare(b.timestamp_jst); });
-
   if (events.length < 3) {
     document.getElementById('growthTitle').textContent = isJa
       ? '\u6210\u9577\u30c1\u30e3\u30fc\u30c8\u306b\u306f\u3088\u308a\u591a\u304f\u306e\u30c7\u30fc\u30bf\u304c\u5fc5\u8981'
@@ -2415,7 +2385,6 @@ function renderGrowth(m) {
     return;
   }
 
-  // Build cumulative time series
   var cumLikes = 0, cumFollows = 0;
   var likePoints = [], followPoints = [];
   events.forEach(function(e) {
@@ -2424,30 +2393,25 @@ function renderGrowth(m) {
     else if (e.kind === 'follow') { cumFollows++; followPoints.push({ x: d, y: cumFollows }); }
   });
 
-  // Action title
-  // Check growth trajectory: compare first half vs second half rate
-  var halfIdx = Math.floor(likePoints.length / 2);
-  var growthText;
+  // Title based on growth trajectory
+  var titleText;
   if (likePoints.length >= 6) {
-    var firstHalfDays = halfIdx > 0 ? (likePoints[halfIdx - 1].x - likePoints[0].x) / 86400000 : 1;
-    var secondHalfDays = likePoints.length > halfIdx ? (likePoints[likePoints.length - 1].x - likePoints[halfIdx].x) / 86400000 : 1;
-    var firstRate = firstHalfDays > 0 ? halfIdx / firstHalfDays : 0;
-    var secondRate = secondHalfDays > 0 ? (likePoints.length - halfIdx) / secondHalfDays : 0;
-    if (secondRate > firstRate * 1.3) {
-      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u304c\u52a0\u901f\u3057\u3066\u3044\u308b' : 'Engagement pace is accelerating';
-    } else if (secondRate < firstRate * 0.7) {
-      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u304c\u6e1b\u901f\u3057\u3066\u3044\u308b' : 'Engagement pace is slowing';
-    } else {
-      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u306f\u5b89\u5b9a\u3057\u3066\u3044\u308b' : 'Engagement pace is steady';
-    }
+    var half = Math.floor(likePoints.length / 2);
+    var firstSpan = (likePoints[half - 1].x - likePoints[0].x) / 86400000 || 1;
+    var secondSpan = (likePoints[likePoints.length - 1].x - likePoints[half].x) / 86400000 || 1;
+    var firstRate = half / firstSpan;
+    var secondRate = (likePoints.length - half) / secondSpan;
+    if (secondRate > firstRate * 1.3) titleText = isJa ? '\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u30da\u30fc\u30b9\u304c\u52a0\u901f' : 'Engagement pace is accelerating';
+    else if (secondRate < firstRate * 0.7) titleText = isJa ? '\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u30da\u30fc\u30b9\u304c\u6e1b\u901f' : 'Engagement pace is slowing';
+    else titleText = isJa ? '\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u30da\u30fc\u30b9\u306f\u5b89\u5b9a' : 'Engagement pace is steady';
   } else {
-    growthText = isJa
+    titleText = isJa
       ? m.daySpan + '\u65e5\u9593\u3067' + cumLikes + '\u4ef6\u306e\u3044\u3044\u306d\u3068' + cumFollows + '\u4ef6\u306e\u30d5\u30a9\u30ed\u30fc'
       : cumLikes + ' likes and ' + cumFollows + ' follows over ' + m.daySpan + ' days';
   }
-  document.getElementById('growthTitle').textContent = growthText;
+  document.getElementById('growthTitle').textContent = titleText;
 
-  // Article publish markers
+  // Publish date markers
   var annotations = {};
   m.articles.forEach(function(art, i) {
     if (art.published_date_jst) {
@@ -2481,8 +2445,8 @@ function renderGrowth(m) {
         {
           label: isJa ? '\u7d2f\u8a08\u30d5\u30a9\u30ed\u30fc' : 'Cumulative follows',
           data: followPoints,
-          borderColor: COLOURS.green,
-          backgroundColor: COLOURS.green + '15',
+          borderColor: '#0d9488',
+          backgroundColor: '#0d948815',
           pointRadius: 4,
           pointStyle: 'triangle',
           pointHoverRadius: 6,
@@ -2502,15 +2466,131 @@ function renderGrowth(m) {
           grid: { color: '#f0f0f0' },
           ticks: { font: { size: 10 } },
         },
-        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, font: { size: 10 } },
+          grid: { color: '#f0f0f0' },
+        },
       },
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 } },
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 },
+        },
         tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8,
+          backgroundColor: '#1a1a2eee',
+          cornerRadius: 6,
+          padding: 8,
           callbacks: {
+            label: function(ctx) { return ctx.dataset.label + ': ' + ctx.raw.y; },
+          },
+        },
+        annotation: { annotations: annotations },
+      },
+    },
+  });
+}
+
+function renderActivity(m) {
+  var canvas = document.getElementById('chartActivity');
+  if (chartActivity) chartActivity.destroy();
+  var isJa = currentLang === 'ja';
+  var likes = m.events.filter(function(e) { return e.kind === 'like'; });
+  if (likes.length < 3) return;
+
+  var labels = Array.from({ length: 24 }, function(_, i) { return String(i); });
+  var peakS = m.peakStart, peakE = m.peakEnd;
+
+  // Bar colours: accent for peak, grey for rest
+  var barColours = labels.map(function(_, h) {
+    return (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.accent : COLOURS.grey;
+  });
+
+  // Annotations: peak zone background + publish ticks + average line
+  var annotations = {};
+  if (peakS !== null) {
+    annotations.peakZone = {
+      type: 'box',
+      xMin: peakS - 0.5,
+      xMax: peakE + 0.5,
+      backgroundColor: COLOURS.accentZone,
+      borderWidth: 0,
+      z: -1,
+    };
+  }
+  m.publishHours.forEach(function(ph, i) {
+    annotations['pub' + i] = {
+      type: 'line',
+      xMin: ph.hour,
+      xMax: ph.hour,
+      borderColor: COLOURS.red + '40',
+      borderWidth: 2,
+      borderDash: [4, 4],
+    };
+  });
+  var totalLikes = m.hourLikes.reduce(function(a, b) { return a + b; }, 0);
+  var avgPerHour = totalLikes / 24;
+  if (avgPerHour > 0) {
+    annotations.avgLine = {
+      type: 'line',
+      yMin: avgPerHour,
+      yMax: avgPerHour,
+      borderColor: COLOURS.inkMuted + '60',
+      borderWidth: 1,
+      borderDash: [4, 4],
+    };
+  }
+
+  // Legend
+  document.getElementById('activityKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30d4\u30fc\u30af\u6642\u9593\u5e2f' : 'Peak hours') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u305d\u306e\u4ed6' : 'Other hours') + '</div>' +
+    '<div class="chart-key-item"><div style="width:0;height:10px;border-left:2px solid ' + COLOURS.red + '40;"></div> ' + (isJa ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Article publish time') + '</div>';
+
+  chartActivity = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: m.hourLikes,
+        backgroundColor: barColours,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      responsive: true,
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 10, weight: '500' }, color: COLOURS.ink, maxRotation: 0 },
+          title: {
+            display: true,
+            text: isJa ? 'JST (\u8aad\u8005)  |  GMT (\u8457\u8005)' : 'JST (audience)  |  GMT (author)',
+            font: { size: 9 },
+            color: COLOURS.inkMuted,
+            align: 'start',
+          },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1, font: { size: 10 } },
+          grid: { color: '#f0f0f0' },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1a2eee',
+          cornerRadius: 6,
+          padding: 8,
+          z: 9999,
+          callbacks: {
+            title: function(items) {
+              var h = items[0].dataIndex;
+              return 'JST ' + String(h).padStart(2, '0') + ':00 / GMT ' + String(jstToGmt(h)).padStart(2, '0') + ':00';
+            },
             label: function(ctx) {
-              return ctx.dataset.label + ': ' + ctx.raw.y;
+              return ctx.raw + (isJa ? ' \u4ef6\u306e\u3044\u3044\u306d' : ' likes');
             },
           },
         },
@@ -2518,422 +2598,32 @@ function renderGrowth(m) {
       },
     },
   });
-
-  document.getElementById('growthAlt').textContent = isJa
-    ? '\u7834\u7dda = \u8a18\u4e8b\u516c\u958b\u65e5\u3002\u516c\u958b\u5f8c\u306b\u3044\u3044\u306d\u3068\u30d5\u30a9\u30ed\u30fc\u304c\u3069\u3046\u5897\u3048\u305f\u304b\u3092\u793a\u3059\u3002'
-    : 'Dashed lines = article publish dates. Shows how likes and follows accumulated after each publish.';
-}
-
-function renderTimeline(m) {
-  const canvas = document.getElementById('chartTimeline');
-  if (chartTimeline) chartTimeline.destroy();
-
-  // Chart key
-  const isJa = currentLang === 'ja';
-  document.getElementById('timelineKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (isJa ? '\u3044\u3044\u306d' : 'Like') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-tri" style="border-bottom-color:#059669;"></div> ' + (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:#99999980;"></div> ' +
-    (isJa ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article publish date') + '</div>' +
-    (timelineMode === 'article'
-      ? '<div class="chart-key-item" style="color:var(--ink-muted);">' + (isJa ? '\u5404\u884c = 1\u3064\u306e\u8a18\u4e8b' : 'Each row represents one article') + '</div>'
-      : '<div class="chart-key-item" style="color:var(--ink-muted);">' + (isJa ? '\u5404\u884c = 1\u4eba\u306e\u30e6\u30fc\u30b6\u30fc' : 'Each row represents one user') + '</div>');
-
-  if (timelineMode === 'article') {
-    renderTimelineByArticle(m, canvas);
-  } else {
-    renderTimelineByUser(m, canvas);
-  }
-}
-
-function renderTimelineByArticle(m, canvas) {
-  canvas.style.display = '';
-  const isJa = currentLang === 'ja';
-  const articles = m.articles;
-  const likes = m.events.filter(e => e.kind === 'like');
-  const follows = m.events.filter(e => e.kind === 'follow');
-
-  // Short labels: "A1", "A2", etc. Full title in tooltip.
-  const shortLabels = articles.map((_, i) => 'A' + (i + 1));
-  const allLabels = [...shortLabels, t('follow')];
-
-  const datasets = [];
-
-  // All likes as one dataset -row position (Y) identifies the article
-  const allLikeData = [];
-  for (let i = 0; i < articles.length; i++) {
-    const art = articles[i];
-    const artLikes = likes.filter(e => e.article_url === art.article_url);
-    for (const e of artLikes) {
-      allLikeData.push({ x: new Date(e.timestamp_jst), y: i, who: e.who, artIdx: i });
-    }
-  }
-  datasets.push({
-    label: isJa ? '\u3044\u3044\u306d' : 'Like',
-    data: allLikeData,
-    backgroundColor: COLOURS.accent,
-    borderColor: '#ffffff',
-    borderWidth: 1.5,
-    pointRadius: 5,
-    pointHoverRadius: 7,
-    showLine: false,
-    type: 'scatter',
-  });
-
-  // All follows on a separate row
-  datasets.push({
-    label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow',
-    data: follows.map(e => ({ x: new Date(e.timestamp_jst), y: articles.length, who: e.who })),
-    backgroundColor: COLOURS.green,
-    borderColor: COLOURS.green,
-    pointRadius: 7,
-    pointStyle: 'triangle',
-    pointHoverRadius: 9,
-    showLine: false,
-    type: 'scatter',
-  });
-
-  // Publish markers: dashed vertical lines in muted grey
-  const annotations = {};
-  articles.forEach((art, i) => {
-    annotations['pub' + i] = {
-      type: 'line',
-      xMin: new Date(art.published_date_jst),
-      xMax: new Date(art.published_date_jst),
-      borderColor: COLOURS.inkMuted + '50',
-      borderWidth: 1.5,
-      borderDash: [6, 3],
-    };
-  });
-
-  // Publish dates are shown in the floating article key sidebar
-
-  chartTimeline = new Chart(canvas, {
-    type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { right: 16, top: 20 } },
-      scales: {
-        x: {
-          type: 'time',
-          time: { unit: 'day', displayFormats: { day: 'MM/dd', hour: 'MM/dd HH:mm' } },
-          title: { display: false },
-          grid: { color: '#f0f0f0' },
-          ticks: { font: { size: 11 } },
-        },
-        y: {
-          min: -0.5,
-          max: articles.length + 0.5,
-          reverse: false,
-          ticks: {
-            callback: (val) => allLabels[val] || '',
-            stepSize: 1,
-            font: { size: 11, weight: 'bold' },
-            padding: 4,
-          },
-          grid: { color: '#f8f8f8' },
-          afterFit: (axis) => { axis.width = 60; },
-        },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1a1a2eee',
-          titleFont: { size: 12, family: "'Noto Sans JP', 'Inter', sans-serif" },
-          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
-          padding: 10,
-          cornerRadius: 6,
-          callbacks: {
-            title: (items) => {
-              const pt = items[0].raw;
-              if (pt.artIdx !== undefined) {
-                const art = articles[pt.artIdx];
-                return 'A' + (pt.artIdx + 1) + ': ' + (currentLang === 'ja' ? art.title_jp : art.title_en);
-              }
-              return t('follow');
-            },
-            label: (ctx) => {
-              const pt = ctx.raw;
-              return (pt.who || '') + ' | ' + formatDate(pt.x);
-            },
-          },
-        },
-        annotation: { annotations },
-      },
-    },
-  });
-
-  var timelineH = Math.max(280, (articles.length + 2) * (articles.length > THRESHOLDS.timelineScrollAt ? 30 : 50));
-  if (timelineH > THRESHOLDS.timelineMaxHeight) {
-    canvas.parentElement.style.height = THRESHOLDS.timelineMaxHeight + 'px';
-    canvas.parentElement.style.overflowY = 'auto';
-  } else {
-    canvas.parentElement.style.height = timelineH + 'px';
-    canvas.parentElement.style.overflowY = '';
-  }
-
-  const altEl = document.getElementById('timelineAlt');
-  const isJa2 = currentLang === 'ja';
-  altEl.innerHTML = isJa2
-    ? articles.length + '\u8a18\u4e8b\u306b\u5bfe\u3057\u3066 ' + m.totalLikes + '\u4ef6\u306e\u3044\u3044\u306d\u3068 ' + m.totalFollows + '\u4ef6\u306e\u30d5\u30a9\u30ed\u30fc\u3002\u5404\u70b9\u306f1\u4eba\u306e\u30e6\u30fc\u30b6\u30fc\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u793a\u3057\u307e\u3059\u3002'
-    : m.totalLikes + ' likes and ' + m.totalFollows + ' follows across ' + articles.length + ' articles. Each dot is one user action.';
-  altEl.style.fontStyle = 'italic';
-  altEl.style.fontSize = '11px';
-}
-
-function renderTimelineByUser(m, canvas) {
-  // Hide the chart canvas, show formatted journey list instead
-  canvas.style.display = 'none';
-  canvas.parentElement.style.height = 'auto';
-
-  const follows = m.events.filter(e => e.kind === 'follow');
-  const likes = m.events.filter(e => e.kind === 'like');
-  const isJa = currentLang === 'ja';
-
-  // Show followers and repeat likers
-  const relevantSlugs = new Set();
-  for (const f of follows) relevantSlugs.add(f.slug);
-  for (const [slug] of m.repeatLikers) relevantSlugs.add(slug);
-  const slugs = [...relevantSlugs].sort();
-
-  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;">';
-
-  for (const slug of slugs) {
-    const name = m.events.find(e => e.slug === slug)?.who || slug;
-    const userLikes = likes.filter(e => e.slug === slug);
-    const userFollow = follows.find(e => e.slug === slug);
-    const artCount = new Set(userLikes.map(e => e.article_url)).size;
-
-    html += '<div style="background:var(--bg);border-radius:6px;padding:10px 12px;font-size:12px;">';
-    html += '<div style="font-weight:600;color:var(--ink);margin-bottom:4px;">' + escapeHtml(name) + '</div>';
-
-    // What they did
-    const actions = [];
-    if (userLikes.length > 0) {
-      actions.push(userLikes.length + (isJa ? '\u4ef6\u306e\u3044\u3044\u306d' : (userLikes.length === 1 ? ' like' : ' likes')) +
-        (artCount > 1 ? (isJa ? ' (' + artCount + '\u8a18\u4e8b)' : ' (' + artCount + ' articles)') : ''));
-    }
-    if (userFollow) {
-      actions.push('<span style="color:var(--green);font-weight:600;">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u6e08' : 'Followed') + '</span>');
-    }
-    html += '<div style="color:var(--ink-light);">' + actions.join(' \u2192 ') + '</div>';
-    html += '</div>';
-  }
-
-  if (slugs.length === 0) {
-    html += '<div style="color:var(--ink-muted);padding:20px;text-align:center;">' +
-      (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u307e\u305f\u306f\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u306f\u307e\u3060\u3044\u307e\u305b\u3093' : 'No followers or repeat readers yet') +
-      '</div>';
-  }
-
-  html += '</div>';
-
-  const altEl = document.getElementById('timelineAlt');
-  altEl.innerHTML = html;
-  altEl.style.fontStyle = 'normal';
-  altEl.style.fontSize = 'inherit';
-  altEl.style.lineHeight = 'inherit';
-}
-
-function toggleTimelineView() {
-  timelineMode = timelineMode === 'article' ? 'user' : 'article';
-  const btn = document.getElementById('timelineToggle');
-  btn.querySelector('span').setAttribute('data-i18n', timelineMode === 'article' ? 'toggle_by_user' : 'toggle_by_article');
-  btn.querySelector('span').textContent = t(timelineMode === 'article' ? 'toggle_by_user' : 'toggle_by_article');
-  btn.classList.toggle('active', timelineMode === 'user');
-  renderGrowth(currentMetrics);
-}
-
-function renderActivity(m) {
-  const canvas = document.getElementById('chartActivity');
-  if (chartActivity) chartActivity.destroy();
-  const isJa = currentLang === 'ja';
-
-  // JST hour labels only. GMT shown in axis title and tooltips.
-  const labels = Array.from({ length: 24 }, function(_, i) {
-    return String(i);
-  });
-
-  // Grey-out/colour-in: peak hours get accent, rest get grey
-  const peakS = m.peakStart, peakE = m.peakEnd;
-  const barColours = Array.from({ length: 24 }, (_, h) =>
-    (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.accent : COLOURS.grey
-  );
-
-  // Annotations: peak zone background + publish ticks
-  const annotations = {};
-  if (peakS !== null) {
-    annotations['peakZone'] = {
-      type: 'box',
-      xMin: peakS - 0.5, xMax: peakE + 0.5,
-      backgroundColor: COLOURS.accentZone,
-      borderWidth: 0,
-      z: -1,
-    };
-  }
-  m.publishHours.forEach((ph, i) => {
-    annotations['pub' + i] = {
-      type: 'line', xMin: ph.hour, xMax: ph.hour,
-      borderColor: COLOURS.red + '40', borderWidth: 2, borderDash: [4, 4],
-    };
-  });
-
-  // Average line
-  var totalHourLikes = m.hourLikes.reduce(function(a, b) { return a + b; }, 0);
-  var avgPerHour = totalHourLikes / 24;
-  if (avgPerHour > 0) {
-    annotations['avgLine'] = {
-      type: 'line', yMin: avgPerHour, yMax: avgPerHour,
-      borderColor: COLOURS.inkMuted + '60', borderWidth: 1, borderDash: [4, 4],
-      label: { display: true, content: (isJa ? '\u5e73\u5747' : 'avg'), position: 'end', font: { size: 8 }, color: COLOURS.inkMuted, backgroundColor: 'transparent' },
-    };
-  }
-
-  // Chart key
-  document.getElementById('activityKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30d4\u30fc\u30af\u6642\u9593\u5e2f' : 'Peak hours') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u305d\u306e\u4ed6' : 'Other hours') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:' + COLOURS.red + ';"></div> ' +
-    (isJa ? '\u8a18\u4e8b\u516c\u958b\u6642\u523b' : 'Article publish time') + '</div>';
-
-  chartActivity = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: isJa ? '\u3044\u3044\u306d' : 'Likes',
-          data: m.hourLikes,
-          backgroundColor: barColours,
-          borderRadius: 3,
-        },
-        {
-          label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows',
-          data: m.hourFollows,
-          backgroundColor: m.hourFollows.map((_, h) =>
-            (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.green : COLOURS.green + '60'
-          ),
-          borderRadius: 3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: {
-          stacked: true, grid: { display: false },
-          ticks: { font: { size: 10, weight: 500 }, color: COLOURS.ink, maxRotation: 0 },
-          title: { display: true, text: currentLang === 'ja' ? 'JST (\u8aad\u8005)  |  GMT (\u8457\u8005)' : 'JST (audience)  |  GMT (author)', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
-        },
-        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8, z: 9999,
-          callbacks: {
-            title: function(items) {
-              const h = items[0].dataIndex;
-              return 'JST ' + String(h).padStart(2, '0') + ':00 / GMT ' + String(jstToGmt(h)).padStart(2, '0') + ':00';
-            },
-          },
-        },
-        annotation: { annotations },
-      },
-    },
-  });
-
-  // Alt text: observation
-  const peakLikes = (peakS !== null) ? m.hourLikes.slice(peakS, peakE + 1).reduce((a, b) => a + b, 0) : 0;
-  const totalLikes = m.hourLikes.reduce((a, b) => a + b, 0);
-  const peakPct = totalLikes > 0 ? Math.round(peakLikes / totalLikes * 100) : 0;
-  document.getElementById('activityAlt').textContent =
-    isJa
-    ? peakPct + '%\u306e\u3044\u3044\u306d\u304c\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u96c6\u4e2d\u3002'
-    : peakPct + '% of all likes arrived during peak hours.';
-}
-
-function renderDow(m) {
-  const canvas = document.getElementById('chartDow');
-  if (chartDow) chartDow.destroy();
-
-  // Need at least 14 days of data for day-of-week to be meaningful
-  if (m.daySpan < 14) {
-    canvas.parentElement.style.display = 'none';
-    var dowTitle = document.getElementById('dayOfWeekTitle');
-    if (dowTitle) dowTitle.parentElement.style.display = 'none';
-    document.getElementById('dowAlt').textContent = '';
-    return;
-  }
-
-  document.getElementById('dowKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + t('like') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#059669;"></div> ' + t('follow') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#dc262640;width:10px;height:10px;border-radius:0;"></div> ' +
-    (currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Day article was published') + '</div>';
-
-  chartDow = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: m.DOW_NAMES,
-      datasets: [
-        { label: t('like'), data: m.dowLikes, backgroundColor: COLOURS.accent + '90', borderRadius: 3 },
-        { label: t('follow'), data: m.dowFollows, backgroundColor: COLOURS.green + '90', borderRadius: 3 },
-        { label: currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article published', data: m.dowPublish, backgroundColor: COLOURS.red + '30', borderRadius: 3 },
-      ],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
-        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: { backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8 },
-      },
-    },
-  });
-
-  const bestDowIdx = m.dowLikes.indexOf(Math.max(...m.dowLikes));
-  const bestDowCount = m.dowLikes[bestDowIdx];
-  document.getElementById('dowAlt').textContent =
-    (currentLang === 'ja'
-    ? '\u2192 ' + m.DOW_NAMES[bestDowIdx] + '\u304c\u6700\u3082\u6d3b\u767a (' + bestDowCount + '\u4ef6\u306e\u3044\u3044\u306d)\u3002\u8d64\u306f\u8a18\u4e8b\u516c\u958b\u65e5\u3002'
-    : '\u2192 ' + m.DOW_NAMES[bestDowIdx] + ' is the most active day (' + bestDowCount + ' likes). Red bars show days articles were published.');
 }
 
 function renderArticlePerf(m) {
   var canvas = document.getElementById('chartArticlePerf');
   if (chartArticlePerf) chartArticlePerf.destroy();
   var isJa = currentLang === 'ja';
-
-  // Sort by like rate descending (best at top)
   var arts = m.articleMetrics.filter(function(a) { return a.views > 0; })
     .sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
+  if (arts.length === 0) return;
+
   var labels = arts.map(function(a) {
-    var idx = m.articleMetrics.indexOf(a) + 1;
-    return 'A' + idx + '  ' + artTitle(a, 24);
+    return 'A' + (m.articleMetrics.indexOf(a) + 1) + '  ' + artTitle(a, 24);
   });
   var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
+  var rates = arts.map(function(a) { return parseFloat((a.likes_total / a.views * 100).toFixed(1)); });
+  var colours = rates.map(function(r) { return r >= avgRate ? COLOURS.accent : COLOURS.grey; });
 
-  // Like rate as the primary bar. Colour: above avg = accent, below = grey.
-  var rates = arts.map(function(a) { return a.views > 0 ? parseFloat((a.likes_total / a.views * 100).toFixed(1)) : 0; });
-  var barColours = rates.map(function(r) { return r >= avgRate ? COLOURS.accent : COLOURS.grey; });
-
-  var chartHeight = Math.max(180, arts.length * 36 + 50);
-  canvas.parentElement.style.height = chartHeight + 'px';
+  canvas.parentElement.style.height = Math.max(180, arts.length * 36 + 50) + 'px';
 
   chartArticlePerf = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [{
-        label: isJa ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)',
         data: rates,
-        backgroundColor: barColours,
+        backgroundColor: colours,
         borderRadius: 3,
       }],
     },
@@ -2942,20 +2632,28 @@ function renderArticlePerf(m) {
       responsive: true,
       maintainAspectRatio: false,
       scales: {
-        x: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
-          title: { display: true, text: isJa ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)', font: { size: 10 } } },
-        y: { grid: { display: false }, ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" } },
-          afterFit: function(axis) { axis.width = Math.min(220, Math.max(140, axis.width)); } },
+        x: {
+          beginAtZero: true,
+          grid: { color: '#f0f0f0' },
+          ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" } },
+          afterFit: function(axis) { axis.width = Math.min(220, Math.max(140, axis.width)); },
+        },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 10,
+          backgroundColor: '#1a1a2eee',
+          cornerRadius: 6,
+          padding: 10,
           bodyFont: { family: "'Noto Sans JP', 'Inter', sans-serif" },
           callbacks: {
             label: function(ctx) {
               var a = arts[ctx.dataIndex];
-              return (isJa ? '\u30b9\u30ad\u7387: ' : 'Like rate: ') + ctx.raw + '% (' + a.likes_total + '/' + a.views + ')';
+              return ctx.raw + '% (' + a.likes_total + ' / ' + a.views + ')';
             },
           },
         },
@@ -2963,19 +2661,20 @@ function renderArticlePerf(m) {
           annotations: {
             avgLine: {
               type: 'line',
-              xMin: avgRate, xMax: avgRate,
-              borderColor: COLOURS.inkMuted + '80',
+              xMin: avgRate,
+              xMax: avgRate,
+              borderColor: COLOURS.inkMuted,
               borderWidth: 1.5,
               borderDash: [6, 4],
               label: {
                 display: true,
                 content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%',
                 position: 'start',
-                yAdjust: -16,
-                font: { size: 9, weight: 600 },
+                yAdjust: -20,
+                font: { size: 9, weight: '600' },
                 color: COLOURS.inkMuted,
                 backgroundColor: '#ffffff',
-                padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                padding: 3,
               },
             },
           },
@@ -2983,250 +2682,6 @@ function renderArticlePerf(m) {
       },
     },
   });
-  // Legend
-  document.getElementById('articlePerfLegend').innerHTML =
-    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
-    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>';
-}
-
-var chartTrend = null;
-function renderTrend(m) {
-  var canvas = document.getElementById('chartTrend');
-  if (chartTrend) chartTrend.destroy();
-  var isJa = currentLang === 'ja';
-
-  // Articles in chronological order (publish date)
-  var arts = m.articles.filter(function(a) { return a.views > 0; });
-  if (arts.length < 2) {
-    document.getElementById('trendTitle').textContent = isJa
-      ? '\u30c8\u30ec\u30f3\u30c9\u306b\u306f2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u304c\u5fc5\u8981'
-      : 'Trend needs 2 or more articles';
-    return;
-  }
-
-  var labels = arts.map(function(a, i) { return 'A' + (m.articles.indexOf(a) + 1); });
-  var rates = arts.map(function(a) { return a.views > 0 ? parseFloat((a.likes_total / a.views * 100).toFixed(1)) : 0; });
-  var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
-
-  // Determine trend direction
-  var firstHalf = rates.slice(0, Math.ceil(rates.length / 2));
-  var secondHalf = rates.slice(Math.ceil(rates.length / 2));
-  var firstAvg = firstHalf.reduce(function(a, b) { return a + b; }, 0) / firstHalf.length;
-  var secondAvg = secondHalf.reduce(function(a, b) { return a + b; }, 0) / secondHalf.length;
-  var diff = secondAvg - firstAvg;
-
-  var titleText;
-  if (Math.abs(diff) < 2) {
-    titleText = isJa ? '\u30b9\u30ad\u7387\u306f\u5b89\u5b9a\u3057\u3066\u3044\u308b' : 'Like rate is stable over time';
-  } else if (diff > 0) {
-    titleText = isJa ? '\u6700\u8fd1\u306e\u8a18\u4e8b\u306e\u30b9\u30ad\u7387\u304c\u4e0a\u6607\u50be\u5411' : 'Recent articles show improving like rates';
-  } else {
-    titleText = isJa ? '\u6700\u8fd1\u306e\u8a18\u4e8b\u306e\u30b9\u30ad\u7387\u304c\u4e0b\u964d\u50be\u5411' : 'Recent articles show declining like rates';
-  }
-  document.getElementById('trendTitle').textContent = titleText;
-
-  chartTrend = new Chart(canvas, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: isJa ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)',
-        data: rates,
-        borderColor: COLOURS.accent,
-        backgroundColor: COLOURS.accent + '20',
-        pointBackgroundColor: rates.map(function(r) { return r >= avgRate ? COLOURS.accent : COLOURS.grey; }),
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        borderWidth: 2,
-        fill: true,
-        tension: 0.3,
-      }],
-    },
-    options: {
-      responsive: true,
-      scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 } },
-          title: { display: true, text: isJa ? '\u516c\u958b\u9806 (\u53e4\u3044\u2192\u65b0\u3057\u3044)' : 'Publish order (oldest to newest)', font: { size: 9 }, color: COLOURS.inkMuted } },
-        y: { beginAtZero: true, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
-          grid: { color: '#f0f0f0' } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 10,
-          callbacks: {
-            label: function(ctx) {
-              var a = arts[ctx.dataIndex];
-              var title = isJa ? (a.title_jp || a.title_en) : (a.title_en || a.title_jp);
-              return shortTitle(title, 30) + ': ' + ctx.raw + '%';
-            },
-          },
-        },
-        annotation: {
-          annotations: {
-            avgLine: {
-              type: 'line', yMin: avgRate, yMax: avgRate,
-              borderColor: COLOURS.inkMuted + '60', borderWidth: 1, borderDash: [4, 4],
-              label: { display: true, content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%', position: 'end', font: { size: 9 }, color: COLOURS.inkMuted, backgroundColor: 'transparent' },
-            },
-          },
-        },
-      },
-    },
-  });
-}
-
-function renderTags(m) {
-  const canvas = document.getElementById('chartTags');
-  if (chartTags) chartTags.destroy();
-
-  // Show all tags but mark ubiquitous ones differently
-  var isJaTag = currentLang === 'ja';
-  var ubiqThreshold = m.articles.length * 0.5;
-  var allTags = m.tagData.slice(0, THRESHOLDS.tagMax);
-  var avg = m.totalLikesReported / (m.articles.length || 1);
-
-  document.getElementById('tagsKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' +
-    (isJaTag ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' +
-    (isJaTag ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#d97706;"></div> ' +
-    (isJaTag ? '\u307b\u307c\u5168\u8a18\u4e8b\u306b\u5171\u901a (\u5206\u6790\u5bfe\u8c61\u5916)' : 'On most articles (excluded from analysis)') + '</div>';
-
-  chartTags = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: allTags.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; }),
-      datasets: [
-        {
-          label: isJaTag ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article',
-          data: allTags.map(function(t) { return t.articles > 0 ? parseFloat((t.likes / t.articles).toFixed(1)) : 0; }),
-          backgroundColor: allTags.map(function(t) {
-            if (t.articles > ubiqThreshold) return '#d97706'; // amber for ubiquitous
-            var tagAvg = t.articles > 0 ? t.likes / t.articles : 0;
-            return tagAvg > avg ? COLOURS.accent : COLOURS.grey;
-          }),
-          borderRadius: 3,
-        },
-      ],
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      scales: {
-        x: { beginAtZero: true, ticks: { font: { size: 10 } }, grid: { color: '#f0f0f0' },
-          title: { display: true, text: currentLang === 'ja' ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg Likes per Article', font: { size: 10 } } },
-        y: { grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: { backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8 },
-      },
-    },
-  });
-
-  const topTag = m.tagData.length > 0 ? translateTag(m.tagData[0].tag) : '';
-  document.getElementById('tagsAlt').textContent =
-    currentLang === 'ja'
-    ? '\u2192 \u300c' + topTag + '\u300d\u304c\u6700\u3082\u591a\u304f\u306e\u3044\u3044\u306d\u3092\u7372\u5f97\u3002\u6fc3\u3044\u8272 = \u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u3057\u305f\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u3002\u8584\u3044\u8272 = 1\u8a18\u4e8b\u306e\u307f\u306e\u8aad\u8005\u3002'
-    : '\u2192 "' + topTag + '" draws the most likes. Dark bars = readers who liked multiple articles. Light bars = one-time readers.';
-}
-
-function renderJourneys(m) {
-  const canvas = document.getElementById('chartJourneys');
-  if (chartJourneys) chartJourneys.destroy();
-
-  // Build as a scatter/line chart: Y = follower, X = time, dots = events
-  const datasets = [];
-  const slugs = m.journeys.map(j => j.who || j.slug);
-
-  document.getElementById('journeysKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#2563eb;"></div> ' + (currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Like') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-tri" style="border-bottom-color:#059669;"></div> ' + (currentLang === 'ja' ? '\u30d5\u30a9\u30ed\u30fc' : 'Follow') + '</div>' +
-    '<div class="chart-key-item" style="color:var(--ink-muted);">' +
-    (currentLang === 'ja' ? '\u7dda\u306f\u540c\u3058\u4eba\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u6642\u7cfb\u5217\u3067\u63a5\u7d9a' : 'Lines connect the same person\'s actions over time') + '</div>';
-
-  for (let i = 0; i < m.journeys.length; i++) {
-    const j = m.journeys[i];
-    const allEvents = [];
-    for (const lk of j.likes) {
-      allEvents.push({ x: new Date(lk.time), y: i, kind: 'like', article: lk.article, who: j.who });
-    }
-    allEvents.push({ x: new Date(j.follow_time), y: i, kind: 'follow', article: null, who: j.who });
-    allEvents.sort((a, b) => a.x - b.x);
-
-    datasets.push({
-      label: j.who || j.slug,
-      data: allEvents,
-      backgroundColor: allEvents.map(e => e.kind === 'follow' ? COLOURS.green : COLOURS.accent),
-      borderColor: COLOURS.accent + '30',
-      pointRadius: allEvents.map(e => e.kind === 'follow' ? 8 : 5),
-      pointStyle: allEvents.map(e => e.kind === 'follow' ? 'triangle' : 'circle'),
-      showLine: true,
-      borderWidth: 1,
-      tension: 0,
-      fill: false,
-    });
-  }
-
-  chartJourneys = new Chart(canvas, {
-    type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { right: 16 } },
-      scales: {
-        x: {
-          type: 'time',
-          time: { unit: 'day', displayFormats: { day: 'MM/dd' } },
-          grid: { color: '#f0f0f0' },
-          ticks: { font: { size: 11 } },
-        },
-        y: {
-          min: -0.5,
-          max: m.journeys.length - 0.5,
-          ticks: {
-            callback: (val) => slugs[val] || '',
-            stepSize: 1,
-            font: { size: 10 },
-          },
-          grid: { color: '#f8f8f8' },
-          afterFit: (axis) => { axis.width = 130; },
-        },
-      },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 10,
-          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
-          callbacks: {
-            label: (ctx) => {
-              const pt = ctx.raw;
-              let lbl = t(pt.kind);
-              if (pt.article) lbl += ': ' + shortTitle(pt.article, 25);
-              lbl += ' (' + formatDate(pt.x) + ')';
-              return lbl;
-            },
-          },
-        },
-      },
-    },
-  });
-
-  var journeyH = Math.max(200, (m.journeys.length + 1) * 35);
-  if (journeyH > THRESHOLDS.timelineMaxHeight) {
-    canvas.parentElement.style.height = THRESHOLDS.timelineMaxHeight + 'px';
-    canvas.parentElement.style.overflowY = 'auto';
-  } else {
-    canvas.parentElement.style.height = journeyH + 'px';
-    canvas.parentElement.style.overflowY = '';
-  }
-  document.getElementById('journeysAlt').textContent =
-    currentLang === 'ja'
-    ? '\u2192 ' + m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u884c\u52d5\u7d4c\u8def\u3002\u4e38 = \u3044\u3044\u306d\u3001\u25b2 = \u30d5\u30a9\u30ed\u30fc\u3002\u7dda\u306f\u540c\u4e00\u30e6\u30fc\u30b6\u30fc\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u63a5\u7d9a\u3002'
-    : '\u2192 ' + m.journeys.length + ' followers tracked. Circles = likes, triangles = follows. Lines connect the same person\u2019s actions over time.';
 }
 
 function renderObservations(m, prevSnapshot) {
