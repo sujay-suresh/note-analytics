@@ -262,7 +262,7 @@ body {
   padding: 20px 18px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .obs-box {
   background: #f3f4f6;
@@ -2236,7 +2236,7 @@ const COLOURS = {
   accentBorder: '#1e3a8a',
   accentZone: '#dbeafe',
   grey: '#d1d5db',
-  green: '#059669',
+  green: '#0d9488',
   red: '#dc2626',
   purple: '#7c3aed',
   ink: '#1a1a2e',
@@ -2393,9 +2393,27 @@ function renderGrowth(m) {
   });
 
   // Action title
-  document.getElementById('growthTitle').textContent = isJa
-    ? m.daySpan + '\u65e5\u9593\u3067' + cumLikes + '\u4ef6\u306e\u3044\u3044\u306d\u3068' + cumFollows + '\u4ef6\u306e\u30d5\u30a9\u30ed\u30fc\u3092\u7372\u5f97'
-    : cumLikes + ' likes and ' + cumFollows + ' follows over ' + m.daySpan + ' days';
+  // Check growth trajectory: compare first half vs second half rate
+  var halfIdx = Math.floor(likePoints.length / 2);
+  var growthText;
+  if (likePoints.length >= 6) {
+    var firstHalfDays = halfIdx > 0 ? (likePoints[halfIdx - 1].x - likePoints[0].x) / 86400000 : 1;
+    var secondHalfDays = likePoints.length > halfIdx ? (likePoints[likePoints.length - 1].x - likePoints[halfIdx].x) / 86400000 : 1;
+    var firstRate = firstHalfDays > 0 ? halfIdx / firstHalfDays : 0;
+    var secondRate = secondHalfDays > 0 ? (likePoints.length - halfIdx) / secondHalfDays : 0;
+    if (secondRate > firstRate * 1.3) {
+      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u304c\u52a0\u901f\u3057\u3066\u3044\u308b' : 'Engagement pace is accelerating';
+    } else if (secondRate < firstRate * 0.7) {
+      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u304c\u6e1b\u901f\u3057\u3066\u3044\u308b' : 'Engagement pace is slowing';
+    } else {
+      growthText = isJa ? '\u3044\u3044\u306d\u306e\u30da\u30fc\u30b9\u306f\u5b89\u5b9a\u3057\u3066\u3044\u308b' : 'Engagement pace is steady';
+    }
+  } else {
+    growthText = isJa
+      ? m.daySpan + '\u65e5\u9593\u3067' + cumLikes + '\u4ef6\u306e\u3044\u3044\u306d\u3068' + cumFollows + '\u4ef6\u306e\u30d5\u30a9\u30ed\u30fc'
+      : cumLikes + ' likes and ' + cumFollows + ' follows over ' + m.daySpan + ' days';
+  }
+  document.getElementById('growthTitle').textContent = growthText;
 
   // Article publish markers
   var annotations = {};
@@ -2812,9 +2830,10 @@ function renderDow(m) {
 
   // Need at least 14 days of data for day-of-week to be meaningful
   if (m.daySpan < 14) {
-    document.getElementById('dowAlt').textContent = currentLang === 'ja'
-      ? '\u66dc\u65e5\u5225\u30d1\u30bf\u30fc\u30f3\u306b\u306f2\u9031\u9593\u4ee5\u4e0a\u306e\u30c7\u30fc\u30bf\u304c\u5fc5\u8981\u3002'
-      : 'Day-of-week patterns need at least 2 weeks of data.';
+    canvas.parentElement.style.display = 'none';
+    var dowTitle = document.getElementById('dayOfWeekTitle');
+    if (dowTitle) dowTitle.parentElement.style.display = 'none';
+    document.getElementById('dowAlt').textContent = '';
     return;
   }
 
@@ -2860,9 +2879,9 @@ function renderArticlePerf(m) {
   if (chartArticlePerf) chartArticlePerf.destroy();
   var isJa = currentLang === 'ja';
 
-  // Sort by like rate ascending (Chart.js horizontal: last item renders at top)
+  // Sort by like rate descending (best at top)
   var arts = m.articleMetrics.filter(function(a) { return a.views > 0; })
-    .sort(function(a, b) { return (a.likes_total / a.views) - (b.likes_total / b.views); });
+    .sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
   var labels = arts.map(function(a) {
     var idx = m.articleMetrics.indexOf(a) + 1;
     return 'A' + idx + '  ' + artTitle(a, 24);
@@ -2921,9 +2940,11 @@ function renderArticlePerf(m) {
                 display: true,
                 content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%',
                 position: 'start',
+                yAdjust: -10,
                 font: { size: 9 },
                 color: COLOURS.inkMuted,
-                backgroundColor: '#ffffffcc',
+                backgroundColor: '#ffffffee',
+                padding: 3,
               },
             },
           },
@@ -2931,7 +2952,12 @@ function renderArticlePerf(m) {
       },
     },
   });
-  document.getElementById('articlePerfAlt').textContent = '';
+  // Legend
+  document.getElementById('articlePerfAlt').innerHTML =
+    '<div class="chart-legend">' +
+    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
+    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>' +
+    '</div>';
 }
 
 var chartTrend = null;
@@ -3026,7 +3052,7 @@ function renderTags(m) {
   if (chartTags) chartTags.destroy();
 
   // Filter out ubiquitous tags (on most articles) as they always dominate and add no insight
-  var nonUbiquitous = m.tagData.filter(function(t) { return t.articles < m.articles.length * 0.7; });
+  var nonUbiquitous = m.tagData.filter(function(t) { return t.articles <= m.articles.length * 0.5; });
   var top = (nonUbiquitous.length > 0 ? nonUbiquitous : m.tagData).slice(0, THRESHOLDS.tagMax);
 
   var isJaTag = currentLang === 'ja';
