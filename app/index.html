@@ -648,55 +648,33 @@ body {
   <!-- KPI SUMMARY -->
   <div class="summary-block" id="summaryBlock"></div>
 
-  <!-- DIMENSION 1: CONTENT (What to write next) -->
+  <!-- DIMENSION 1: CONTENT -->
   <div class="section-heading" id="headingContent"></div>
   <div class="chart-section">
     <div class="chart-main">
       <div class="action-title" id="articlePerfTitle"></div>
       <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
-      <div class="chart-legend" id="articlePerfLegend"></div>
-      <div style="margin-top:20px;">
-        <div class="action-title" id="tagsTitle"></div>
-        <div class="chart-key" id="tagsKey"></div>
-        <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
-        <div class="chart-alt" id="tagsAlt"></div>
-      </div>
     </div>
     <div class="chart-obs" id="obsContent"></div>
   </div>
 
-  <!-- DIMENSION 2: TIMING (When to publish) -->
+  <!-- DIMENSION 2: TIMING -->
   <div class="section-heading" id="headingTiming"></div>
   <div class="chart-section">
     <div class="chart-main">
       <div class="action-title" id="activityTitle"></div>
       <div class="chart-key" id="activityKey"></div>
       <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
-      <div class="chart-alt" id="activityAlt"></div>
-      <div class="chart-legend" id="activityLegend"></div>
-      <div style="margin-top:20px;">
-        <div class="action-title" id="dayOfWeekTitle"></div>
-        <div class="chart-key" id="dowKey"></div>
-        <div class="chart-wrap"><canvas id="chartDow"></canvas></div>
-        <div class="chart-alt" id="dowAlt"></div>
-      </div>
     </div>
     <div class="chart-obs" id="obsTiming"></div>
   </div>
 
-  <!-- DIMENSION 3: AUDIENCE (Building loyalty) -->
+  <!-- DIMENSION 3: AUDIENCE -->
   <div class="section-heading" id="headingAudience"></div>
   <div class="chart-section">
     <div class="chart-main">
       <div class="action-title" id="growthTitle"></div>
       <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
-      <div class="chart-alt" id="growthAlt"></div>
-      <div style="margin-top:20px;">
-        <div class="action-title" id="journeysTitle"></div>
-        <div class="chart-key" id="journeysKey"></div>
-        <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
-        <div class="chart-alt" id="journeysAlt"></div>
-      </div>
     </div>
     <div class="chart-obs" id="obsAudience"></div>
   </div>
@@ -1792,7 +1770,45 @@ function computeContentObs(m) {
     });
   }
 
-  // 3. Time-to-like speed
+  // 3. Tags that appear only on above-average articles
+  var aboveAvgUrls = new Set(sorted.filter(function(a) { return (a.likes_total / a.views * 100) >= avgRate; }).map(function(a) { return a.article_url; }));
+  var belowAvgUrls = new Set(sorted.filter(function(a) { return (a.likes_total / a.views * 100) < avgRate; }).map(function(a) { return a.article_url; }));
+  if (aboveAvgUrls.size > 0 && belowAvgUrls.size > 0) {
+    // Find tags that appear on above-avg articles but not on below-avg ones
+    var aboveOnlyTags = [];
+    m.tagData.forEach(function(t) {
+      if (t.articles <= m.articles.length * 0.5) return; // skip ubiquitous
+      // Check if this tag appears on any above-avg article
+      // tagData doesn't have per-article breakdown, so use raw article data
+    });
+    // Simpler: for above-avg articles, collect their unique tags and compare to below-avg
+    var aboveTagSet = new Set();
+    var belowTagSet = new Set();
+    m.articles.forEach(function(art) {
+      if (!art.tags || art.views <= 0) return;
+      var rate = art.likes_total / art.views * 100;
+      (art.tags || []).forEach(function(tag) {
+        if (rate >= avgRate) aboveTagSet.add(tag);
+        else belowTagSet.add(tag);
+      });
+    });
+    var distinctiveTags = [];
+    aboveTagSet.forEach(function(tag) {
+      if (!belowTagSet.has(tag)) distinctiveTags.push(tag);
+    });
+    if (distinctiveTags.length > 0) {
+      var tagStr = distinctiveTags.slice(0, 3).map(function(t) {
+        return isJa ? t : (TAG_EN[t] || t);
+      }).join(', ');
+      obs.push({
+        text: isJa
+          ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u308f\u308c\u3066\u3044\u308b\u30bf\u30b0: <strong>' + tagStr + '</strong>'
+          : 'Tags found only on above-average articles: <strong>' + tagStr + '</strong>'
+      });
+    }
+  }
+
+  // 4. Time-to-like speed
   var articleSpeeds = [];
   m.articles.filter(function(a) { return a.views > 0; }).forEach(function(art) {
     var pubTime = new Date(art.published_date_jst).getTime();
@@ -2355,11 +2371,8 @@ function renderSummary(m, prevSnapshot) {
   // Note: growthTitle, trendTitle are set by their own render functions
   var titles = getActionTitles(m);
   var setTitle = function(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; };
-  setTitle('activityTitle', titles.activity);
-  setTitle('dayOfWeekTitle', titles.dow);
   setTitle('articlePerfTitle', titles.articlePerf);
-  setTitle('tagsTitle', titles.tags);
-  setTitle('journeysTitle', titles.journeys);
+  setTitle('activityTitle', titles.activity);
 
 }
 
@@ -3534,12 +3547,9 @@ async function loadAndRender() {
 
   renderStatusBar(currentMetrics);
   renderSummary(currentMetrics, prevSnapshot);
-  renderGrowth(currentMetrics);
-  renderActivity(currentMetrics);
-  renderTags(currentMetrics);
   renderArticlePerf(currentMetrics);
-  renderDow(currentMetrics);
-  renderJourneys(currentMetrics);
+  renderActivity(currentMetrics);
+  renderGrowth(currentMetrics);
   renderObservations(currentMetrics, prevSnapshot);
   renderEventsTable(currentMetrics.events);
   renderImportHistory();
@@ -3579,12 +3589,9 @@ function renderAll() {
   if (currentMetrics) {
     renderStatusBar(currentMetrics);
     renderSummary(currentMetrics, null);
-    renderGrowth(currentMetrics);
-    renderActivity(currentMetrics);
-    renderTags(currentMetrics);
     renderArticlePerf(currentMetrics);
-    renderDow(currentMetrics);
-    renderJourneys(currentMetrics);
+    renderActivity(currentMetrics);
+    renderGrowth(currentMetrics);
     renderObservations(currentMetrics, null);
     renderEventsTable(currentMetrics.events);
     renderImportHistory();
