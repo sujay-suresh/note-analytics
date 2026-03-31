@@ -654,6 +654,11 @@ body {
     <div class="chart-main">
       <div class="action-title" id="articlePerfTitle"></div>
       <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
+      <div style="margin-top:20px;">
+        <div class="action-title" id="tagsTitle"></div>
+        <div class="chart-key" id="tagsKey"></div>
+        <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
+      </div>
     </div>
     <div class="chart-obs" id="obsContent"></div>
   </div>
@@ -675,6 +680,10 @@ body {
     <div class="chart-main">
       <div class="action-title" id="growthTitle"></div>
       <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
+      <div style="margin-top:20px;">
+        <div class="action-title" id="journeysTitle"></div>
+        <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
+      </div>
     </div>
     <div class="chart-obs" id="obsAudience"></div>
   </div>
@@ -2368,6 +2377,8 @@ function renderSummary(m, prevSnapshot) {
   var setTitle = function(id, text) { var el = document.getElementById(id); if (el) el.textContent = text; };
   setTitle('articlePerfTitle', titles.articlePerf);
   setTitle('activityTitle', titles.activity);
+  setTitle('tagsTitle', titles.tags);
+  setTitle('journeysTitle', titles.journeys);
 
 }
 
@@ -2615,6 +2626,183 @@ function renderArticlePerf(m) {
                 backgroundColor: '#ffffff',
                 padding: { top: 2, bottom: 2, left: 6, right: 6 },
               },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+
+var chartTags = null;
+function renderTags(m) {
+  var canvas = document.getElementById('chartTags');
+  if (!canvas) return;
+  if (chartTags) chartTags.destroy();
+  var isJa = currentLang === 'ja';
+
+  // All tags with ubiquitous ones in amber
+  var ubiqThreshold = m.articles.length * 0.5;
+  var allTags = m.tagData.slice(0, THRESHOLDS.tagMax);
+  if (allTags.length === 0) return;
+  var avgLikesPerArt = m.totalLikesReported / (m.articles.length || 1);
+
+  var labels = allTags.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; });
+  var data = allTags.map(function(t) { return t.articles > 0 ? parseFloat((t.likes / t.articles).toFixed(1)) : 0; });
+  var colours = allTags.map(function(t) {
+    if (t.articles > ubiqThreshold) return '#d97706'; // amber: ubiquitous
+    var tagAvg = t.articles > 0 ? t.likes / t.articles : 0;
+    return tagAvg > avgLikesPerArt ? COLOURS.accent : COLOURS.grey;
+  });
+
+  // Title
+  var nonUbiq = allTags.filter(function(t) { return t.articles <= ubiqThreshold; });
+  if (nonUbiq.length > 0) {
+    var topTag = nonUbiq[0];
+    var tagName = isJa ? topTag.tag : (TAG_EN[topTag.tag] || topTag.tag);
+    document.getElementById('tagsTitle').textContent = isJa
+      ? '"' + topTag.tag + '"\u30bf\u30b0\u306e\u8a18\u4e8b\u304c\u5e73\u5747' + (topTag.likes / topTag.articles).toFixed(0) + '\u4ef6\u306e\u3044\u3044\u306d'
+      : '"' + tagName + '" articles average ' + (topTag.likes / topTag.articles).toFixed(0) + ' likes each';
+  } else {
+    document.getElementById('tagsTitle').textContent = isJa
+      ? '\u307b\u3068\u3093\u3069\u306e\u30bf\u30b0\u304c\u5168\u8a18\u4e8b\u306b\u5171\u901a'
+      : 'Most tags are shared across all articles';
+  }
+
+  // Legend
+  document.getElementById('tagsKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above avg') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below avg') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#d97706;"></div> ' + (isJa ? '\u307b\u307c\u5168\u8a18\u4e8b\u306b\u5171\u901a' : 'On most articles') + '</div>';
+
+  chartTags = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{ data: data, backgroundColor: colours, borderRadius: 3 }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      scales: {
+        x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } },
+          title: { display: true, text: isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article', font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
+          callbacks: {
+            label: function(ctx) {
+              var t = m.tagData[ctx.dataIndex];
+              return ctx.raw + (isJa ? ' \u3044\u3044\u306d/\u8a18\u4e8b (' + t.articles + '\u8a18\u4e8b)' : ' likes/article (' + t.articles + ' articles)');
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+var chartJourneys = null;
+function renderJourneys(m) {
+  var canvas = document.getElementById('chartJourneys');
+  if (!canvas) return;
+  if (chartJourneys) chartJourneys.destroy();
+  var isJa = currentLang === 'ja';
+
+  if (m.journeys.length === 0) {
+    document.getElementById('journeysTitle').textContent = isJa
+      ? '\u307e\u3060\u30d5\u30a9\u30ed\u30ef\u30fc\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093'
+      : 'No follower data yet';
+    return;
+  }
+
+  // Title
+  var likedFirst = m.journeys.filter(function(j) { return j.likes.length > 0; }).length;
+  document.getElementById('journeysTitle').textContent = isJa
+    ? likedFirst + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u30d5\u30a9\u30ed\u30fc\u524d\u306b\u3044\u3044\u306d'
+    : likedFirst + ' of ' + m.journeys.length + ' followers liked before following';
+
+  // Scatter chart: X = time, Y = follower
+  var datasets = [];
+  var slugs = m.journeys.map(function(j) { return j.who || j.slug; });
+
+  for (var i = 0; i < m.journeys.length; i++) {
+    var j = m.journeys[i];
+    var points = [];
+    j.likes.forEach(function(lk) {
+      points.push({ x: new Date(lk.time), y: i, kind: 'like', article: lk.article });
+    });
+    points.push({ x: new Date(j.follow_time), y: i, kind: 'follow' });
+    points.sort(function(a, b) { return a.x - b.x; });
+
+    // Check if this follower is a friend
+    var isFriend = m.events.some(function(e) { return e.slug === j.slug && e.is_friend === 1; });
+
+    datasets.push({
+      label: j.who || j.slug,
+      data: points,
+      backgroundColor: points.map(function(p) {
+        if (isFriend) return '#d97706'; // amber for friends
+        return p.kind === 'follow' ? '#0d9488' : COLOURS.accent;
+      }),
+      borderColor: isFriend ? '#d9770630' : COLOURS.accent + '30',
+      pointRadius: points.map(function(p) { return p.kind === 'follow' ? 8 : 5; }),
+      pointStyle: points.map(function(p) { return p.kind === 'follow' ? 'triangle' : 'circle'; }),
+      showLine: true,
+      borderWidth: 1,
+      tension: 0,
+      fill: false,
+    });
+  }
+
+  var maxH = m.journeys.length > THRESHOLDS.journeyScrollAt ? THRESHOLDS.timelineMaxHeight : undefined;
+  if (maxH) {
+    canvas.parentElement.style.maxHeight = maxH + 'px';
+    canvas.parentElement.style.overflowY = 'auto';
+  }
+  canvas.parentElement.style.height = Math.max(200, (m.journeys.length + 1) * 35) + 'px';
+
+  chartJourneys = new Chart(canvas, {
+    type: 'scatter',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 16 } },
+      scales: {
+        x: {
+          type: 'time',
+          time: { unit: 'day', displayFormats: { day: 'MM/dd' } },
+          grid: { color: '#f3f4f6' },
+          ticks: { font: { size: 10 } },
+        },
+        y: {
+          min: -0.5,
+          max: m.journeys.length - 0.5,
+          ticks: {
+            callback: function(val) { return slugs[val] || ''; },
+            stepSize: 1,
+            font: { size: 10 },
+          },
+          grid: { color: '#f8f8f8' },
+          afterFit: function(axis) { axis.width = 130; },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 10,
+          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
+          callbacks: {
+            label: function(ctx) {
+              var pt = ctx.raw;
+              var lbl = pt.kind === 'follow' ? (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Followed') : (isJa ? '\u3044\u3044\u306d' : 'Liked');
+              if (pt.article) lbl += ': ' + shortTitle(pt.article, 25);
+              return lbl;
             },
           },
         },
@@ -3083,6 +3271,8 @@ async function loadAndRender() {
   renderArticlePerf(currentMetrics);
   renderActivity(currentMetrics);
   renderGrowth(currentMetrics);
+  renderTags(currentMetrics);
+  renderJourneys(currentMetrics);
   renderObservations(currentMetrics, prevSnapshot);
   renderEventsTable(currentMetrics.events);
   renderImportHistory();
@@ -3125,6 +3315,8 @@ function renderAll() {
     renderArticlePerf(currentMetrics);
     renderActivity(currentMetrics);
     renderGrowth(currentMetrics);
+    renderTags(currentMetrics);
+    renderJourneys(currentMetrics);
     renderObservations(currentMetrics, null);
     renderEventsTable(currentMetrics.events);
     renderImportHistory();
