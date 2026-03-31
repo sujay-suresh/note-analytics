@@ -723,7 +723,7 @@ body {
     <button class="btn" onclick="exportData()">
       <span data-i18n="import_export">Export All Data</span>
     </button>
-    <input type="file" id="fileInput" accept=".json,.csv" style="display:none" onchange="handleFileUpload(event)">
+    <input type="file" id="fileInput" accept=".json,.csv" multiple style="display:none" onchange="handleFileUpload(event)">
     <div class="import-result" id="importResult"></div>
   </div>
 
@@ -769,7 +769,8 @@ body {
       Run these in the browser console on the corresponding note.com page.
     </p>
 
-    <h4 style="font-size:13px;font-weight:600;margin-bottom:8px;">1. Notifications</h4>
+    <details>
+    <summary style="font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">1. Notifications</summary>
     <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_notif_desc">
       Open your notifications page (note.com/notifications), scroll to load all, then run:
     </p>
@@ -878,8 +879,10 @@ body {
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptNotifications')">Copy</button>
     </div>
+    </details>
 
-    <h4 style="font-size:13px;font-weight:600;margin:16px 0 8px;">2. Profile &amp; Articles</h4>
+    <details>
+    <summary style="font-size:13px;font-weight:600;cursor:pointer;margin:16px 0 8px;">2. Profile &amp; Articles</summary>
     <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_profile_desc">
       Open your profile page (note.com/your_username), then run:
     </p>
@@ -1000,8 +1003,10 @@ body {
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptProfile')">Copy</button>
     </div>
+    </details>
 
-    <h4 style="font-size:13px;font-weight:600;margin:16px 0 8px;">3. Creator Dashboard</h4>
+    <details>
+    <summary style="font-size:13px;font-weight:600;cursor:pointer;margin:16px 0 8px;">3. Creator Dashboard</summary>
     <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_dashboard_desc">
       Open your creator dashboard (note.com/dashboard), then run:
     </p>
@@ -1111,6 +1116,7 @@ body {
 })();</pre>
       <button class="btn btn-sm script-copy" onclick="copyScript('scriptDashboard')">Copy</button>
     </div>
+    </details>
   </div>
 
   <div class="dict-section">
@@ -1656,12 +1662,25 @@ function generateDowTitle(DOW_NAMES, dowLikes, isJa) {
   return isJa ? dayStr + 'に最もエンゲージメントが集中' : dayStr + (topDays.length > 1 ? ' see' : ' sees') + ' the most engagement';
 }
 function generateArticlePerfTitle(articleMetrics, isJa) {
-  const withViews = articleMetrics.filter(a => a.views > 0);
-  if (withViews.length === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
-  const best = withViews.reduce((a, b) => (b.likes_total / b.views) > (a.likes_total / a.views) ? b : a);
-  const idx = articleMetrics.indexOf(best);
-  const rate = (best.likes_total / best.views * 100).toFixed(0);
-  return isJa ? 'A' + (idx + 1) + 'のスキ率が' + rate + '%で最も高い' : 'A' + (idx + 1) + ' has the highest like rate at ' + rate + '%';
+  var withViews = articleMetrics.filter(function(a) { return a.views > 0; });
+  if (withViews.length === 0) return isJa ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet';
+  if (withViews.length === 1) {
+    var only = withViews[0];
+    var onlyRate = (only.likes_total / only.views * 100).toFixed(0);
+    return isJa ? '\u30b9\u30ad\u7387 ' + onlyRate + '%\u3002\u8a18\u4e8b\u304c\u5897\u3048\u308b\u3068\u6bd4\u8f03\u53ef\u80fd\u306b\u3002' : 'Like rate ' + onlyRate + '%. More articles needed to compare.';
+  }
+  var sorted = withViews.slice().sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
+  var best = sorted[0];
+  var bestIdx = articleMetrics.indexOf(best) + 1;
+  var bestRate = (best.likes_total / best.views * 100).toFixed(0);
+  var avgRate = 0;
+  var totalV = 0, totalL = 0;
+  withViews.forEach(function(a) { totalV += a.views; totalL += a.likes_total; });
+  avgRate = totalV > 0 ? (totalL / totalV * 100).toFixed(0) : 0;
+  // Sorted by performance, so title references the ranking
+  return isJa
+    ? '\u8a18\u4e8b\u306e\u30b9\u30ad\u7387\u306f' + avgRate + '%\u5e73\u5747\u3002A' + bestIdx + '\u304c' + bestRate + '%\u3067\u6700\u9ad8\u3002'
+    : 'Articles average ' + avgRate + '% like rate. A' + bestIdx + ' leads at ' + bestRate + '%.';
 }
 function generateTagsTitle(tagData, articleCount, isJa) {
   if (tagData.length === 0) return isJa ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet';
@@ -2688,8 +2707,13 @@ function renderArticlePerf(m) {
   const canvas = document.getElementById('chartArticlePerf');
   if (chartArticlePerf) chartArticlePerf.destroy();
 
-  const arts = m.articleMetrics.filter(a => a.views > 0);
-  const labels = arts.map(a => artTitle(a, 18));
+  // Sort by like rate (highest first) so best-performing articles are on the left
+  const arts = m.articleMetrics.filter(a => a.views > 0)
+    .sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
+  const labels = arts.map(function(a) {
+    var idx = m.articleMetrics.indexOf(a) + 1;
+    return 'A' + idx + ' ' + artTitle(a, 14);
+  });
 
   chartArticlePerf = new Chart(canvas, {
     type: 'bar',
@@ -3141,10 +3165,12 @@ async function processImport(text) {
 }
 
 async function handleFileUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const text = await file.text();
-  await processImport(text);
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
+  for (let i = 0; i < files.length; i++) {
+    const text = await files[i].text();
+    await processImport(text);
+  }
   e.target.value = '';
 }
 
