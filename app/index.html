@@ -2492,7 +2492,14 @@ function renderTimelineByArticle(m, canvas) {
     },
   });
 
-  canvas.parentElement.style.height = Math.max(280, (articles.length + 2) * 50) + 'px';
+  var timelineH = Math.max(280, (articles.length + 2) * (articles.length > THRESHOLDS.timelineScrollAt ? 30 : 50));
+  if (timelineH > THRESHOLDS.timelineMaxHeight) {
+    canvas.parentElement.style.height = THRESHOLDS.timelineMaxHeight + 'px';
+    canvas.parentElement.style.overflowY = 'auto';
+  } else {
+    canvas.parentElement.style.height = timelineH + 'px';
+    canvas.parentElement.style.overflowY = '';
+  }
 
   const altEl = document.getElementById('timelineAlt');
   const isJa2 = currentLang === 'ja';
@@ -2700,7 +2707,7 @@ function renderDow(m) {
       datasets: [
         { label: t('like'), data: m.dowLikes, backgroundColor: COLOURS.accent + '90', borderRadius: 3 },
         { label: t('follow'), data: m.dowFollows, backgroundColor: COLOURS.green + '90', borderRadius: 3 },
-        { label: currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article published', data: m.dowPublish, backgroundColor: '#dc262630', borderRadius: 3 },
+        { label: currentLang === 'ja' ? '\u8a18\u4e8b\u516c\u958b\u65e5' : 'Article published', data: m.dowPublish, backgroundColor: COLOURS.red + '30', borderRadius: 3 },
       ],
     },
     options: {
@@ -2725,84 +2732,85 @@ function renderDow(m) {
 }
 
 function renderArticlePerf(m) {
-  const canvas = document.getElementById('chartArticlePerf');
+  var canvas = document.getElementById('chartArticlePerf');
   if (chartArticlePerf) chartArticlePerf.destroy();
+  var isJa = currentLang === 'ja';
 
-  // Sort by like rate (highest first) so best-performing articles are on the left
-  const arts = m.articleMetrics.filter(a => a.views > 0)
-    .sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
-  const labels = arts.map(function(a) {
+  // Sort by like rate (best on top). Horizontal bars scale to any number of articles.
+  var arts = m.articleMetrics.filter(function(a) { return a.views > 0; })
+    .sort(function(a, b) { return (a.likes_total / a.views) - (b.likes_total / b.views); }); // ascending for horizontal (top = last = best)
+  var labels = arts.map(function(a) {
     var idx = m.articleMetrics.indexOf(a) + 1;
-    return 'A' + idx + ' ' + artTitle(a, 14);
+    return 'A' + idx + ' ' + artTitle(a, 20);
   });
+  var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
+
+  // Colour bars: above average = accent, below = grey
+  var barColours = arts.map(function(a) {
+    var rate = a.views > 0 ? a.likes_total / a.views * 100 : 0;
+    return rate >= avgRate ? COLOURS.accent : COLOURS.grey;
+  });
+
+  // Dynamic height: 40px per article, min 200px
+  var chartHeight = Math.max(200, arts.length * 40 + 60);
+  canvas.parentElement.style.height = chartHeight + 'px';
 
   chartArticlePerf = new Chart(canvas, {
     type: 'bar',
     data: {
-      labels,
-      datasets: [
-        {
-          label: currentLang === 'ja' ? '\u95b2\u89a7\u6570' : 'Views',
-          data: arts.map(a => a.views),
-          backgroundColor: COLOURS.accent + '30',
-          borderColor: COLOURS.accent,
-          borderWidth: 1,
-          borderRadius: 3,
-          yAxisID: 'y',
-        },
-        {
-          label: currentLang === 'ja' ? '\u3044\u3044\u306d' : 'Likes',
-          data: arts.map(a => a.likes_total),
-          backgroundColor: COLOURS.purple + '90',
-          borderRadius: 3,
-          yAxisID: 'y',
-        },
-        {
-          label: currentLang === 'ja' ? '\u30b9\u30ad\u7387 %' : 'Like Rate %',
-          data: arts.map(a => a.views > 0 ? parseFloat((a.likes_total / a.views * 100).toFixed(1)) : 0),
-          type: 'line',
-          borderColor: '#dc2626',
-          backgroundColor: '#dc262620',
-          pointBackgroundColor: '#dc2626',
-          pointRadius: 4,
-          borderWidth: 2,
-          fill: false,
-          yAxisID: 'y1',
-        },
-      ],
+      labels: labels,
+      datasets: [{
+        label: isJa ? '\u95b2\u89a7\u6570' : 'Views',
+        data: arts.map(function(a) { return a.views; }),
+        backgroundColor: barColours,
+        borderRadius: 3,
+      }],
     },
     options: {
+      indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" }, maxRotation: 45 } },
-        y: { beginAtZero: true, position: 'left', grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 } },
-          title: { display: true, text: currentLang === 'ja' ? '\u95b2\u89a7\u6570 / \u3044\u3044\u306d\u6570' : 'Views / Likes', font: { size: 10 } } },
-        y1: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, callback: (v) => v + '%' },
-          title: { display: true, text: currentLang === 'ja' ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)', font: { size: 10 } } },
+        x: { beginAtZero: true, grid: { color: '#f0f0f0' }, ticks: { font: { size: 10 } },
+          title: { display: true, text: isJa ? '\u95b2\u89a7\u6570' : 'Views', font: { size: 10 } } },
+        y: { grid: { display: false }, ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" } },
+          afterFit: function(axis) { axis.width = Math.min(200, Math.max(120, axis.width)); } },
       },
       plugins: {
-        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 } },
+        legend: { display: false },
         tooltip: {
-          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 8,
+          backgroundColor: '#1a1a2eee', cornerRadius: 6, padding: 10,
           bodyFont: { family: "'Noto Sans JP', 'Inter', sans-serif" },
+          callbacks: {
+            afterLabel: function(ctx) {
+              var a = arts[ctx.dataIndex];
+              var rate = a.views > 0 ? (a.likes_total / a.views * 100).toFixed(0) : 0;
+              return a.likes_total + (isJa ? '\u3044\u3044\u306d, \u30b9\u30ad\u7387 ' : ' likes, like rate ') + rate + '%';
+            },
+          },
         },
         annotation: {
           annotations: {
             avgLine: {
               type: 'line',
-              yMin: m.totalViews > 0 ? (m.totalLikesReported / m.totalViews * 100) : 0,
-              yMax: m.totalViews > 0 ? (m.totalLikesReported / m.totalViews * 100) : 0,
-              yScaleID: 'y1',
+              display: avgRate > 0,
+              xMin: avgRate > 0 ? (function() {
+                // Convert avg like rate to approximate view count for the reference line
+                // Actually, we want a vertical line at the average views. More useful.
+                var avgViews = m.totalViews / (m.articles.length || 1);
+                return avgViews;
+              })() : 0,
+              xMax: avgRate > 0 ? m.totalViews / (m.articles.length || 1) : 0,
               borderColor: COLOURS.inkMuted + '80',
               borderWidth: 1.5,
               borderDash: [6, 4],
               label: {
                 display: true,
-                content: (currentLang === 'ja' ? '\u5e73\u5747 ' : 'avg ') + (m.totalViews > 0 ? (m.totalLikesReported / m.totalViews * 100).toFixed(0) : 0) + '%',
-                position: 'end',
+                content: (isJa ? '\u5e73\u5747 ' : 'avg ') + Math.round(m.totalViews / (m.articles.length || 1)),
+                position: 'start',
                 font: { size: 9 },
                 color: COLOURS.inkMuted,
-                backgroundColor: 'transparent',
+                backgroundColor: '#ffffff',
               },
             },
           },
@@ -2811,15 +2819,13 @@ function renderArticlePerf(m) {
     },
   });
 
-  if (m.bestArticle && m.worstArticle && m.bestArticle !== m.worstArticle) {
-    const bestRate = (m.bestArticle.likes_total / m.bestArticle.views * 100).toFixed(1);
-    const worstRate = (m.worstArticle.likes_total / m.worstArticle.views * 100).toFixed(1);
-    const bestName = currentLang === 'ja' ? (m.bestArticle.title_jp || m.bestArticle.title_en) : (m.bestArticle.title_en || m.bestArticle.title_jp);
-    document.getElementById('articlePerfAlt').textContent =
-      (currentLang === 'ja'
-      ? '\u2192 \u30b9\u30ad\u7387\u306f ' + worstRate + '% \u301c ' + bestRate + '%\u3002\u300c' + shortTitle(bestName, 25) + '\u300d\u304c\u6700\u3082\u9ad8\u3044\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3\u3002'
-      : '\u2192 Like rates range from ' + worstRate + '% to ' + bestRate + '%. "' + shortTitle(bestName, 25) + '" converts the most readers to likers.');
-  }
+  // Show like rate as text labels next to each bar (using alt text area)
+  var altLines = arts.map(function(a) {
+    var idx = m.articleMetrics.indexOf(a) + 1;
+    var rate = a.views > 0 ? (a.likes_total / a.views * 100).toFixed(0) : 0;
+    return 'A' + idx + ': ' + rate + '%';
+  }).reverse(); // reverse because chart is ascending but we want best first in text
+  document.getElementById('articlePerfAlt').textContent = '';
 }
 
 function renderTags(m) {
@@ -2960,7 +2966,14 @@ function renderJourneys(m) {
     },
   });
 
-  canvas.parentElement.style.height = Math.max(200, (m.journeys.length + 1) * 35) + 'px';
+  var journeyH = Math.max(200, (m.journeys.length + 1) * 35);
+  if (journeyH > THRESHOLDS.timelineMaxHeight) {
+    canvas.parentElement.style.height = THRESHOLDS.timelineMaxHeight + 'px';
+    canvas.parentElement.style.overflowY = 'auto';
+  } else {
+    canvas.parentElement.style.height = journeyH + 'px';
+    canvas.parentElement.style.overflowY = '';
+  }
   document.getElementById('journeysAlt').textContent =
     currentLang === 'ja'
     ? '\u2192 ' + m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u884c\u52d5\u7d4c\u8def\u3002\u4e38 = \u3044\u3044\u306d\u3001\u25b2 = \u30d5\u30a9\u30ed\u30fc\u3002\u7dda\u306f\u540c\u4e00\u30e6\u30fc\u30b6\u30fc\u306e\u30a2\u30af\u30b7\u30e7\u30f3\u3092\u63a5\u7d9a\u3002'
