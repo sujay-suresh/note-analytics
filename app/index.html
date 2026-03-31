@@ -2939,10 +2939,11 @@ function renderArticlePerf(m) {
               label: {
                 display: true,
                 content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%',
-                position: 'end',
-                font: { size: 9 },
+                position: 'start',
+                yAdjust: -16,
+                font: { size: 9, weight: 600 },
                 color: COLOURS.inkMuted,
-                backgroundColor: '#ffffffee',
+                backgroundColor: '#ffffff',
                 padding: { top: 2, bottom: 2, left: 4, right: 4 },
               },
             },
@@ -2954,9 +2955,7 @@ function renderArticlePerf(m) {
   // Legend
   document.getElementById('articlePerfLegend').innerHTML =
     '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above average') + '</div>' +
-    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>' +
-    '<div class="legend-item" style="border-left:1.5px dashed ' + COLOURS.inkMuted + '60;height:10px;width:0;margin:0 4px;"></div>' +
-    '<span style="color:' + COLOURS.inkMuted + ';font-size:11px;">' + (isJa ? '\u5e73\u5747\u30e9\u30a4\u30f3' : 'Average line') + '</span>';
+    '<div class="legend-item"><div class="legend-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below average') + '</div>';
 }
 
 var chartTrend = null;
