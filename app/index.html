@@ -2713,98 +2713,68 @@ function renderJourneys(m) {
   if (chartJourneys) chartJourneys.destroy();
   var isJa = currentLang === 'ja';
 
-  if (m.journeys.length === 0) {
+  if (!m.journeys || m.journeys.length === 0) {
     document.getElementById('journeysTitle').textContent = isJa
       ? '\u307e\u3060\u30d5\u30a9\u30ed\u30ef\u30fc\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093'
       : 'No follower data yet';
     return;
   }
 
-  // Title
-  var likedFirst = m.journeys.filter(function(j) { return j.likes.length > 0; }).length;
-  document.getElementById('journeysTitle').textContent = isJa
-    ? likedFirst + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u30d5\u30a9\u30ed\u30fc\u524d\u306b\u3044\u3044\u306d'
-    : likedFirst + ' of ' + m.journeys.length + ' followers liked before following';
+  var likedMultiple = m.journeys.filter(function(j) { return j.likes.length > 1; }).length;
+  var likedOne = m.journeys.filter(function(j) { return j.likes.length === 1; }).length;
+  var noLike = m.journeys.filter(function(j) { return j.likes.length === 0; }).length;
 
-  // Scatter chart: X = time, Y = follower
-  var datasets = [];
-  var slugs = m.journeys.map(function(j) { return j.who || j.slug; });
-
-  for (var i = 0; i < m.journeys.length; i++) {
-    var j = m.journeys[i];
-    var points = [];
-    j.likes.forEach(function(lk) {
-      points.push({ x: new Date(lk.time), y: i, kind: 'like', article: lk.article });
-    });
-    points.push({ x: new Date(j.follow_time), y: i, kind: 'follow' });
-    points.sort(function(a, b) { return a.x - b.x; });
-
-    // Check if this follower is a friend
+  // Count friends vs organic in each bucket
+  var friendMulti = 0, friendOne = 0, friendNone = 0;
+  m.journeys.forEach(function(j) {
     var isFriend = m.events.some(function(e) { return e.slug === j.slug && e.is_friend === 1; });
+    if (j.likes.length > 1) { if (isFriend) friendMulti++; }
+    else if (j.likes.length === 1) { if (isFriend) friendOne++; }
+    else { if (isFriend) friendNone++; }
+  });
 
-    datasets.push({
-      label: j.who || j.slug,
-      data: points,
-      backgroundColor: points.map(function(p) {
-        if (isFriend) return '#d97706'; // amber for friends
-        return p.kind === 'follow' ? '#0d9488' : COLOURS.accent;
-      }),
-      borderColor: isFriend ? '#d9770630' : COLOURS.accent + '30',
-      pointRadius: points.map(function(p) { return p.kind === 'follow' ? 8 : 5; }),
-      pointStyle: points.map(function(p) { return p.kind === 'follow' ? 'triangle' : 'circle'; }),
-      showLine: true,
-      borderWidth: 1,
-      tension: 0,
-      fill: false,
-    });
-  }
+  // Title
+  document.getElementById('journeysTitle').textContent = isJa
+    ? m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u884c\u52d5\u30d1\u30bf\u30fc\u30f3'
+    : 'How ' + m.journeys.length + ' followers discovered you';
 
-  var maxH = m.journeys.length > THRESHOLDS.journeyScrollAt ? THRESHOLDS.timelineMaxHeight : undefined;
-  if (maxH) {
-    canvas.parentElement.style.maxHeight = maxH + 'px';
-    canvas.parentElement.style.overflowY = 'auto';
-  }
-  canvas.parentElement.style.height = Math.max(200, (m.journeys.length + 1) * 35) + 'px';
+  var labels = isJa
+    ? ['\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u30d5\u30a9\u30ed\u30fc', '1\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u30d5\u30a9\u30ed\u30fc', '\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc']
+    : ['Liked 2+ articles then followed', 'Liked 1 article then followed', 'Followed without liking'];
 
   chartJourneys = new Chart(canvas, {
-    type: 'scatter',
-    data: { datasets: datasets },
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: isJa ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af' : 'Organic',
+          data: [likedMultiple - friendMulti, likedOne - friendOne, noLike - friendNone],
+          backgroundColor: COLOURS.accent,
+          borderRadius: 3,
+        },
+        {
+          label: isJa ? '\u30d5\u30ec\u30f3\u30c9' : 'Friends',
+          data: [friendMulti, friendOne, friendNone],
+          backgroundColor: '#d97706',
+          borderRadius: 3,
+        },
+      ],
+    },
     options: {
+      indexAxis: 'y',
       responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { right: 16 } },
       scales: {
-        x: {
-          type: 'time',
-          time: { unit: 'day', displayFormats: { day: 'MM/dd' } },
-          grid: { color: '#f3f4f6' },
-          ticks: { font: { size: 10 } },
-        },
-        y: {
-          min: -0.5,
-          max: m.journeys.length - 0.5,
-          ticks: {
-            callback: function(val) { return slugs[val] || ''; },
-            stepSize: 1,
-            font: { size: 10 },
-          },
-          grid: { color: '#f8f8f8' },
-          afterFit: function(axis) { axis.width = 130; },
-        },
+        x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
       },
       plugins: {
-        legend: { display: false },
+        legend: {
+          position: 'bottom',
+          labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 },
+        },
         tooltip: {
-          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 10,
-          bodyFont: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
-          callbacks: {
-            label: function(ctx) {
-              var pt = ctx.raw;
-              var lbl = pt.kind === 'follow' ? (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Followed') : (isJa ? '\u3044\u3044\u306d' : 'Liked');
-              if (pt.article) lbl += ': ' + shortTitle(pt.article, 25);
-              return lbl;
-            },
-          },
+          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
         },
       },
     },
