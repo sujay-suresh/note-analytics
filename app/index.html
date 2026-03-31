@@ -2571,8 +2571,10 @@ function renderActivity(m) {
   if (chartActivity) chartActivity.destroy();
   const isJa = currentLang === 'ja';
 
-  // JST labels (GMT shown in tooltip)
-  const labels = Array.from({ length: 24 }, (_, i) => String(i));
+  // Dual timezone labels: JST primary, GMT secondary
+  const labels = Array.from({ length: 24 }, function(_, i) {
+    return String(i).padStart(2, '0') + '\n' + String(jstToGmt(i)).padStart(2, '0');
+  });
 
   // Grey-out/colour-in: peak hours get accent, rest get grey
   const peakS = m.peakStart, peakE = m.peakEnd;
@@ -2632,7 +2634,7 @@ function renderActivity(m) {
         x: {
           stacked: true, grid: { display: false },
           ticks: { font: { size: 10, weight: 500 }, color: COLOURS.ink, maxRotation: 0 },
-          title: { display: true, text: 'JST', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
+          title: { display: true, text: currentLang === 'ja' ? 'JST (\u8aad\u8005)  |  GMT (\u8457\u8005)' : 'JST (audience)  |  GMT (author)', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
         },
         y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f0f0f0' } },
       },
