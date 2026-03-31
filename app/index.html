@@ -656,10 +656,6 @@ body {
       <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
       <div class="chart-legend" id="articlePerfLegend"></div>
       <div style="margin-top:20px;">
-        <div class="action-title" id="trendTitle"></div>
-        <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
-      </div>
-      <div style="margin-top:20px;">
         <div class="action-title" id="tagsTitle"></div>
         <div class="chart-key" id="tagsKey"></div>
         <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
@@ -2712,7 +2708,6 @@ function toggleTimelineView() {
   btn.querySelector('span').textContent = t(timelineMode === 'article' ? 'toggle_by_user' : 'toggle_by_article');
   btn.classList.toggle('active', timelineMode === 'user');
   renderGrowth(currentMetrics);
-  renderTrend(currentMetrics);
 }
 
 function renderActivity(m) {
@@ -3540,7 +3535,6 @@ async function loadAndRender() {
   renderStatusBar(currentMetrics);
   renderSummary(currentMetrics, prevSnapshot);
   renderGrowth(currentMetrics);
-  renderTrend(currentMetrics);
   renderActivity(currentMetrics);
   renderTags(currentMetrics);
   renderArticlePerf(currentMetrics);
@@ -3586,7 +3580,6 @@ function renderAll() {
     renderStatusBar(currentMetrics);
     renderSummary(currentMetrics, null);
     renderGrowth(currentMetrics);
-  renderTrend(currentMetrics);
     renderActivity(currentMetrics);
     renderTags(currentMetrics);
     renderArticlePerf(currentMetrics);
