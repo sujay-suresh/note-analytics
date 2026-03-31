@@ -648,26 +648,25 @@ body {
   <!-- KPI SUMMARY -->
   <div class="summary-block" id="summaryBlock"></div>
 
-  <!-- SECTION 1: ENGAGEMENT TIMELINE -->
-  <div class="section-heading" id="sectionTimelineHeading"></div>
+  <!-- DIMENSION 1: CONTENT (What to write next) -->
+  <div class="section-heading" id="headingContent"></div>
   <div class="chart-section">
     <div class="chart-main">
-      <div class="action-title" id="timelineTitle"></div>
-      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
-        <button class="chart-toggle" id="timelineToggle" onclick="toggleTimelineView()">
-          <span data-i18n="toggle_by_user">Show People</span>
-        </button>
+      <div class="action-title" id="articlePerfTitle"></div>
+      <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
+      <div class="chart-alt" id="articlePerfAlt"></div>
+      <div style="margin-top:20px;">
+        <div class="action-title" id="tagsTitle"></div>
+        <div class="chart-key" id="tagsKey"></div>
+        <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
+        <div class="chart-alt" id="tagsAlt"></div>
       </div>
-      <div class="chart-key" id="timelineKey"></div>
-      <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
-      <div class="chart-alt" id="timelineAlt"></div>
-      <div class="chart-legend" id="timelineLegend"></div>
     </div>
-    <div class="chart-obs" id="obsTimeline"></div>
+    <div class="chart-obs" id="obsContent"></div>
   </div>
 
-  <!-- SECTION 2: TIMING -->
-  <div class="section-heading" id="sectionWhenHeading"></div>
+  <!-- DIMENSION 2: TIMING (When to publish) -->
+  <div class="section-heading" id="headingTiming"></div>
   <div class="chart-section">
     <div class="chart-main">
       <div class="action-title" id="activityTitle"></div>
@@ -685,33 +684,27 @@ body {
     <div class="chart-obs" id="obsTiming"></div>
   </div>
 
-  <!-- SECTION 3: ARTICLES AND TAGS -->
-  <div class="section-heading" id="sectionAudienceHeading"></div>
+  <!-- DIMENSION 3: AUDIENCE (Building loyalty) -->
+  <div class="section-heading" id="headingAudience"></div>
   <div class="chart-section">
     <div class="chart-main">
-      <div class="action-title" id="articlePerfTitle"></div>
-      <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
-      <div class="chart-alt" id="articlePerfAlt"></div>
+      <div class="action-title" id="timelineTitle"></div>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+        <button class="chart-toggle" id="timelineToggle" onclick="toggleTimelineView()">
+          <span data-i18n="toggle_by_user">Show People</span>
+        </button>
+      </div>
+      <div class="chart-key" id="timelineKey"></div>
+      <div class="chart-wrap"><canvas id="chartTimeline"></canvas></div>
+      <div class="chart-alt" id="timelineAlt"></div>
       <div style="margin-top:20px;">
-        <div class="action-title" id="tagsTitle"></div>
-        <div class="chart-key" id="tagsKey"></div>
-        <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
-        <div class="chart-alt" id="tagsAlt"></div>
+        <div class="action-title" id="journeysTitle"></div>
+        <div class="chart-key" id="journeysKey"></div>
+        <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
+        <div class="chart-alt" id="journeysAlt"></div>
       </div>
     </div>
     <div class="chart-obs" id="obsAudience"></div>
-  </div>
-
-  <!-- SECTION 4: FOLLOWER JOURNEYS -->
-  <div class="section-heading" id="sectionInsightsHeading"></div>
-  <div class="chart-section">
-    <div class="chart-main">
-      <div class="action-title" id="journeysTitle"></div>
-      <div class="chart-key" id="journeysKey"></div>
-      <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
-      <div class="chart-alt" id="journeysAlt"></div>
-    </div>
-    <div class="chart-obs" id="obsJourneys"></div>
   </div>
 </div>
 
@@ -2318,14 +2311,12 @@ function renderSummary(m, prevSnapshot) {
   renderArticleKey(m);
 
   // Section headings
-  document.getElementById('sectionTimelineHeading').textContent =
-    isJa ? '1. \u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\u306e\u63a8\u79fb' : '1. How engagement built over time';
-  document.getElementById('sectionWhenHeading').textContent =
-    isJa ? '2. \u3044\u3064\u8aad\u8005\u304c\u53cd\u5fdc\u3057\u305f\u304b' : '2. When readers respond';
-  document.getElementById('sectionAudienceHeading').textContent =
-    isJa ? '3. \u3069\u306e\u8a18\u4e8b\u304c\u8aad\u8005\u3092\u5f15\u304d\u4ed8\u3051\u305f\u304b' : '3. Which articles attract and retain readers';
-  document.getElementById('sectionInsightsHeading').textContent =
-    isJa ? '4. \u30d5\u30a9\u30ed\u30ef\u30fc\u304c\u3069\u306e\u3088\u3046\u306b\u30d5\u30a9\u30ed\u30fc\u306b\u81f3\u3063\u305f\u304b' : '4. How followers discovered and converted';
+  document.getElementById('headingContent').textContent =
+    isJa ? '1. \u30b3\u30f3\u30c6\u30f3\u30c4: \u6b21\u306b\u4f55\u3092\u66f8\u304f\u304b' : '1. Content: what to write next';
+  document.getElementById('headingTiming').textContent =
+    isJa ? '2. \u30bf\u30a4\u30df\u30f3\u30b0: \u3044\u3064\u516c\u958b\u3059\u308b\u304b' : '2. Timing: when to publish';
+  document.getElementById('headingAudience').textContent =
+    isJa ? '3. \u30aa\u30fc\u30c7\u30a3\u30a8\u30f3\u30b9: \u8aad\u8005\u306f\u5b9a\u7740\u3057\u3066\u3044\u308b\u304b' : '3. Audience: are readers staying';
 
   // Chart titles: computed at render time so they respond to language changes
   const titles = getActionTitles(m);
@@ -2909,16 +2900,10 @@ function renderObservations(m, prevSnapshot) {
     el.innerHTML = html;
   }
 
-  // 3 MECE dimensions mapped to 4 visual panels
-  // Content: articles, reader overlap, engagement speed
-  renderObsPanel('obsTimeline', computeContentObs(m));
-  // Timing: velocity, peak window, publish alignment
+  // 3 MECE dimensions, 1 observation panel each
+  renderObsPanel('obsContent', computeContentObs(m));
   renderObsPanel('obsTiming', computeTimingObs(m));
-  // Audience (conversion): funnel from like to follow
-  var audienceObs = computeAudienceObs(m);
-  renderObsPanel('obsAudience', audienceObs.slice(0, 1)); // Funnel only
-  // Audience (journeys): entry points, pre-follow behaviour
-  renderObsPanel('obsJourneys', audienceObs.slice(1));     // Entry point + behaviour
+  renderObsPanel('obsAudience', computeAudienceObs(m));
 }
 
 /* ================================================================
