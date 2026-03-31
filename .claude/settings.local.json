@@ -8,7 +8,10 @@
       "WebFetch(domain:note.com)",
       "Bash(node --check app/_check.js)",
       "Bash(grep -v \"^$\")",
-      "Bash(bash \"C:/Users/Sujay/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Sujay/documents/projects/note-analytics\")"
+      "Bash(bash \"C:/Users/Sujay/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Sujay/documents/projects/note-analytics\")",
+      "Bash(node -e \":*)",
+      "Bash(node:*)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }
