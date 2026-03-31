@@ -1374,7 +1374,7 @@ function switchTab(tabId) {
    STORE -IndexedDB
    ================================================================ */
 const DB_NAME = 'noteAnalytics';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 let db = null;
 
 function openDB() {
@@ -1393,6 +1393,9 @@ function openDB() {
       }
       if (!d.objectStoreNames.contains('metrics_snapshot')) {
         d.createObjectStore('metrics_snapshot', { keyPath: 'id' });
+      }
+      if (!d.objectStoreNames.contains('user_metadata')) {
+        d.createObjectStore('user_metadata', { keyPath: 'slug' });
       }
     };
     req.onsuccess = (e) => { db = e.target.result; resolve(db); };
@@ -1603,7 +1606,14 @@ async function importData(raw) {
     stats_added: importedStats,
   });
 
-  return { events: importedEvents, articles: importedArticles, stats: importedStats, skipped: skipped };
+  // User metadata import (friend flags, user types from Excel reference)
+  if (raw.user_metadata) {
+    for (const u of raw.user_metadata) {
+      if (u.slug) await dbPut('user_metadata', u);
+    }
+  }
+
+  return { events: importedEvents, articles: importedArticles, stats: importedStats, skipped: skipped, users: raw.user_metadata ? raw.user_metadata.length : 0 };
 }
 
 /* ================================================================
@@ -1862,6 +1872,16 @@ function computeAudienceObs(m) {
   var totalLikers = m.uniqueUsers;
   var totalFollowers = m.totalFollows;
   var followPct = totalLikers > 0 ? Math.round(totalFollowers / totalLikers * 100) : 0;
+  // Include friend/organic split if metadata exists
+  if (m.friendLikes > 0 || m.organicLikes > 0) {
+    var organicPct = (m.organicLikes + m.organicFollows) > 0
+      ? Math.round((m.organicLikes + m.organicFollows) / (m.totalLikes + m.totalFollows) * 100) : 0;
+    obs.push({
+      text: isJa
+        ? '<strong>' + m.organicLikes + '</strong>\u4ef6\u306e\u3044\u3044\u306d\u304c\u30aa\u30fc\u30ac\u30cb\u30c3\u30af\u3001<strong>' + m.friendLikes + '</strong>\u4ef6\u304c\u30d5\u30ec\u30f3\u30c9\u304b\u3089\u3002\u30aa\u30fc\u30ac\u30cb\u30c3\u30af\u7387: <strong>' + organicPct + '%</strong>'
+        : '<strong>' + m.organicLikes + '</strong> likes are organic, <strong>' + m.friendLikes + '</strong> from friends. Organic rate: <strong>' + organicPct + '%</strong>'
+    });
+  }
   obs.push({
     text: isJa
       ? '<strong>' + totalLikers + '\u4eba</strong>\u304c\u3044\u3044\u306d\u3001\u305d\u306e\u3046\u3061<strong>' + totalFollowers + '\u4eba</strong>(' + followPct + '%)\u304c\u30d5\u30a9\u30ed\u30fc\u306b\u8ee2\u63db\u3002'
@@ -2162,6 +2182,11 @@ function computeMetrics(events, articles) {
     publishHours,
     bestArticle,
     worstArticle,
+    // Friend vs organic breakdown
+    friendLikes: likes.filter(function(e) { return e.is_friend === 1; }).length,
+    organicLikes: likes.filter(function(e) { return e.is_friend !== 1; }).length,
+    friendFollows: follows.filter(function(e) { return e.is_friend === 1; }).length,
+    organicFollows: follows.filter(function(e) { return e.is_friend !== 1; }).length,
   };
 }
 
@@ -3084,7 +3109,8 @@ async function processImport(text) {
     var msg = isJa
       ? result.events + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + result.articles + '\u4ef6\u306e\u8a18\u4e8b\u3092\u30a4\u30f3\u30dd\u30fc\u30c8'
       : 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
-    if (result.stats > 0) msg += (isJa ? '\u3001' + result.stats + '\u4ef6\u306e\u7d71\u8a08' : ', ' + result.stats + ' stats');
+    if (result.stats > 0) msg += (isJa ? ', ' + result.stats + '\u4ef6\u306e\u7d71\u8a08' : ', ' + result.stats + ' stats');
+    if (result.users > 0) msg += (isJa ? ', ' + result.users + '\u4eba\u306e\u30e6\u30fc\u30b6\u30fc\u30c7\u30fc\u30bf' : ', ' + result.users + ' user profiles');
     if (result.skipped > 0) msg += (isJa ? ' (' + result.skipped + '\u4ef6\u306f\u91cd\u8907)' : ' (' + result.skipped + ' duplicates skipped)');
     showImportResult(msg, false);
     await loadAndRender();
@@ -3155,6 +3181,21 @@ let currentMetrics = null;
 async function loadAndRender() {
   const events = await dbGetAll('events');
   const articles = await dbGetAll('articles');
+
+  // Enrich events with user metadata (friend flag, user type)
+  const userMeta = await dbGetAll('user_metadata');
+  const metaMap = {};
+  userMeta.forEach(function(u) { metaMap[u.slug] = u; });
+  events.forEach(function(e) {
+    var meta = metaMap[e.slug];
+    if (meta) {
+      e.is_friend = meta.is_friend || 0;
+      e.user_type = meta.user_type || '';
+    } else {
+      e.is_friend = 0;
+      e.user_type = '';
+    }
+  });
 
   currentMetrics = computeMetrics(events, articles);
 
