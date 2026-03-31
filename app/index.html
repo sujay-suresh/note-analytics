@@ -2907,6 +2907,24 @@ function renderObservations(m, prevSnapshot) {
       audienceObs.push(isJa
         ? '\u30d5\u30a9\u30ed\u30ef\u30fc' + m.journeys.length + '\u4eba: <strong>' + likedMultiple + '</strong>\u4eba\u304c\u8907\u6570\u8a18\u4e8b\u3001<strong>' + likedOne + '</strong>\u4eba\u304c1\u8a18\u4e8b\u3001<strong>' + noLike + '</strong>\u4eba\u304c\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc\u3002'
         : m.journeys.length + ' followers: <strong>' + likedMultiple + '</strong> liked multiple articles, <strong>' + likedOne + '</strong> liked one, <strong>' + noLike + '</strong> followed without liking.');
+
+      // Entry point: which article was first liked by most followers
+      var entryArticles = {};
+      m.journeys.forEach(function(j) {
+        if (j.likes.length > 0) {
+          var firstUrl = j.likes[0].article_url;
+          entryArticles[firstUrl] = (entryArticles[firstUrl] || 0) + 1;
+        }
+      });
+      var entries = Object.entries(entryArticles).sort(function(a, b) { return b[1] - a[1]; });
+      if (entries.length > 0 && entries[0][1] >= 2) {
+        var artIdx = m.articles.findIndex(function(a) { return a.article_url === entries[0][0]; });
+        if (artIdx >= 0) {
+          audienceObs.push(isJa
+            ? 'A' + (artIdx + 1) + '\u304c<strong>' + entries[0][1] + '\u4eba</strong>\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9\u3002'
+            : 'A' + (artIdx + 1) + ' was the first article liked by <strong>' + entries[0][1] + '</strong> followers.');
+        }
+      }
     }
   }
   obsPanel('obsAudience', audienceObs);
