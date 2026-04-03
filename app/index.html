@@ -126,7 +126,6 @@ body {
   max-width: 1080px;
   margin: 0 auto;
   padding: 24px;
-  padding-bottom: 48px;
 }
 .tab-content.active { display: block; }
 
@@ -1212,9 +1211,6 @@ body {
 <!-- ============================================================
      JAVASCRIPT
      ============================================================ -->
-<!-- ARTICLE KEY: sticky bottom bar -->
-<div class="article-key-bar hidden" id="articleKeyBar" onclick="toggleArticleKeyPanel()"></div>
-<div class="article-key-panel" id="articleKeyPanel"></div>
 
 <script>
 /* ================================================================
@@ -1989,8 +1985,8 @@ function computeTimingObs(m) {
     }
     var remainPct = 100 - pct48;
     var timingMeaning = pct48 >= 70
-      ? (isJa ? '\u516c\u958b\u65e5\u306e\u62e1\u6563\u306b\u96c6\u4e2d\u3059\u308b' : 'Promote heavily on publish day. that is when readers engage')
-      : (isJa ? '\u904e\u53bb\u8a18\u4e8b\u306e\u518d\u5171\u6709\u3082\u6709\u52b9\u3002\u6025\u304c\u306a\u304f\u3066\u3088\u3044' : 'No rush to promote. reshare older articles, they still convert');
+      ? (isJa ? '\u516c\u958b\u5f8c2\u65e5\u304c\u52dd\u8ca0\u3002SNS\u3084\u30cf\u30c3\u30b7\u30e5\u30bf\u30b0\u3067\u521d\u52d5\u3092\u4f5c\u308b' : 'First 2 days matter most. Share on social or use hashtags to boost early traction')
+      : (isJa ? '\u53cd\u5fdc\u304c\u9577\u671f\u7684\u306b\u5165\u308b\u3002\u904e\u53bb\u8a18\u4e8b\u306e\u518d\u5171\u6709\u3082\u6709\u52b9' : 'Likes arrive over time. Resharing older articles still works');
     obs.push({ metric: metricStr, label: labelStr, meaning: timingMeaning });
   }
 
@@ -2067,10 +2063,10 @@ function computeAudienceObs(m) {
       metric: organicPct + '%',
       label: isJa ? '\u65b0\u898f\u8aad\u8005\u7387 (' + m.organicLikes + '\u4ef6\u65b0\u898f / ' + m.friendLikes + '\u4ef6\u30d5\u30ec\u30f3\u30c9)' : organicPct + '% of engagement comes from new readers (' + m.organicLikes + ' new, ' + m.friendLikes + ' friends)',
       meaning: organicPct >= 80
-        ? (isJa ? '\u65b0\u898f\u8aad\u8005\u306b\u81ea\u7136\u306b\u5c4a\u3044\u3066\u3044\u308b\u3002\u3053\u306e\u307e\u307e\u7d9a\u3051\u308b' : 'content reaches new readers naturally')
+        ? (isJa ? '\u65b0\u898f\u8aad\u8005\u304c\u5927\u534a\u3002\u81ea\u7136\u306b\u5c4a\u3044\u3066\u3044\u308b' : 'Mostly new readers. Content is reaching beyond your circle')
         : organicPct >= 50
-          ? (isJa ? '\u826f\u3044\u30d0\u30e9\u30f3\u30b9\u3002\u4e21\u65b9\u306e\u8aad\u8005\u5411\u3051\u306b\u66f8\u304d\u7d9a\u3051\u308b' : 'Good balance. keep writing for both audiences')
-          : (isJa ? '\u30bf\u30b0\u3092\u5e83\u3052\u308b\u304b\u4ed6\u30d7\u30e9\u30c3\u30c8\u30d5\u30a9\u30fc\u30e0\u3067\u5171\u6709\u3057\u3001\u65b0\u898f\u8aad\u8005\u3092\u589e\u3084\u3059' : 'Try adding broader tags or sharing on other platforms to attract new readers')
+          ? (isJa ? '\u65b0\u898f\u8aad\u8005\u3068\u30d5\u30ec\u30f3\u30c9\u306e\u30d0\u30e9\u30f3\u30b9\u304c\u826f\u3044' : 'Healthy split between new readers and friends')
+          : (isJa ? '\u30d5\u30ec\u30f3\u30c9\u304b\u3089\u306e\u53cd\u5fdc\u304c\u591a\u3044\u3002\u30bf\u30b0\u3092\u5e83\u3052\u3066\u65b0\u898f\u8aad\u8005\u3092\u589e\u3084\u3059' : 'Mostly friends. Broaden tags to reach new readers')
     });
   }
 
