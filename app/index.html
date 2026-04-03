@@ -919,9 +919,7 @@ body {
 
     <details>
     <summary style="font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">1. Notifications</summary>
-    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_notif_desc">
-      Open your notifications page (note.com/notifications), scroll to load all, then run:
-    </p>
+    <div style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.7;"><p data-i18n="dict_notif_desc"><strong>EN:</strong> Open <a href="https://note.com/notifications" target="_blank">note.com/notifications</a>. Scroll down to load all notifications. Press F12 to open the console. Click inside the console, paste this script, press Enter. Data is copied to clipboard.</p><p style="margin-top:6px;"><strong>JP:</strong> <a href="https://note.com/notifications" target="_blank">note.com/notifications</a>を開く。下までスクロールして全通知を読み込む。F12でコンソールを開く。コンソール内をクリックし、スクリプトを貼り付けてEnter。データがクリップボードにコピーされます。</p></div>
     <div class="script-block">
       <pre id="scriptNotifications">// Note.com Analytics -Notifications Extractor
 // 1. Open https://note.com/notifications
@@ -1031,9 +1029,7 @@ body {
 
     <details>
     <summary style="font-size:13px;font-weight:600;cursor:pointer;margin:16px 0 8px;">2. Profile &amp; Articles</summary>
-    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_profile_desc">
-      Open your profile page (note.com/your_username), then run:
-    </p>
+    <div style="font-size:12px;color:var(--ink-light);margin-bottom:12px;line-height:1.7;"><p data-i18n="dict_profile_desc"><strong>EN:</strong> Open your profile page (note.com/your_username). Scroll down to load all articles. Press F12 to open the console. Click inside the console, paste this script, press Enter. Data is copied to clipboard.</p><p style="margin-top:6px;"><strong>JP:</strong> プロフィールページ（note.com/ユーザー名）を開く。下までスクロールして全記事を読み込む。F12でコンソールを開く。コンソール内をクリックし、スクリプトを貼り付けてEnter。データがクリップボードにコピーされます。</p></div>
     <div class="script-block">
       <pre id="scriptProfile">// Note.com Analytics -Profile &amp; Articles Extractor
 // 1. Open your profile: https://note.com/YOUR_USERNAME
@@ -1153,118 +1149,6 @@ body {
     </div>
     </details>
 
-    <details>
-    <summary style="font-size:13px;font-weight:600;cursor:pointer;margin:16px 0 8px;">3. Creator Dashboard</summary>
-    <p style="font-size:12px;color:var(--ink-light);margin-bottom:8px;" data-i18n="dict_dashboard_desc">
-      Open your creator dashboard (note.com/dashboard), then run:
-    </p>
-    <div class="script-block">
-      <pre id="scriptDashboard">// Note.com Analytics -Creator Dashboard Extractor
-// 1. Open https://note.com/dashboard (must be logged in)
-// 2. Navigate to the analytics/stats section if available
-// 3. Paste this entire script into the browser console
-// 4. JSON is copied to clipboard -paste into the app
-//
-// NOTE: This script attempts to extract whatever analytics
-// data note.com exposes. The dashboard structure may vary.
-
-(async () => {
-  const stats = { daily_views: [], article_stats: [] };
-
-  // Approach 1: __NEXT_DATA__
-  const nd = document.getElementById('__NEXT_DATA__');
-  if (nd) {
-    try {
-      const data = JSON.parse(nd.textContent);
-      const pp = data?.props?.pageProps;
-
-      // Look for analytics/stats data in any likely property
-      const candidates = [
-        pp?.stats, pp?.analytics, pp?.dashboard,
-        pp?.dailyStats, pp?.noteStats, pp?.viewStats
-      ].filter(Boolean);
-
-      for (const c of candidates) {
-        if (Array.isArray(c)) {
-          for (const item of c) {
-            if (item.date &amp;&amp; (item.readCount || item.viewCount)) {
-              stats.daily_views.push({
-                date: item.date,
-                views: item.readCount || item.viewCount || 0,
-                likes: item.likeCount || 0,
-              });
-            }
-          }
-        }
-      }
-
-      // Per-article stats
-      const notes = pp?.contents || pp?.notes || [];
-      for (const n of notes) {
-        stats.article_stats.push({
-          title_jp: n.name || n.title || '',
-          article_url: n.noteUrl || n.key ? ('https://note.com/n/' + n.key) : '',
-          views: n.readCount || n.viewCount || 0,
-          likes: n.likeCount || n.spCount || 0,
-          comments: n.commentCount || 0,
-        });
-      }
-    } catch (e) { console.warn('__NEXT_DATA__ parse failed', e); }
-  }
-
-  // Approach 2: API for stats
-  if (stats.daily_views.length === 0 &amp;&amp; stats.article_stats.length === 0) {
-    try {
-      const res = await fetch('/api/v1/stats/pv', { credentials: 'include' });
-      if (res.ok) {
-        const json = await res.json();
-        const daily = json.data || json.stats || [];
-        for (const d of daily) {
-          stats.daily_views.push({
-            date: d.date || d.day || '',
-            views: d.pv || d.count || 0,
-            likes: d.likes || 0,
-          });
-        }
-      }
-    } catch (e) { console.warn('Stats API unavailable', e); }
-
-    try {
-      const res = await fetch('/api/v1/stats/notes', { credentials: 'include' });
-      if (res.ok) {
-        const json = await res.json();
-        const notes = json.data || json.notes || [];
-        for (const n of notes) {
-          stats.article_stats.push({
-            title_jp: n.name || '',
-            article_url: n.noteUrl || '',
-            views: n.readCount || 0,
-            likes: n.likeCount || 0,
-            comments: n.commentCount || 0,
-          });
-        }
-      }
-    } catch (e) { console.warn('Note stats API unavailable', e); }
-  }
-
-  const output = {
-    stats,
-    extracted_at: new Date().toISOString(),
-    source: 'dashboard',
-  };
-  const json = JSON.stringify(output, null, 2);
-  try { await navigator.clipboard.writeText(json); } catch(e) { var ta = document.createElement('textarea'); ta.value = json; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
-  const total = stats.daily_views.length + stats.article_stats.length;
-  console.log('Extracted ' + stats.daily_views.length + ' daily records, ' + stats.article_stats.length + ' article stats.');
-  if (total === 0) {
-    console.log('No stats found. The dashboard structure may have changed.');
-    console.log('Try navigating to the analytics section first.');
-  }
-  console.log('Paste into the Note.com Analytics app (Data tab).');
-})();</pre>
-      <button class="btn btn-sm script-copy" onclick="copyScript('scriptDashboard')">Copy</button>
-    </div>
-    </details>
   </div>
 
   <div class="dict-section">
@@ -1427,10 +1311,12 @@ let currentLang = 'ja';
 function t(key) { return STRINGS[currentLang][key] || STRINGS.en[key] || key; }
 
 function toggleLang() {
+  var scrollPos = window.scrollY;
   currentLang = currentLang === 'ja' ? 'en' : 'ja';
   document.getElementById('langToggle').textContent = currentLang === 'ja' ? 'EN' : 'JP';
   applyI18n();
   renderAll();
+  requestAnimationFrame(function() { window.scrollTo(0, scrollPos); });
 }
 
 function applyI18n() {
