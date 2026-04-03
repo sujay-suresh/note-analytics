@@ -1,0 +1,771 @@
+{
+  "articles": [
+    {
+      "title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "title_en": "Self-introduction (8 years strategy consulting)",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "published_date_jst": "2026-03-17T17:40:00+09:00",
+      "article_type": "Life",
+      "tags": [
+        "仕事",
+        "自己紹介",
+        "生き方",
+        "キャリア",
+        "コンサル"
+      ],
+      "views": 126,
+      "likes_total": 14
+    },
+    {
+      "title_jp": "戦略コンサルの仕事は、実際には何をしているのか",
+      "title_en": "What strategy consultants actually do",
+      "article_url": "https://note.com/penduck_mk/n/nacca9952b9e3",
+      "published_date_jst": "2026-03-18T18:29:00+09:00",
+      "article_type": "Work Know-how",
+      "tags": [
+        "仕事",
+        "仕事について話そう",
+        "note書き初め",
+        "キャリアアップ",
+        "コンサルタント"
+      ],
+      "views": 34,
+      "likes_total": 3
+    },
+    {
+      "title_jp": "戦略コンサルのやりがいと葛藤",
+      "title_en": "The rewards and struggles of strategy consulting",
+      "article_url": "https://note.com/penduck_mk/n/ndc1e9112c32f",
+      "published_date_jst": "2026-03-19T20:12:00+09:00",
+      "article_type": "Work Know-how",
+      "tags": [
+        "仕事",
+        "キャリア",
+        "仕事について話そう",
+        "コンサル"
+      ],
+      "views": 26,
+      "likes_total": 3
+    },
+    {
+      "title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "title_en": "Self-introduction②】Work is going well, but I questioned this path",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "published_date_jst": "2026-03-21T22:26:00+09:00",
+      "article_type": "Life",
+      "tags": [
+        "仕事",
+        "自己紹介",
+        "生き方",
+        "キャリア",
+        "コンサル"
+      ],
+      "views": 37,
+      "likes_total": 7
+    },
+    {
+      "title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "title_en": "What I learned about working in strategy consulting",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "published_date_jst": "2026-03-25T19:21:00+09:00",
+      "article_type": "Work Know-how",
+      "tags": [
+        "仕事",
+        "ビジネス",
+        "転職",
+        "ビジネススキル",
+        "コンサル",
+        "コンサル転職"
+      ],
+      "views": 31,
+      "likes_total": 9
+    },
+    {
+      "title_jp": "課題解決がうまくいかない理由（課題分解編）",
+      "title_en": "Why problem-solving fails (problem decomposition)",
+      "article_url": "https://note.com/penduck_mk/n/n10a21e58d065",
+      "published_date_jst": "2026-03-26T18:00:00+09:00",
+      "article_type": "Work Know-how",
+      "tags": [],
+      "views": 0,
+      "likes_total": 0
+    }
+  ],
+  "events": [
+    {
+      "id": "quento|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "Quento",
+      "slug": "quento",
+      "who_url": "https://note.com/quento",
+      "timestamp_jst": "2026-03-17T21:45:33.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "masami_kt|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "masami",
+      "slug": "masami_kt",
+      "who_url": "https://note.com/masami_kt",
+      "timestamp_jst": "2026-03-17T21:45:33.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "kouji0516|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "浩二｜知識・経験・実績…",
+      "slug": "kouji0516",
+      "who_url": "https://note.com/kouji0516",
+      "timestamp_jst": "2026-03-17T21:45:33.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "tabibito_jiro||follow",
+      "kind": "follow",
+      "who": "じろー",
+      "slug": "tabibito_jiro",
+      "who_url": "https://note.com/tabibito_jiro",
+      "timestamp_jst": "2026-03-17T23:49:23.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "quento||follow",
+      "kind": "follow",
+      "who": "Quento",
+      "slug": "quento",
+      "who_url": "https://note.com/quento",
+      "timestamp_jst": "2026-03-17T23:49:23.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "masami_kt||follow",
+      "kind": "follow",
+      "who": "masami",
+      "slug": "masami_kt",
+      "who_url": "https://note.com/masami_kt",
+      "timestamp_jst": "2026-03-17T23:49:23.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "icarus_journal|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "イカロス",
+      "slug": "icarus_journal",
+      "who_url": "https://note.com/icarus_journal",
+      "timestamp_jst": "2026-03-17T17:40:00.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "excel_seed"
+    },
+    {
+      "id": "byonyk|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "byonyk",
+      "slug": "byonyk",
+      "who_url": "https://note.com/byonyk",
+      "timestamp_jst": "2026-03-17T17:40:00.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "excel_seed"
+    },
+    {
+      "id": "brisk_lily7639||follow",
+      "kind": "follow",
+      "who": "brisk_lily7…",
+      "slug": "brisk_lily7639",
+      "who_url": "https://note.com/brisk_lily7639",
+      "timestamp_jst": "2026-03-18T08:44:56.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "noble_sedum9692|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "つむ | 外資系ゆるキ…",
+      "slug": "noble_sedum9692",
+      "who_url": "https://note.com/noble_sedum9692",
+      "timestamp_jst": "2026-03-18T14:03:29.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "icarus_journal|https://note.com/penduck_mk/n/nacca9952b9e3|like",
+      "kind": "like",
+      "who": "イカロス",
+      "slug": "icarus_journal",
+      "who_url": "https://note.com/icarus_journal",
+      "timestamp_jst": "2026-03-18T18:29:00.000+09:00",
+      "article_title_jp": "戦略コンサルの仕事は、実際には何をしているのか",
+      "article_url": "https://note.com/penduck_mk/n/nacca9952b9e3",
+      "source": "excel_seed"
+    },
+    {
+      "id": "mio_ko|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "Miik",
+      "slug": "mio_ko",
+      "who_url": "https://note.com/mio_ko",
+      "timestamp_jst": "2026-03-19T02:07:54.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "icarus_journal|https://note.com/penduck_mk/n/ndc1e9112c32f|like",
+      "kind": "like",
+      "who": "イカロス",
+      "slug": "icarus_journal",
+      "who_url": "https://note.com/icarus_journal",
+      "timestamp_jst": "2026-03-19T20:12:00.000+09:00",
+      "article_title_jp": "戦略コンサルのやりがいと葛藤",
+      "article_url": "https://note.com/penduck_mk/n/ndc1e9112c32f",
+      "source": "excel_seed"
+    },
+    {
+      "id": "seiya_1||follow",
+      "kind": "follow",
+      "who": "SI",
+      "slug": "seiya_1",
+      "who_url": "https://note.com/seiya_1",
+      "timestamp_jst": "2026-03-20T09:05:11.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "masami_kt|https://note.com/penduck_mk/n/ndc1e9112c32f|like",
+      "kind": "like",
+      "who": "masami",
+      "slug": "masami_kt",
+      "who_url": "https://note.com/masami_kt",
+      "timestamp_jst": "2026-03-20T09:29:54.000+09:00",
+      "article_title_jp": "戦略コンサルのやりがいと葛藤",
+      "article_url": "https://note.com/penduck_mk/n/ndc1e9112c32f",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "kin_mac_md|https://note.com/penduck_mk/n/nacca9952b9e3|like",
+      "kind": "like",
+      "who": "オモイカネ",
+      "slug": "kin_mac_md",
+      "who_url": "https://note.com/kin_mac_md",
+      "timestamp_jst": "2026-03-21T10:36:48.000+09:00",
+      "article_title_jp": "戦略コンサルの仕事は、実際には何をしているのか",
+      "article_url": "https://note.com/penduck_mk/n/nacca9952b9e3",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "noble_sedum9692||follow",
+      "kind": "follow",
+      "who": "つむ | 外資系ゆるキ…",
+      "slug": "noble_sedum9692",
+      "who_url": "https://note.com/noble_sedum9692",
+      "timestamp_jst": "2026-03-21T10:59:18.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "icarus_journal|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "イカロス",
+      "slug": "icarus_journal",
+      "who_url": "https://note.com/icarus_journal",
+      "timestamp_jst": "2026-03-21T22:26:00.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "excel_seed"
+    },
+    {
+      "id": "tori_english|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "Tori_Englis…",
+      "slug": "tori_english",
+      "who_url": "https://note.com/tori_english",
+      "timestamp_jst": "2026-03-21T23:46:02.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "to_make_u_happy|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "Cody",
+      "slug": "to_make_u_happy",
+      "who_url": "https://note.com/to_make_u_happy",
+      "timestamp_jst": "2026-03-21T23:46:02.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "kouji0516|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "浩二｜知識・経験・実績…",
+      "slug": "kouji0516",
+      "who_url": "https://note.com/kouji0516",
+      "timestamp_jst": "2026-03-21T23:46:02.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "noble_sedum9692|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "つむ | 外資系ゆるキ…",
+      "slug": "noble_sedum9692",
+      "who_url": "https://note.com/noble_sedum9692",
+      "timestamp_jst": "2026-03-21T23:46:02.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "koilavo4suc|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "🪄あたるの恋愛成功ラボ…",
+      "slug": "koilavo4suc",
+      "who_url": "https://note.com/koilavo4suc",
+      "timestamp_jst": "2026-03-22T21:36:03.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "taropon123|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "shu",
+      "slug": "taropon123",
+      "who_url": "https://note.com/taropon123",
+      "timestamp_jst": "2026-03-22T21:36:03.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "koilavo4suc||follow",
+      "kind": "follow",
+      "who": "🪄あたるの恋愛成功ラボ…",
+      "slug": "koilavo4suc",
+      "who_url": "https://note.com/koilavo4suc",
+      "timestamp_jst": "2026-03-22T21:36:11.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "tamashi63|https://note.com/penduck_mk/n/nacca9952b9e3|like",
+      "kind": "like",
+      "who": "魂のしるべ🩬",
+      "slug": "tamashi63",
+      "who_url": "https://note.com/tamashi63",
+      "timestamp_jst": "2026-03-23T12:08:35.000+09:00",
+      "article_title_jp": "戦略コンサルの仕事は、実際には何をしているのか",
+      "article_url": "https://note.com/penduck_mk/n/nacca9952b9e3",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "tamashi63|https://note.com/penduck_mk/n/n0b1a7b82ef02|like",
+      "kind": "like",
+      "who": "魂のしるべ🩬",
+      "slug": "tamashi63",
+      "who_url": "https://note.com/tamashi63",
+      "timestamp_jst": "2026-03-23T16:35:47.000+09:00",
+      "article_title_jp": "【自己紹介】戦略コンサルを8年やって、それでも答えが出ていない問い",
+      "article_url": "https://note.com/penduck_mk/n/n0b1a7b82ef02",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "royal0708|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "Royal0708",
+      "slug": "royal0708",
+      "who_url": "https://note.com/royal0708",
+      "timestamp_jst": "2026-03-25T21:02:58.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "oyazi_kosodate|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "両麻痺ですが、何か？|…",
+      "slug": "oyazi_kosodate",
+      "who_url": "https://note.com/oyazi_kosodate",
+      "timestamp_jst": "2026-03-25T21:02:58.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "icarus_journal|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "イカロス",
+      "slug": "icarus_journal",
+      "who_url": "https://note.com/icarus_journal",
+      "timestamp_jst": "2026-03-25T19:21:00.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "excel_seed"
+    },
+    {
+      "id": "nomadic_sidejob|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "駐在員の本音｜戦略企画…",
+      "slug": "nomadic_sidejob",
+      "who_url": "https://note.com/nomadic_sidejob",
+      "timestamp_jst": "2026-03-26T07:56:39.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "rio_ai_bootcamp|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "Rio｜藤井亨子 @非…",
+      "slug": "rio_ai_bootcamp",
+      "who_url": "https://note.com/rio_ai_bootcamp",
+      "timestamp_jst": "2026-03-26T07:56:39.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "aiux_unite|https://note.com/penduck_mk/n/ndc1e9112c32f|like",
+      "kind": "like",
+      "who": "吉川 聡史 | AI＆…",
+      "slug": "aiux_unite",
+      "who_url": "https://note.com/aiux_unite",
+      "timestamp_jst": "2026-03-26T08:53:29.000+09:00",
+      "article_title_jp": "戦略コンサルのやりがいと葛藤",
+      "article_url": "https://note.com/penduck_mk/n/ndc1e9112c32f",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "aiux_unite|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "吉川 聡史 | AI＆…",
+      "slug": "aiux_unite",
+      "who_url": "https://note.com/aiux_unite",
+      "timestamp_jst": "2026-03-26T08:53:55.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "tora_nari_gogo|https://note.com/penduck_mk/n/n7d0be2eaeb94|like",
+      "kind": "like",
+      "who": "とらなりなり",
+      "slug": "tora_nari_gogo",
+      "who_url": "https://note.com/tora_nari_gogo",
+      "timestamp_jst": "2026-03-26T08:53:55.000+09:00",
+      "article_title_jp": "【自己紹介②】仕事は順調。でも、このままでいいのかと思っていた",
+      "article_url": "https://note.com/penduck_mk/n/n7d0be2eaeb94",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "nisson_cons||follow",
+      "kind": "follow",
+      "who": "にっそん | コンサル…",
+      "slug": "nisson_cons",
+      "who_url": "https://note.com/nisson_cons",
+      "timestamp_jst": "2026-03-26T11:34:18.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "yu0412||follow",
+      "kind": "follow",
+      "who": "yu",
+      "slug": "yu0412",
+      "who_url": "https://note.com/yu0412",
+      "timestamp_jst": "2026-03-26T11:34:18.000+09:00",
+      "article_title_jp": null,
+      "article_url": null,
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "akino12|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "Akino",
+      "slug": "akino12",
+      "who_url": "https://note.com/akino12",
+      "timestamp_jst": "2026-03-26T14:06:04.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "nisson_cons|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "にっそん | コンサル…",
+      "slug": "nisson_cons",
+      "who_url": "https://note.com/nisson_cons",
+      "timestamp_jst": "2026-03-26T14:06:04.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "yu0412|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "yu",
+      "slug": "yu0412",
+      "who_url": "https://note.com/yu0412",
+      "timestamp_jst": "2026-03-26T14:06:04.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "aiux_unite|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "吉川 聡史 | AI＆…",
+      "slug": "aiux_unite",
+      "who_url": "https://note.com/aiux_unite",
+      "timestamp_jst": "2026-03-26T14:06:04.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "flower_index|https://note.com/penduck_mk/n/n10a21e58d065|like",
+      "kind": "like",
+      "who": "Kyo",
+      "slug": "flower_index",
+      "who_url": "https://note.com/flower_index",
+      "timestamp_jst": "2026-03-26T19:25:55.000+09:00",
+      "article_title_jp": "課題解決がうまくいかない理由（課題分解編）",
+      "article_url": "https://note.com/penduck_mk/n/n10a21e58d065",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "haihaihaii|https://note.com/penduck_mk/n/n10a21e58d065|like",
+      "kind": "like",
+      "who": "こしあん | グローバ…",
+      "slug": "haihaihaii",
+      "who_url": "https://note.com/haihaihaii",
+      "timestamp_jst": "2026-03-26T19:25:55.000+09:00",
+      "article_title_jp": "課題解決がうまくいかない理由（課題分解編）",
+      "article_url": "https://note.com/penduck_mk/n/n10a21e58d065",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "brisk_lily7639|https://note.com/penduck_mk/n/nacca9952b9e3|like",
+      "kind": "like",
+      "who": "brisk_lily7…",
+      "slug": "brisk_lily7639",
+      "who_url": "https://note.com/brisk_lily7639",
+      "timestamp_jst": "2026-03-26T20:49:37.000+09:00",
+      "article_title_jp": "戦略コンサルの仕事は、実際には何をしているのか",
+      "article_url": "https://note.com/penduck_mk/n/nacca9952b9e3",
+      "source": "notifications_2026-03-26"
+    },
+    {
+      "id": "ronxworks|https://note.com/penduck_mk/n/n8554484e8fc4|like",
+      "kind": "like",
+      "who": "Ron",
+      "slug": "ronxworks",
+      "who_url": "https://note.com/ronxworks",
+      "timestamp_jst": "2026-03-26T20:55:27.000+09:00",
+      "article_title_jp": "戦略コンサルで学んだ仕事のやり方",
+      "article_url": "https://note.com/penduck_mk/n/n8554484e8fc4",
+      "source": "notifications_2026-03-26"
+    }
+  ],
+  "user_metadata": [
+    {
+      "slug": "icarus_journal",
+      "name": "イカロス",
+      "user_id": "icarus_journal",
+      "profile_url": "https://note.com/icarus_journal",
+      "user_type": "Career / personal writing",
+      "is_friend": 1
+    },
+    {
+      "slug": "tamashi63",
+      "name": "魂のしるべ",
+      "user_id": "tamashi63",
+      "profile_url": "https://note.com/tamashi63",
+      "user_type": "Spiritual / personal",
+      "is_friend": 0
+    },
+    {
+      "slug": "koilavo4suc",
+      "name": "あたるの恋愛成功ラボ",
+      "user_id": "koilavo4suc",
+      "profile_url": "https://note.com/koilavo4suc",
+      "user_type": "Relationship / self-help",
+      "is_friend": 0
+    },
+    {
+      "slug": "taropon123",
+      "name": "shu",
+      "user_id": "taropon123",
+      "profile_url": "https://note.com/taropon123",
+      "user_type": "Casual / general",
+      "is_friend": 0
+    },
+    {
+      "slug": "mio_ko",
+      "name": "Miik",
+      "user_id": "mio_ko",
+      "profile_url": "https://note.com/mio_ko",
+      "user_type": "Unknown / personal",
+      "is_friend": 0
+    },
+    {
+      "slug": "noble_sedum9692",
+      "name": "つむ",
+      "user_id": "noble_sedum9692",
+      "profile_url": "https://note.com/noble_sedum9692",
+      "user_type": "Career / lifestyle",
+      "is_friend": 0
+    },
+    {
+      "slug": "quento",
+      "name": "Quento",
+      "user_id": "quento",
+      "profile_url": "https://note.com/quento",
+      "user_type": "Casual",
+      "is_friend": 1
+    },
+    {
+      "slug": "byonyk",
+      "name": "byonyk",
+      "user_id": "byonyk",
+      "profile_url": "https://note.com/byonyk",
+      "user_type": "Casual",
+      "is_friend": 1
+    },
+    {
+      "slug": "masami_kt",
+      "name": "masami",
+      "user_id": "masami_kt",
+      "profile_url": "https://note.com/masami_kt",
+      "user_type": "Casual",
+      "is_friend": 1
+    },
+    {
+      "slug": "—",
+      "name": "Guest users",
+      "user_id": "—",
+      "profile_url": "—",
+      "user_type": "Anonymous",
+      "is_friend": 1
+    },
+    {
+      "slug": "aiux_unite",
+      "name": "吉川 聡史",
+      "user_id": "aiux_unite",
+      "profile_url": "https://note.com/aiux_unite",
+      "user_type": "AI / UX",
+      "is_friend": 0
+    },
+    {
+      "slug": "tora_nari_gogo",
+      "name": "とらなりなり",
+      "user_id": "tora_nari_gogo",
+      "profile_url": "https://note.com/tora_nari_gogo",
+      "user_type": "Personal",
+      "is_friend": 0
+    },
+    {
+      "slug": "tori_english",
+      "name": "Tori_English",
+      "user_id": "tori_english",
+      "profile_url": "https://note.com/tori_english",
+      "user_type": "Language / education",
+      "is_friend": 0
+    },
+    {
+      "slug": "to_make_u_happy",
+      "name": "Cody",
+      "user_id": "to_make_u_happy",
+      "profile_url": "https://note.com/to_make_u_happy",
+      "user_type": "Lifestyle",
+      "is_friend": 0
+    },
+    {
+      "slug": "akino12",
+      "name": "Akino",
+      "user_id": "akino12",
+      "profile_url": "https://note.com/akino12",
+      "user_type": "Casual",
+      "is_friend": 0
+    },
+    {
+      "slug": "nisson_cons",
+      "name": "にっそん",
+      "user_id": "nisson_cons",
+      "profile_url": "https://note.com/nisson_cons",
+      "user_type": "Consulting",
+      "is_friend": 0
+    },
+    {
+      "slug": "yu0412",
+      "name": "yu",
+      "user_id": "yu0412",
+      "profile_url": "https://note.com/yu0412",
+      "user_type": "Casual",
+      "is_friend": 0
+    },
+    {
+      "slug": "nomadic_sidejob",
+      "name": "nomadic_sidejob",
+      "user_id": "nomadic_sidejob",
+      "profile_url": "https://note.com/nomadic_sidejob",
+      "user_type": "Career / expat",
+      "is_friend": 0
+    },
+    {
+      "slug": "rio_ai_bootcamp",
+      "name": "Rio",
+      "user_id": "rio_ai_bootcamp",
+      "profile_url": "https://note.com/rio_ai_bootcamp",
+      "user_type": "AI / education",
+      "is_friend": 0
+    },
+    {
+      "slug": "royal0708",
+      "name": "Royal0708",
+      "user_id": "royal0708",
+      "profile_url": "https://note.com/royal0708",
+      "user_type": "Casual",
+      "is_friend": 0
+    },
+    {
+      "slug": "oyazi_kosodate",
+      "name": "両麻痺ですが",
+      "user_id": "oyazi_kosodate",
+      "profile_url": "https://note.com/oyazi_kosodate",
+      "user_type": "Personal / blog",
+      "is_friend": 0
+    },
+    {
+      "slug": "*",
+      "name": "*",
+      "user_id": "*",
+      "profile_url": "*",
+      "user_type": "",
+      "is_friend": 0
+    }
+  ],
+  "exported_at": "2026-04-03T16:04:18.381Z",
+  "source": "shared"
+}
