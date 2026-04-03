@@ -1907,7 +1907,7 @@ function computeContentObs(m) {
       metric: fVal + fUnit + ' vs ' + sVal + sUnit,
       label: isJa ? 'A' + fastest.idx + '(\u6700\u901f) vs A' + slowest.idx + '(\u6700\u9045)\u306e\u3044\u3044\u306d\u7372\u5f97\u901f\u5ea6' : 'A' + fastest.idx + ' attracts likes ' + (sVal > fVal ? Math.round(sVal / Math.max(fVal, 1)) + 'x' : 'much') + ' faster than A' + slowest.idx,
       meaning: fastest.median < 6
-        ? (isJa ? 'A' + fastest.idx + '\u306e\u30bf\u30a4\u30c8\u30eb\u3068\u5c0e\u5165\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Study A' + fastest.idx + '\'s title and opening. Reuse that hook next time')
+        ? (isJa ? 'A' + fastest.idx + '\u306e\u30bf\u30a4\u30c8\u30eb\u3068\u5c0e\u5165\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Study A' + fastest.idx + '\'s title and opening. Reuse that approach next time')
         : (isJa ? 'A' + fastest.idx + '\u306e\u5c0e\u5165\u90e8\u5206\u3092\u53c2\u8003\u306b\u3001\u6b21\u306e\u8a18\u4e8b\u306e\u30d5\u30c3\u30af\u3092\u5f37\u5316\u3059\u308b' : 'A' + fastest.idx + ' gained traction faster. A' + slowest.idx + ' spread gradually')
     });
   }
@@ -1937,7 +1937,7 @@ function computeTimingObs(m) {
     var metricStr = pct48 + '%';
     var labelStr = isJa ? '\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u53cd\u5fda' : pct48 + '% of likes arrive within 48 hours of publish';
     if (pctLong >= 20) {
-      labelStr += isJa ? '\u3002' + pctLong + '%\u306f\u305d\u308c\u4ee5\u964d' : ', ' + pctLong + '% trickle in later';
+      labelStr += isJa ? '\u3002' + pctLong + '%\u306f\u305d\u308c\u4ee5\u964d' : ', ' + pctLong + '% arrive after 48h';
     }
     var remainPct = 100 - pct48;
     var timingMeaning = pct48 >= 70
