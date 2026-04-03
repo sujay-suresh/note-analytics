@@ -182,21 +182,64 @@ body {
   white-space: nowrap;
 }
 
-.range-filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-.range-select {
-  font-size: 12px;
+.article-filter { position: relative; }
+.af-btn {
+  font-size: 11px;
   padding: 4px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink-light);
   cursor: pointer;
+  white-space: nowrap;
 }
-.range-select:hover { border-color: var(--accent); }
+.af-btn:hover { border-color: var(--accent); color: var(--accent); }
+.af-panel {
+  display: none;
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 200;
+  min-width: 300px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.af-panel.open { display: block; }
+.af-search {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 12px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+  box-sizing: border-box;
+}
+.af-actions {
+  display: flex;
+  gap: 12px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+}
+.af-actions a { color: var(--accent); cursor: pointer; text-decoration: none; }
+.af-actions a:hover { text-decoration: underline; }
+.af-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.af-item:hover { background: var(--bg); }
+.af-item input { margin: 0; cursor: pointer; }
+.af-item .af-title { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.af-item .af-stat { font-size: 10px; color: var(--ink-muted); white-space: nowrap; }
 
 .section-heading {
   font-size: 14px;
@@ -716,9 +759,16 @@ body {
   <div class="app-title">Note.com Analytics</div>
   <div class="header-controls">
     <div class="status-bar" id="statusBar"></div>
-    <div class="range-filter" id="rangeFilter" style="display:none;">
-      <label for="rangeSelect" style="font-size:10px;color:var(--ink-muted);">Analyse:</label>
-      <select id="rangeSelect" class="range-select" onchange="applyRange()"></select>
+    <div class="article-filter" id="articleFilter" style="display:none;">
+      <button class="af-btn" id="afBtn" onclick="toggleArticleFilter()"></button>
+      <div class="af-panel" id="afPanel">
+        <input class="af-search" id="afSearch" type="text" oninput="filterArticleList()">
+        <div class="af-actions">
+          <a onclick="selectAllArticles(true)">All</a>
+          <a onclick="selectAllArticles(false)">None</a>
+        </div>
+        <div id="afList"></div>
+      </div>
     </div>
     <button class="lang-toggle" id="langToggle" onclick="toggleLang()">EN</button>
   </div>
@@ -3300,6 +3350,19 @@ async function processImport(text) {
         return;
       }
     }
+    // Preview what will be imported
+    var evCount = (raw.events || raw.notifications || []).length;
+    var artCount = (raw.articles || []).length;
+    var userCount = (raw.user_metadata || []).length;
+    var preview = isJa
+      ? evCount + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + artCount + '\u4ef6\u306e\u8a18\u4e8b'
+      : evCount + ' events, ' + artCount + ' articles';
+    if (userCount > 0) preview += (isJa ? ', ' + userCount + '\u4eba\u306e\u30e6\u30fc\u30b6\u30fc' : ', ' + userCount + ' users');
+    var confirmMsg = isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u3057\u307e\u3059\u304b\uff1f\n' + preview : 'Import this data?\n' + preview;
+    if (!confirm(confirmMsg)) {
+      showImportResult(isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u3092\u30ad\u30e3\u30f3\u30bb\u30eb\u3057\u307e\u3057\u305f' : 'Import cancelled', false);
+      return;
+    }
     var result = await importData(raw);
     var msg = isJa
       ? result.events + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + result.articles + '\u4ef6\u306e\u8a18\u4e8b\u3092\u30a4\u30f3\u30dd\u30fc\u30c8'
@@ -3309,6 +3372,8 @@ async function processImport(text) {
     if (result.skipped > 0) msg += (isJa ? ' (' + result.skipped + '\u4ef6\u306f\u91cd\u8907)' : ' (' + result.skipped + ' duplicates skipped)');
     showImportResult(msg, false);
     await loadAndRender();
+    // Switch to Briefing tab to show updated charts
+    switchTab('briefing');
   } catch (err) {
     showImportResult(
       isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u5931\u6557: ' + err.message : 'Import failed: ' + err.message,
@@ -3378,44 +3443,113 @@ importZone.addEventListener('drop', async (e) => {
 let currentMetrics = null;
 let allMetrics = null;
 let prevSnapshot = null;
-let selectedRange = 'all';
+var selectedArticleUrls = null; // null = all selected
 
-function buildRangeFilter(totalArticles) {
-  var filter = document.getElementById('rangeFilter');
-  var select = document.getElementById('rangeSelect');
-  var label = filter.querySelector('label');
+function buildArticleFilter() {
+  var filter = document.getElementById('articleFilter');
+  if (!allMetrics || allMetrics.articles.length === 0) { filter.style.display = 'none'; return; }
+  filter.style.display = 'block';
+  updateAfBtn();
+  renderAfList('');
+}
+
+function updateAfBtn() {
+  var btn = document.getElementById('afBtn');
   var isJa = currentLang === 'ja';
+  var total = allMetrics ? allMetrics.articles.length : 0;
+  if (!selectedArticleUrls || selectedArticleUrls.size === total) {
+    btn.textContent = isJa ? '\u5168' + total + '\u8a18\u4e8b' : 'All ' + total + ' articles';
+  } else {
+    btn.textContent = selectedArticleUrls.size + (isJa ? '\u8a18\u4e8b\u9078\u629e\u4e2d' : ' selected');
+  }
+}
 
-  label.textContent = isJa ? '\u5206\u6790:' : 'Analyse:';
+function toggleArticleFilter() {
+  var panel = document.getElementById('afPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) {
+    document.getElementById('afSearch').value = '';
+    document.getElementById('afSearch').placeholder = currentLang === 'ja' ? '\u8a18\u4e8b\u3092\u691c\u7d22...' : 'Search articles...';
+    renderAfList('');
+    document.getElementById('afSearch').focus();
+    // Close on outside click
+    setTimeout(function() {
+      document.addEventListener('click', closeAfOnOutside);
+    }, 0);
+  }
+}
 
-  if (totalArticles <= 5) { filter.style.display = 'none'; return; }
-  filter.style.display = 'flex';
+function closeAfOnOutside(e) {
+  var filter = document.getElementById('articleFilter');
+  if (!filter.contains(e.target)) {
+    document.getElementById('afPanel').classList.remove('open');
+    document.removeEventListener('click', closeAfOnOutside);
+  }
+}
 
-  var options = [
-    { value: 'all', label: isJa ? '\u5168' + totalArticles + '\u8a18\u4e8b' : 'All ' + totalArticles + ' articles' },
-  ];
-  if (totalArticles > 5) options.push({ value: '5', label: isJa ? '\u6700\u65b05\u8a18\u4e8b' : 'Last 5 articles' });
-  if (totalArticles > 10) options.push({ value: '10', label: isJa ? '\u6700\u65b010\u8a18\u4e8b' : 'Last 10 articles' });
-  if (totalArticles > 20) options.push({ value: '20', label: isJa ? '\u6700\u65b020\u8a18\u4e8b' : 'Last 20 articles' });
+function renderAfList(query) {
+  if (!allMetrics) return;
+  var list = document.getElementById('afList');
+  var isJa = currentLang === 'ja';
+  var q = (query || '').toLowerCase();
+  var allSelected = !selectedArticleUrls;
 
-  select.innerHTML = options.map(function(o) {
-    return '<option value="' + o.value + '"' + (o.value === selectedRange ? ' selected' : '') + '>' + o.label + '</option>';
+  list.innerHTML = allMetrics.articles.map(function(art, i) {
+    var title = isJa ? (art.title_jp || art.title_en) : (art.title_en || art.title_jp);
+    if (q && !title.toLowerCase().includes(q) && !('a' + (i+1)).includes(q)) return '';
+    var checked = allSelected || selectedArticleUrls.has(art.article_url);
+    var views = art.views || 0;
+    return '<label class="af-item">' +
+      '<input type="checkbox"' + (checked ? ' checked' : '') + ' onchange="toggleArticle(\'' + art.article_url.replace(/'/g, "\\'") + '\')">' +
+      '<span class="af-title">A' + (i+1) + ' ' + escapeHtml(shortTitle(title, 35)) + '</span>' +
+      '<span class="af-stat">' + views + (isJa ? '\u95b2\u89a7' : ' views') + '</span>' +
+      '</label>';
   }).join('');
 }
 
-function getFilteredMetrics() {
-  if (!allMetrics || selectedRange === 'all') return allMetrics;
-  var n = parseInt(selectedRange);
-  var recentArticles = allMetrics.articles.slice(-n);
-  var recentUrls = new Set(recentArticles.map(function(a) { return a.article_url; }));
-  var filteredEvents = allMetrics.events.filter(function(e) {
-    return e.kind === 'follow' || recentUrls.has(e.article_url);
-  });
-  return computeMetrics(filteredEvents, recentArticles);
+function filterArticleList() {
+  renderAfList(document.getElementById('afSearch').value);
 }
 
-function applyRange() {
-  selectedRange = document.getElementById('rangeSelect').value;
+function selectAllArticles(selectAll) {
+  if (selectAll) {
+    selectedArticleUrls = null;
+  } else {
+    selectedArticleUrls = new Set();
+  }
+  renderAfList(document.getElementById('afSearch').value);
+  updateAfBtn();
+  applyArticleFilter();
+}
+
+function toggleArticle(url) {
+  if (!selectedArticleUrls) {
+    // Was "all" - create set with all except this one
+    selectedArticleUrls = new Set(allMetrics.articles.map(function(a) { return a.article_url; }));
+    selectedArticleUrls.delete(url);
+  } else if (selectedArticleUrls.has(url)) {
+    selectedArticleUrls.delete(url);
+  } else {
+    selectedArticleUrls.add(url);
+    // If all are now selected, reset to null (= all)
+    if (selectedArticleUrls.size === allMetrics.articles.length) selectedArticleUrls = null;
+  }
+  updateAfBtn();
+  applyArticleFilter();
+}
+
+function getFilteredMetrics() {
+  if (!allMetrics || !selectedArticleUrls) return allMetrics;
+  if (selectedArticleUrls.size === 0) return allMetrics;
+  var selected = allMetrics.articles.filter(function(a) { return selectedArticleUrls.has(a.article_url); });
+  var selectedUrls = new Set(selected.map(function(a) { return a.article_url; }));
+  var filteredEvents = allMetrics.events.filter(function(e) {
+    return e.kind === 'follow' || selectedUrls.has(e.article_url);
+  });
+  return computeMetrics(filteredEvents, selected);
+}
+
+function applyArticleFilter() {
   currentMetrics = getFilteredMetrics();
   renderBriefing();
 }
@@ -3461,7 +3595,7 @@ async function loadAndRender() {
   } catch(e) {}
 
   renderStatusBar(currentMetrics);
-  buildRangeFilter(allMetrics.articles.length);
+  buildArticleFilter();
   renderBriefing();
   renderEventsTable(currentMetrics.events);
   renderImportHistory();
@@ -3506,7 +3640,7 @@ function renderAll() {
   if (allMetrics) {
     currentMetrics = getFilteredMetrics();
     renderStatusBar(currentMetrics);
-    buildRangeFilter(allMetrics.articles.length);
+    buildArticleFilter();
     renderBriefing();
     renderEventsTable(currentMetrics.events);
     renderImportHistory();
