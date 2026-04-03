@@ -583,6 +583,20 @@ body {
 .import-result.success { display: block; background: var(--green-light); color: var(--green); }
 .import-result.error { display: block; background: var(--red-light); color: var(--red); }
 
+.import-preview-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.import-preview-card .ip-filename { font-weight: 600; margin-bottom: 6px; }
+.import-preview-card .ip-stats { display: flex; gap: 16px; color: var(--ink-light); margin-bottom: 8px; }
+.import-preview-card .ip-stat-new { color: var(--green); font-weight: 600; }
+.import-preview-card .ip-stat-dupe { color: var(--ink-muted); }
+.import-preview-card .ip-actions { display: flex; gap: 8px; }
+
 .data-table-wrap {
   background: var(--surface);
   border-radius: var(--radius);
@@ -858,6 +872,7 @@ body {
     </button>
     <input type="file" id="fileInput" accept=".json,.csv" multiple style="display:none" onchange="handleFileUpload(event)">
     <div class="import-result" id="importResult"></div>
+    <div id="importPreview" style="display:none;margin-top:16px;"></div>
   </div>
 
   <div class="data-table-wrap">
@@ -1904,7 +1919,11 @@ function computeContentObs(m) {
     obs.push({
       metric: worstRate.toFixed(0) + '%\u2013' + bestRate.toFixed(0) + '%',
       label: isJa ? '\u30b9\u30ad\u7387\u306e\u7bc4\u56f2\uff08\u5e73\u5747' + avgRate.toFixed(0) + '%\uff09' : 'All articles convert within a narrow ' + worstRate.toFixed(0) + '\u2013' + bestRate.toFixed(0) + '% band',
-      meaning: isJa ? '\u54c1\u8cea\u304c\u5b89\u5b9a\u3002\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u306f\u305d\u306e\u307e\u307e\u3067\u65b0\u30c8\u30d4\u30c3\u30af\u3092\u8a66\u3059' : 'Articles are performing consistently across topics'
+      meaning: avgRate >= 15
+        ? (isJa ? '\u5168\u8a18\u4e8b\u304c\u5b89\u5b9a\u3057\u3066\u9ad8\u3044\u30b9\u30ad\u7387\u3002\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u304c\u6a5f\u80fd\u3057\u3066\u3044\u308b' : 'All articles converting well. The format is working')
+        : avgRate >= 5
+          ? (isJa ? '\u5b89\u5b9a\u3057\u3066\u3044\u308b\u304c\u4f4e\u3081\u3002\u30c8\u30d4\u30c3\u30af\u3088\u308a\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u304c\u5f71\u97ff\u3057\u3066\u3044\u308b\u53ef\u80fd\u6027' : 'Consistent but modest. Format may matter more than topic')
+          : (isJa ? '\u5168\u4f53\u7684\u306b\u30b9\u30ad\u7387\u304c\u4f4e\u3044\u3002\u8aad\u8005\u5c64\u3068\u8a18\u4e8b\u306e\u30de\u30c3\u30c1\u3092\u78ba\u8a8d' : 'Like rates are low across all articles. Content-audience fit may be the factor')
     });
   }
 
@@ -2059,7 +2078,9 @@ function computeTimingObs(m) {
     obs.push({
       metric: '\u2014',
       label: isJa ? '\u6642\u9593\u5e2f\u306b\u504f\u308a\u306a\u3057' : 'Likes spread evenly across hours',
-      meaning: isJa ? '\u597d\u304d\u306a\u6642\u9593\u306b\u516c\u958b\u3057\u3066\u3088\u3044' : 'No clear peak hour. Timing has minimal effect'
+      meaning: likes.length < 20
+        ? (isJa ? '\u30c7\u30fc\u30bf\u304c\u5c11\u306a\u3044\u305f\u3081\u30d1\u30bf\u30fc\u30f3\u304c\u4e0d\u660e\u78ba\u3002\u30c7\u30fc\u30bf\u304c\u5897\u3048\u308b\u3068\u5091\u5411\u304c\u898b\u3048\u308b' : 'Not enough data yet to detect a pattern. Trends will emerge with more likes')
+        : (isJa ? '\u8aad\u8005\u306f\u6642\u9593\u5e2f\u3092\u554f\u308f\u305a\u53cd\u5fdc\u3002\u516c\u958b\u6642\u523b\u306e\u5f71\u97ff\u304c\u5c0f\u3055\u3044' : 'Readers respond at all hours. Publish timing has minimal effect on engagement')
     });
   }
 
@@ -2107,12 +2128,11 @@ function computeAudienceObs(m) {
   if (m.uniqueUsers < 3) return obs;
 
   // 1. Organic vs friend split (skip if no friend data, and skip if it just restates the funnel)
-  if (m.friendLikes > 0) {
-    var organicPct = (m.organicLikes + m.organicFollows) > 0
-      ? Math.round((m.organicLikes + m.organicFollows) / (m.totalLikes + m.totalFollows) * 100) : 0;
+  if (m.friendUsers > 0) {
+    var organicPct = m.uniqueUsers > 0 ? Math.round(m.organicUsers / m.uniqueUsers * 100) : 0;
     obs.push({
       metric: organicPct + '%',
-      label: isJa ? '\u65b0\u898f\u8aad\u8005\u7387 (' + m.organicLikes + '\u4ef6\u65b0\u898f / ' + m.friendLikes + '\u4ef6\u30d5\u30ec\u30f3\u30c9)' : organicPct + '% of engagement comes from new readers (' + m.organicLikes + ' new, ' + m.friendLikes + ' friends)',
+      label: isJa ? '\u65b0\u898f\u8aad\u8005\u7387 (' + m.organicUsers + '\u4eba\u65b0\u898f / ' + m.friendUsers + '\u4eba\u30d5\u30ec\u30f3\u30c9)' : organicPct + '% of readers are new (' + m.organicUsers + ' new, ' + m.friendUsers + ' friends)',
       meaning: organicPct >= 80
         ? (isJa ? '\u65b0\u898f\u8aad\u8005\u304c\u5927\u534a\u3002\u81ea\u7136\u306b\u5c4a\u3044\u3066\u3044\u308b' : 'Almost all engagement comes from new readers')
         : organicPct >= 50
@@ -2364,10 +2384,11 @@ function computeMetrics(events, articles) {
     dowPublish,
     DOW_NAMES,
     publishHours,
+    // Unique people counts (not event counts) for organic/friend split
+    friendUsers: new Set(likes.filter(function(e) { return e.is_friend === 1; }).map(function(e) { return e.slug; })).size,
+    organicUsers: new Set(likes.filter(function(e) { return e.is_friend !== 1; }).map(function(e) { return e.slug; })).size,
     friendLikes: likes.filter(function(e) { return e.is_friend === 1; }).length,
     organicLikes: likes.filter(function(e) { return e.is_friend !== 1; }).length,
-    friendFollows: follows.filter(function(e) { return e.is_friend === 1; }).length,
-    organicFollows: follows.filter(function(e) { return e.is_friend !== 1; }).length,
   };
 }
 
@@ -3311,83 +3332,108 @@ function isCSV(text) {
   return firstLine.includes('kind,') && firstLine.includes('who,');
 }
 
-async function processImport(text) {
+// Parse text into raw data object, return null on error
+function parseImportText(text) {
   var isJa = currentLang === 'ja';
-
-  // Validate input
-  if (!text || text.trim().length === 0) {
-    showImportResult(isJa ? '\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u304c\u7a7a\u3067\u3059\u3002' : 'Nothing to import. Clipboard is empty.', true);
-    return;
-  }
-
+  if (!text || text.trim().length === 0) return null;
   var trimmed = text.trim();
-
-  // Check for common mistakes: pasting a filename instead of file contents
-  if (trimmed.length < 100 && !trimmed.startsWith('{') && !trimmed.startsWith('[') && !trimmed.includes(',')) {
-    showImportResult(
-      isJa ? '\u30d5\u30a1\u30a4\u30eb\u540d\u3067\u306f\u306a\u304f\u3001\u30d5\u30a1\u30a4\u30eb\u306e\u4e2d\u8eab\u3092\u8cbc\u308a\u4ed8\u3051\u3066\u304f\u3060\u3055\u3044\u3002\u307e\u305f\u306f\u30d5\u30a1\u30a4\u30eb\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3057\u3066\u304f\u3060\u3055\u3044\u3002'
-        : 'This looks like a filename, not file contents. Upload the file directly using the Upload button, or paste the actual file contents.',
-      true);
-    return;
-  }
-
+  if (trimmed.length < 100 && !trimmed.startsWith('{') && !trimmed.startsWith('[') && !trimmed.includes(',')) return null;
   try {
-    var raw;
     if (isCSV(trimmed)) {
       var rows = parseCSV(trimmed);
-      if (rows.length === 0) {
-        showImportResult(isJa ? 'CSV\u306b\u30c7\u30fc\u30bf\u884c\u304c\u3042\u308a\u307e\u305b\u3093\u3002' : 'CSV has no data rows.', true);
-        return;
-      }
-      raw = { events: rows };
-    } else {
-      try {
-        raw = JSON.parse(trimmed);
-      } catch (jsonErr) {
-        showImportResult(
-          isJa ? '\u30c7\u30fc\u30bf\u5f62\u5f0f\u3092\u8a8d\u8b58\u3067\u304d\u307e\u305b\u3093\u3002JSON\u307e\u305f\u306fCSV\u30d5\u30a1\u30a4\u30eb\u3092\u30a2\u30c3\u30d7\u30ed\u30fc\u30c9\u3059\u308b\u304b\u3001\u4e2d\u8eab\u3092\u8cbc\u308a\u4ed8\u3051\u3066\u304f\u3060\u3055\u3044\u3002'
-            : 'Could not read this data. Upload a JSON or CSV file, or paste the file contents directly.',
-          true);
-        return;
-      }
+      return rows.length > 0 ? { events: rows } : null;
     }
-    // Preview what will be imported
-    var evCount = (raw.events || raw.notifications || []).length;
-    var artCount = (raw.articles || []).length;
-    var userCount = (raw.user_metadata || []).length;
-    var preview = isJa
-      ? evCount + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + artCount + '\u4ef6\u306e\u8a18\u4e8b'
-      : evCount + ' events, ' + artCount + ' articles';
-    if (userCount > 0) preview += (isJa ? ', ' + userCount + '\u4eba\u306e\u30e6\u30fc\u30b6\u30fc' : ', ' + userCount + ' users');
-    var confirmMsg = isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u3057\u307e\u3059\u304b\uff1f\n' + preview : 'Import this data?\n' + preview;
-    if (!confirm(confirmMsg)) {
-      showImportResult(isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u3092\u30ad\u30e3\u30f3\u30bb\u30eb\u3057\u307e\u3057\u305f' : 'Import cancelled', false);
-      return;
-    }
-    var result = await importData(raw);
-    var msg = isJa
-      ? result.events + '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8\u3001' + result.articles + '\u4ef6\u306e\u8a18\u4e8b\u3092\u30a4\u30f3\u30dd\u30fc\u30c8'
-      : 'Imported ' + result.events + ' events, ' + result.articles + ' articles';
-    if (result.stats > 0) msg += (isJa ? ', ' + result.stats + '\u4ef6\u306e\u7d71\u8a08' : ', ' + result.stats + ' stats');
-    if (result.users > 0) msg += (isJa ? ', ' + result.users + '\u4eba\u306e\u30e6\u30fc\u30b6\u30fc\u30c7\u30fc\u30bf' : ', ' + result.users + ' user profiles');
-    if (result.skipped > 0) msg += (isJa ? ' (' + result.skipped + '\u4ef6\u306f\u91cd\u8907)' : ' (' + result.skipped + ' duplicates skipped)');
+    return JSON.parse(trimmed);
+  } catch(e) { return null; }
+}
+
+// Count duplicates by checking existing DB
+async function analyseImport(raw) {
+  var events = raw.events || raw.notifications || [];
+  var articles = raw.articles || [];
+  var users = raw.user_metadata || [];
+  var existingEvents = await dbGetAll('events');
+  var existingIds = new Set(existingEvents.map(function(e) { return e.id; }));
+  var newEvents = 0, dupeEvents = 0;
+  var parsed = parseNotifications ? parseNotifications(raw) : { events: events };
+  (parsed.events || events).forEach(function(e) {
+    var id = e.id || makeEventId(e.slug || e.who || '', e.article_url || '', e.kind || '');
+    if (existingIds.has(id)) dupeEvents++; else newEvents++;
+  });
+  return { totalEvents: events.length, newEvents: newEvents, dupeEvents: dupeEvents, articles: articles.length, users: users.length, raw: raw };
+}
+
+// Pending imports waiting for user confirmation
+var pendingImports = [];
+
+function showImportPreview(items) {
+  var panel = document.getElementById('importPreview');
+  var isJa = currentLang === 'ja';
+  if (items.length === 0) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  panel.innerHTML = items.map(function(item, i) {
+    return '<div class="import-preview-card">' +
+      '<div class="ip-filename">' + escapeHtml(item.filename) + '</div>' +
+      '<div class="ip-stats">' +
+        '<span class="ip-stat-new">' + item.analysis.newEvents + (isJa ? '\u4ef6\u65b0\u898f' : ' new') + '</span>' +
+        (item.analysis.dupeEvents > 0 ? '<span class="ip-stat-dupe">' + item.analysis.dupeEvents + (isJa ? '\u4ef6\u91cd\u8907' : ' duplicates') + '</span>' : '') +
+        (item.analysis.articles > 0 ? '<span>' + item.analysis.articles + (isJa ? '\u8a18\u4e8b' : ' articles') + '</span>' : '') +
+        (item.analysis.users > 0 ? '<span>' + item.analysis.users + (isJa ? '\u30e6\u30fc\u30b6\u30fc' : ' users') + '</span>' : '') +
+      '</div>' +
+      '<div class="ip-actions">' +
+        '<button class="btn btn-primary btn-sm" onclick="confirmImport(' + i + ')">' + (isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8' : 'Import') + '</button>' +
+        '<button class="btn btn-sm" onclick="dismissImport(' + i + ')">' + (isJa ? '\u30b9\u30ad\u30c3\u30d7' : 'Skip') + '</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function confirmImport(idx) {
+  var item = pendingImports[idx];
+  if (!item) return;
+  var isJa = currentLang === 'ja';
+  try {
+    var result = await importData(item.analysis.raw);
+    var msg = result.events + (isJa ? '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8' : ' events');
+    if (result.articles > 0) msg += ', ' + result.articles + (isJa ? '\u8a18\u4e8b' : ' articles');
+    if (result.skipped > 0) msg += ' (' + result.skipped + (isJa ? '\u91cd\u8907' : ' dupes') + ')';
     showImportResult(msg, false);
+    pendingImports.splice(idx, 1);
+    showImportPreview(pendingImports);
     await loadAndRender();
-    // Switch to Briefing tab to show updated charts
-    switchTab('briefing');
-  } catch (err) {
-    showImportResult(
-      isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u5931\u6557: ' + err.message : 'Import failed: ' + err.message,
-      true);
+    if (pendingImports.length === 0) switchTab('briefing');
+  } catch(err) {
+    showImportResult((isJa ? '\u5931\u6557: ' : 'Failed: ') + err.message, true);
   }
+}
+
+function dismissImport(idx) {
+  pendingImports.splice(idx, 1);
+  showImportPreview(pendingImports);
+  if (pendingImports.length === 0) {
+    document.getElementById('importPreview').style.display = 'none';
+  }
+}
+
+async function processImport(text, filename) {
+  var isJa = currentLang === 'ja';
+  var raw = parseImportText(text);
+  if (!raw) {
+    showImportResult(isJa ? '\u30c7\u30fc\u30bf\u3092\u8aad\u307f\u53d6\u308c\u307e\u305b\u3093\u3067\u3057\u305f' : 'Could not read this data', true);
+    return;
+  }
+  var analysis = await analyseImport(raw);
+  pendingImports.push({ filename: filename || 'clipboard', analysis: analysis });
+  showImportPreview(pendingImports);
 }
 
 async function handleFileUpload(e) {
   const files = e.target.files;
   if (!files || files.length === 0) return;
+  pendingImports = [];
   for (let i = 0; i < files.length; i++) {
     const text = await files[i].text();
-    await processImport(text);
+    await processImport(text, files[i].name);
   }
   e.target.value = '';
 }
@@ -3395,7 +3441,8 @@ async function handleFileUpload(e) {
 async function pasteFromClipboard() {
   try {
     const text = await navigator.clipboard.readText();
-    await processImport(text);
+    pendingImports = [];
+    await processImport(text, currentLang === 'ja' ? '\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9' : 'Clipboard');
   } catch (err) {
     showImportResult((currentLang === 'ja' ? '\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u306e\u8aad\u307f\u53d6\u308a\u306b\u5931\u6557: ' : 'Clipboard read failed: ') + err.message, true);
   }
@@ -3431,10 +3478,11 @@ importZone.addEventListener('dragleave', () => importZone.classList.remove('drag
 importZone.addEventListener('drop', async (e) => {
   e.preventDefault();
   importZone.classList.remove('dragover');
-  const file = e.dataTransfer.files[0];
-  if (file) {
-    const text = await file.text();
-    await processImport(text);
+  pendingImports = [];
+  const files = e.dataTransfer.files;
+  for (let i = 0; i < files.length; i++) {
+    const text = await files[i].text();
+    await processImport(text, files[i].name);
   }
 });
 
