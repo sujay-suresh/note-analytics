@@ -2519,39 +2519,6 @@ function renderSummary(m, prevSnapshot) {
 
   html += '</div></div>';
 
-  // Executive summary: one computed sentence per dimension
-  var execLines = [];
-  // Timing
-  if (m.peakStart !== null) {
-    var peakStartGMT = jstToGmt(m.peakStart), peakEndGMT = jstToGmt(m.peakEnd);
-    execLines.push(isJa
-      ? 'GMT ' + String(peakStartGMT).padStart(2,'0') + '\u2013' + String(peakEndGMT).padStart(2,'0') + '\u6642\uff08JST ' + String(m.peakStart).padStart(2,'0') + '\u2013' + String(m.peakEnd).padStart(2,'0') + '\u6642\uff09\u306b\u516c\u958b\u304c\u6709\u5229\u3002'
-      : 'Publish around ' + String(peakStartGMT).padStart(2,'0') + ':00\u2013' + String(peakEndGMT).padStart(2,'0') + ':00 GMT (JST ' + String(m.peakStart).padStart(2,'0') + '\u2013' + String(m.peakEnd).padStart(2,'0') + ').');
-  }
-  // Content
-  var withViews = m.articleMetrics.filter(function(a) { return a.views > 0; });
-  if (withViews.length >= 2) {
-    var bestArt = withViews.slice().sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); })[0];
-    var bestArtIdx = m.articleMetrics.indexOf(bestArt) + 1;
-    var bestArtRate = Math.round(bestArt.likes_total / bestArt.views * 100);
-    execLines.push(isJa
-      ? 'A' + bestArtIdx + '\u306e\u30a2\u30d7\u30ed\u30fc\u30c1\u304c\u6700\u3082\u52b9\u679c\u7684\uff08\u30b9\u30ad\u7387' + bestArtRate + '%\uff09\u3002'
-      : 'A' + bestArtIdx + '\'s approach works best (' + bestArtRate + '% like rate).');
-  }
-  // Audience
-  if (returnPct >= 20) {
-    execLines.push(isJa
-      ? '\u518d\u8a2a\u7387' + returnPct.toFixed(0) + '%\u3002\u8aad\u8005\u304c\u5b9a\u7740\u3057\u59cb\u3081\u3066\u3044\u308b\u3002'
-      : returnPct.toFixed(0) + '% return rate. Readers are sticking.');
-  } else if (m.uniqueUsers >= 3) {
-    execLines.push(isJa
-      ? '\u518d\u8a2a\u7387' + returnPct.toFixed(0) + '%\u3002\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u306e\u7372\u5f97\u304c\u8ab2\u984c\u3002'
-      : returnPct.toFixed(0) + '% return rate. Building repeat readers is the challenge.');
-  }
-
-  if (execLines.length > 0) {
-    html += '<div style="font-size:12px;color:var(--ink-light);padding:10px 0 0;border-top:1px solid var(--border);margin-top:12px;line-height:1.6;">' + execLines.join(' ') + '</div>';
-  }
 
   el.innerHTML = html;
 
@@ -3129,14 +3096,12 @@ function renderObservations(m, prevSnapshot) {
       return;
     }
     var maxObs = 3;
-    var preliminary = currentMetrics && currentMetrics.daySpan < 14;
     function renderCard(item, cls) {
       if (item.metric) {
         var h = '<div class="obs-card' + (cls ? ' ' + cls : '') + '">';
         h += '<span class="obs-metric">' + item.metric + '</span>';
         h += '<span class="obs-label">' + item.label + '</span>';
         if (item.meaning) h += '<span class="obs-meaning">' + item.meaning + '</span>';
-        if (preliminary) h += '<span style="display:block;font-size:9px;color:var(--ink-muted);margin-top:4px;opacity:0.7;">' + (currentLang === 'ja' ? '\u203b \u66ab\u5b9a\u7684\uff0814\u65e5\u4ee5\u964d\u3067\u5b89\u5b9a\uff09' : '\u203b Preliminary (stabilises at 14+ days)') + '</span>';
         return h + '</div>';
       }
       return '<div class="obs-card' + (cls ? ' ' + cls : '') + '"><span class="obs-label">' + (item.text || item) + '</span></div>';
