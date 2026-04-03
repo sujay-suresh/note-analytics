@@ -2061,10 +2061,10 @@ function computeAudienceObs(m) {
     var oOne = organicJourneys.filter(function(j) { return j.likes.length === 1; }).length;
     var oDirect = organicJourneys.filter(function(j) { return j.likes.length === 0; }).length;
     var labelText = isJa
-      ? '\u65b0\u898f: ' + oMulti + '\u8907\u6570 / ' + oOne + '\u5358\u8a18\u4e8b / ' + oDirect + '\u76f4\u63a5'
-        + (friendJourneys.length > 0 ? ' + \u30d5\u30ec\u30f3\u30c9' + friendJourneys.length + '\u4eba' : '')
-      : 'New: ' + oMulti + ' multi / ' + oOne + ' single / ' + oDirect + ' direct'
-        + (friendJourneys.length > 0 ? ' + ' + friendJourneys.length + ' friends' : '');
+      ? oMulti + '\u4eba\u304c\u8907\u6570\u8a18\u4e8b\u3092\u8aad\u3093\u3067\u30d5\u30a9\u30ed\u30fc\u3001' + oOne + '\u4eba\u304c1\u8a18\u4e8b\u3067\u30d5\u30a9\u30ed\u30fc\u3001' + oDirect + '\u4eba\u304c\u8a18\u4e8b\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc'
+        + (friendJourneys.length > 0 ? ' (\u30d5\u30ec\u30f3\u30c9' + friendJourneys.length + '\u4eba\u9664\u304f)' : '')
+      : oMulti + ' liked 2+ articles first, ' + oOne + ' liked 1 then followed, ' + oDirect + ' followed without liking'
+        + (friendJourneys.length > 0 ? ' (excl. ' + friendJourneys.length + ' friends)' : '');
     obs.push({
       metric: organicJourneys.length + (isJa ? '\u4eba' : ''),
       label: labelText,
