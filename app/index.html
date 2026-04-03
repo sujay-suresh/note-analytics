@@ -956,7 +956,7 @@ body {
 
   const output = { notifications, extracted_at: new Date().toISOString(), source: 'notifications' };
   const json = JSON.stringify(output, null, 2);
-  await navigator.clipboard.writeText(json);
+  try { await navigator.clipboard.writeText(json); } catch(e) { var ta = document.createElement('textarea'); ta.value = json; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   console.log('Extracted ' + notifications.length + ' notifications. Copied to clipboard.');
   console.log('Paste into the Note.com Analytics app (Data tab).');
 })();</pre>
@@ -1080,7 +1080,7 @@ body {
     source: 'profile',
   };
   const json = JSON.stringify(output, null, 2);
-  await navigator.clipboard.writeText(json);
+  try { await navigator.clipboard.writeText(json); } catch(e) { var ta = document.createElement('textarea'); ta.value = json; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   console.log('Extracted ' + articles.length + ' articles. Followers: ' + followerCount);
   console.log('Paste into the Note.com Analytics app (Data tab).');
 })();</pre>
@@ -1188,7 +1188,7 @@ body {
     source: 'dashboard',
   };
   const json = JSON.stringify(output, null, 2);
-  await navigator.clipboard.writeText(json);
+  try { await navigator.clipboard.writeText(json); } catch(e) { var ta = document.createElement('textarea'); ta.value = json; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
   const total = stats.daily_views.length + stats.article_stats.length;
   console.log('Extracted ' + stats.daily_views.length + ' daily records, ' + stats.article_stats.length + ' article stats.');
   if (total === 0) {
@@ -1884,7 +1884,7 @@ function computeContentObs(m) {
       metric: bestOverlap.count + (isJa ? '\u4eba' : ''),
       label: isJa ? 'A' + bestOverlap.pair[0] + '\u3068A' + bestOverlap.pair[1] + '\u306e\u5171\u901a\u8aad\u8005 (' + overlapPct + '%)' : overlapPct + '% of readers liked both A' + bestOverlap.pair[0] + ' and A' + bestOverlap.pair[1],
       meaning: overlapPct >= 25
-        ? (isJa ? '\u30b3\u30a2\u8aad\u8005\u304c\u91cd\u306a\u308b\u3002\u3053\u306e2\u8a18\u4e8b\u306e\u63a5\u70b9\u3067\u66f8\u304f' : 'Write more at this intersection. it resonates with your core audience')
+        ? (isJa ? '\u30b3\u30a2\u8aad\u8005\u304c\u91cd\u306a\u308b\u3002\u3053\u306e2\u8a18\u4e8b\u306e\u63a5\u70b9\u3067\u66f8\u304f' : 'Write more at this intersection. Your core audience responds to both')
         : (isJa ? '\u3053\u306e2\u8a18\u4e8b\u306b\u76f8\u4e92\u30ea\u30f3\u30af\u3092\u8ffd\u52a0\u3059\u308b' : 'Add cross-links between these two articles to boost discovery')
     });
   }
@@ -1951,7 +1951,7 @@ function computeContentObs(m) {
       metric: fVal + fUnit + ' vs ' + sVal + sUnit,
       label: isJa ? 'A' + fastest.idx + '(\u6700\u901f) vs A' + slowest.idx + '(\u6700\u9045)\u306e\u30b9\u30ad\u534a\u6e1b\u671f' : 'A' + fastest.idx + ' attracts likes ' + (sVal > fVal ? Math.round(sVal / Math.max(fVal, 1)) + 'x' : 'much') + ' faster than A' + slowest.idx,
       meaning: fastest.median < 6
-        ? (isJa ? 'A' + fastest.idx + '\u306e\u30bf\u30a4\u30c8\u30eb\u3068\u5c0e\u5165\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Study A' + fastest.idx + '\'s title and opening. reuse that hook next time')
+        ? (isJa ? 'A' + fastest.idx + '\u306e\u30bf\u30a4\u30c8\u30eb\u3068\u5c0e\u5165\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Study A' + fastest.idx + '\'s title and opening. Reuse that hook next time')
         : (isJa ? 'A' + fastest.idx + '\u306e\u5c0e\u5165\u90e8\u5206\u3092\u53c2\u8003\u306b\u3001\u6b21\u306e\u8a18\u4e8b\u306e\u30d5\u30c3\u30af\u3092\u5f37\u5316\u3059\u308b' : 'A' + fastest.idx + ' hooks readers quickly. Try a similar opening for your next piece')
     });
   }
@@ -2008,7 +2008,7 @@ function computeTimingObs(m) {
     obs.push({
       metric: '\u2014',
       label: isJa ? '\u6642\u9593\u5e2f\u306b\u504f\u308a\u306a\u3057' : 'Likes spread evenly across hours',
-      meaning: isJa ? '\u597d\u304d\u306a\u6642\u9593\u306b\u516c\u958b\u3057\u3066\u3088\u3044' : 'Publish whenever suits you. no timing advantage to capture'
+      meaning: isJa ? '\u597d\u304d\u306a\u6642\u9593\u306b\u516c\u958b\u3057\u3066\u3088\u3044' : 'Publish whenever suits you. No timing advantage to capture'
     });
   }
 
@@ -2087,7 +2087,7 @@ function computeAudienceObs(m) {
           metric: 'A' + (artIdx + 1),
           label: isJa ? entries[0][1] + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9' : entries[0][1] + ' of ' + m.journeys.length + ' followers discovered you through this article',
           meaning: entries[0][1] >= 3
-            ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u56fa\u5b9a\u8a18\u4e8b\u306b\u3059\u308b' : 'Pin this article to your profile. it is your best gateway')
+            ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u56fa\u5b9a\u8a18\u4e8b\u306b\u3059\u308b' : 'Pin this article to your profile. It brings the most followers in')
             : (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u304b\u3089\u3053\u306e\u8a18\u4e8b\u306b\u30ea\u30f3\u30af\u3059\u308b' : 'Link to this article from your profile bio')
         });
       }
@@ -2103,9 +2103,9 @@ function computeAudienceObs(m) {
       metric: likedMultiple + ' / ' + likedOne + ' / ' + followedDirect,
       label: isJa ? '\u8907\u6570\u8a18\u4e8b / 1\u8a18\u4e8b / \u76f4\u63a5\u30d5\u30a9\u30ed\u30fc (' + m.journeys.length + '\u4eba)' : likedMultiple + ' read multiple, ' + likedOne + ' read one, ' + followedDirect + ' followed without liking',
       meaning: likedMultiple > likedOne + followedDirect
-        ? (isJa ? '\u8a18\u4e8b\u9593\u306b\u76f8\u4e92\u30ea\u30f3\u30af\u3092\u8ffd\u52a0\u3059\u308b\u3002\u8aad\u8005\u306f\u56de\u904a\u3057\u3066\u304b\u3089\u6c7a\u3081\u308b' : 'Add cross-links between articles. readers browse before committing')
+        ? (isJa ? '\u8a18\u4e8b\u9593\u306b\u76f8\u4e92\u30ea\u30f3\u30af\u3092\u8ffd\u52a0\u3059\u308b\u3002\u8aad\u8005\u306f\u56de\u904a\u3057\u3066\u304b\u3089\u6c7a\u3081\u308b' : 'Add cross-links between articles. Readers browse before committing')
         : followedDirect > likedMultiple
-          ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u30da\u30fc\u30b8\u3092\u5145\u5b9f\u3055\u305b\u308b\u3002\u305d\u3053\u3067\u5224\u65ad\u3055\u308c\u3066\u3044\u308b' : 'Invest in your profile page. most followers decide there')
+          ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u30da\u30fc\u30b8\u3092\u5145\u5b9f\u3055\u305b\u308b\u3002\u305d\u3053\u3067\u5224\u65ad\u3055\u308c\u3066\u3044\u308b' : 'Invest in your profile page. Most followers decide there')
           : (isJa ? '\u8907\u6570\u306e\u5165\u53e3\u304c\u6a5f\u80fd\u3057\u3066\u3044\u308b\u3002\u3053\u306e\u307e\u307e\u7dad\u6301\u3059\u308b' : 'Keep multiple entry points. followers arrive through different routes')
     });
   }
