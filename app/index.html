@@ -1406,7 +1406,8 @@ function renderArticleKey(m) {
     barHtml += '<span style="font-size:10px;color:var(--ink-light);margin-right:4px;">A' + (i + 1) + '</span>';
   }
   if (m.articles.length > THRESHOLDS.articleKeyInlineMax) {
-    barHtml += '<span style="font-size:10px;color:var(--ink-muted);">+' + (m.articles.length - maxInline) + ' more</span>';
+    var remaining = m.articles.length - maxInline;
+    barHtml += '<span style="font-size:10px;color:var(--ink-muted);">+' + remaining + (currentLang === 'ja' ? '\u4ef6' : ' more') + '</span>';
   }
   bar.innerHTML = barHtml;
 
@@ -1738,11 +1739,13 @@ function generateActivityTitle(m, isJa) {
     : pct + '% of likes concentrate between ' + s + ':00 and ' + e + ':00 JST';
 }
 function generateDowTitle(DOW_NAMES, dowLikes, isJa) {
+  var DOW_JA = ['\u65e5', '\u6708', '\u706b', '\u6c34', '\u6728', '\u91d1', '\u571f'];
   const maxVal = Math.max(...dowLikes);
-  if (maxVal === 0) return isJa ? 'まだ十分なデータがありません' : 'Not enough data yet';
-  const topDays = DOW_NAMES.filter((_, i) => dowLikes[i] === maxVal);
-  const dayStr = topDays.join(isJa ? 'と' : ' and ');
-  return isJa ? dayStr + 'に最もエンゲージメントが集中' : dayStr + (topDays.length > 1 ? ' see' : ' sees') + ' the most engagement';
+  if (maxVal === 0) return isJa ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet';
+  var names = isJa ? DOW_JA : DOW_NAMES;
+  const topDays = names.filter((_, i) => dowLikes[i] === maxVal);
+  const dayStr = topDays.join(isJa ? '\u3068' : ' and ');
+  return isJa ? dayStr + '\u66dc\u65e5\u306b\u6700\u3082\u53cd\u5fdc\u304c\u96c6\u4e2d' : dayStr + (topDays.length > 1 ? ' see' : ' sees') + ' the most engagement';
 }
 function generateArticlePerfTitle(articleMetrics, isJa) {
   var withViews = articleMetrics.filter(function(a) { return a.views > 0; });
@@ -3064,7 +3067,7 @@ function renderObservations(m, prevSnapshot) {
         h += '<span class="obs-metric">' + item.metric + '</span>';
         h += '<span class="obs-label">' + item.label + '</span>';
         if (item.meaning) h += '<span class="obs-meaning">' + item.meaning + '</span>';
-        if (preliminary) h += '<span style="display:block;font-size:9px;color:var(--ink-muted);margin-top:4px;opacity:0.7;">' + (currentLang === 'ja' ? '\u203b \u6697\u5b9a\u7684\uff0814\u65e5\u4ee5\u964d\u3067\u5b89\u5b9a\uff09' : '\u203b Preliminary (stabilises at 14+ days)') + '</span>';
+        if (preliminary) h += '<span style="display:block;font-size:9px;color:var(--ink-muted);margin-top:4px;opacity:0.7;">' + (currentLang === 'ja' ? '\u203b \u66ab\u5b9a\u7684\uff0814\u65e5\u4ee5\u964d\u3067\u5b89\u5b9a\uff09' : '\u203b Preliminary (stabilises at 14+ days)') + '</span>';
         return h + '</div>';
       }
       return '<div class="obs-card' + (cls ? ' ' + cls : '') + '"><span class="obs-label">' + (item.text || item) + '</span></div>';
@@ -3147,8 +3150,9 @@ function filterTable() { renderEventsTable(currentMetrics.events); }
 async function renderImportHistory() {
   const imports = await dbGetAll('imports');
   const list = document.getElementById('importHistoryList');
+  var isJa = currentLang === 'ja';
   if (imports.length === 0) {
-    list.innerHTML = '<div class="import-history-item" style="color:var(--ink-muted);">No imports yet</div>';
+    list.innerHTML = '<div class="import-history-item" style="color:var(--ink-muted);">' + (isJa ? '\u30a4\u30f3\u30dd\u30fc\u30c8\u5c65\u6b74\u306a\u3057' : 'No imports yet') + '</div>';
     return;
   }
   list.innerHTML = imports
@@ -3156,7 +3160,7 @@ async function renderImportHistory() {
     .map(imp =>
       '<div class="import-history-item">' +
       formatDate(imp.timestamp) + ' | ' +
-      imp.events_added + ' events, ' + imp.articles_added + ' articles' +
+      imp.events_added + (isJa ? '\u4ef6\u306e\u30a4\u30d9\u30f3\u30c8, ' : ' events, ') + imp.articles_added + (isJa ? '\u4ef6\u306e\u8a18\u4e8b' : ' articles') +
       '</div>'
     ).join('');
 }
@@ -3333,7 +3337,7 @@ async function pasteFromClipboard() {
     const text = await navigator.clipboard.readText();
     await processImport(text);
   } catch (err) {
-    showImportResult('Clipboard read failed: ' + err.message, true);
+    showImportResult((currentLang === 'ja' ? '\u30af\u30ea\u30c3\u30d7\u30dc\u30fc\u30c9\u306e\u8aad\u307f\u53d6\u308a\u306b\u5931\u6557: ' : 'Clipboard read failed: ') + err.message, true);
   }
 }
 
@@ -3503,6 +3507,8 @@ async function init() {
 
 function renderAll() {
   applyI18n();
+  var searchEl = document.getElementById('tableSearch');
+  if (searchEl) searchEl.placeholder = currentLang === 'ja' ? '\u691c\u7d22...' : 'Search...';
   if (allMetrics) {
     currentMetrics = getFilteredMetrics();
     renderStatusBar(currentMetrics);
