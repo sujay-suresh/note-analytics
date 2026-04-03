@@ -24,7 +24,6 @@
   --accent: #1e40af;
   --accent-border: #1e3a8a;
   --accent-zone: #dbeafe;
-  --grey-bar: #d1d5db;
   --green: #059669;
   --green-light: #d1fae5;
   --amber: #d97706;
@@ -77,7 +76,7 @@ body {
   font-size: 12px;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
@@ -143,15 +142,17 @@ body {
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: 0;
+  gap: 0 12px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 16px;
   margin-bottom: 16px;
 }
-.kpi-item { text-align: center; padding: 8px 4px; }
-.kpi-item + .kpi-item { border-left: 1px solid var(--border); }
+.kpi-item { text-align: center; padding: 8px 8px; }
+.kpi-item + .kpi-item { border-left: 1px solid var(--border); padding-left: 12px; }
 .kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; }
-.kpi-trend { display: inline; font-size: 12px; color: var(--ink-muted); margin-left: 4px; }
+.kpi-trend { display: inline; font-size: 12px; margin-left: 4px; }
+.kpi-trend.up { color: var(--green); }
+.kpi-trend.down { color: var(--red); }
 .kpi-label { font-size: 10px; font-weight: 600; color: var(--ink-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.03em; }
 .kpi-sub { font-size: 10px; color: var(--ink-muted); margin-top: 2px; }
 
@@ -181,12 +182,28 @@ body {
   white-space: nowrap;
 }
 
+.range-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.range-select {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--ink-light);
+  cursor: pointer;
+}
+.range-select:hover { border-color: var(--accent); }
+
 .section-heading {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+  color: var(--ink-light);
   margin: 32px 0 12px;
 }
 
@@ -213,14 +230,14 @@ body {
 .chart-toggle {
   font-size: 11px;
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
   color: var(--ink-light);
 }
 .chart-toggle:hover { border-color: var(--accent); color: var(--accent); }
-.chart-toggle.active { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.chart-toggle.active { background: var(--accent-zone); color: var(--accent); border-color: var(--accent); }
 
 .chart-wrap { position: relative; width: 100%; }
 .chart-alt { font-size: 11px; color: var(--ink-muted); margin-top: 8px; font-style: italic; }
@@ -242,11 +259,8 @@ body {
 }
 
 
-/* Consulting slide layout: chart left, observation panel right */
+/* Chart section: full-width card */
 .chart-section {
-  display: grid;
-  grid-template-columns: 1fr 220px;
-  gap: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   overflow: hidden;
@@ -257,39 +271,66 @@ body {
   padding: 20px 24px 12px;
   min-width: 0;
 }
-.chart-obs {
-  border-left: 1px solid var(--border);
-  padding: 20px 18px;
+
+/* Observations: horizontal card row below chart */
+.obs-row {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
+  gap: 10px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--border);
+  overflow-x: auto;
 }
-.obs-box {
-  background: #f3f4f6;
-  border-radius: 6px;
+.obs-card {
+  flex: 1;
+  min-width: 150px;
   padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   font-size: 12px;
-  color: #374151;
-  line-height: 1.7;
+  color: var(--ink-light);
+  line-height: 1.55;
 }
-.obs-box p + p { margin-top: 8px; }
-.obs-box strong { font-weight: 600; }
-.obs-extra {
-  font-size: 11px;
-  color: #6b7280;
-  margin-top: 10px;
-  line-height: 1.6;
-}
-.action-title {
-  font-size: 15px;
+.obs-card .obs-metric {
+  display: block;
+  font-size: 18px;
   font-weight: 700;
   color: var(--ink);
-  margin-bottom: 14px;
+  margin-bottom: 3px;
+  line-height: 1.1;
+}
+.obs-card .obs-label {
+  font-size: 11px;
+  color: var(--ink-light);
+  display: block;
+}
+.obs-card .obs-meaning {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-light);
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+}
+.obs-card.secondary {
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--ink-light);
+  font-size: 11px;
+}
+.obs-card.secondary .obs-metric {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.action-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 12px;
 }
 
 @media (max-width: 900px) {
-  .chart-section { grid-template-columns: 1fr; }
-  .chart-obs { border-left: none; border-top: 1px solid var(--border); }
+  .obs-row { flex-direction: column; }
 }
 
 .charts-row {
@@ -306,7 +347,7 @@ body {
   gap: 8px;
   padding: 8px 12px;
   background: var(--bg);
-  border-radius: 6px;
+  border-radius: var(--radius);
   font-size: 12px;
 }
 .journey-name {
@@ -403,6 +444,59 @@ body {
   min-width: 50px;
 }
 
+/* Summary: funnel card + KPI grid side by side, vertically centred */
+.summary-layout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 20px;
+  align-items: center;
+}
+@media (max-width: 768px) { .summary-layout { grid-template-columns: 1fr; } }
+
+/* Funnel card */
+.funnel-card {
+  background: var(--bg);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  min-width: 180px;
+}
+.funnel-card-title {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 10px;
+}
+.funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+}
+.funnel-step-bar {
+  height: 10px;
+  border-radius: 2px;
+  min-width: 4px;
+}
+.funnel-step-val {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  min-width: 32px;
+  text-align: right;
+}
+.funnel-step-label {
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+.funnel-step-pct {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ink-light);
+  margin-left: auto;
+}
+
 /* ================================================================
    DATA TAB
    ================================================================ */
@@ -415,7 +509,7 @@ body {
   margin-bottom: 24px;
   transition: border-color 0.15s;
 }
-.import-zone.dragover { border-color: var(--accent); background: var(--accent-light); }
+.import-zone.dragover { border-color: var(--accent); background: var(--accent-zone); }
 .import-zone p { color: var(--ink-muted); font-size: 13px; margin-bottom: 12px; }
 
 .btn {
@@ -423,7 +517,7 @@ body {
   padding: 8px 16px;
   font-size: 13px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: var(--radius);
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--ink);
@@ -432,7 +526,7 @@ body {
 }
 .btn:hover { border-color: var(--accent); color: var(--accent); }
 .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:hover { background: var(--accent-border); }
 .btn-sm { padding: 4px 10px; font-size: 11px; }
 .btn + .btn { margin-left: 8px; }
 
@@ -440,7 +534,7 @@ body {
   margin-top: 12px;
   font-size: 12px;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   display: none;
 }
 .import-result.success { display: block; background: var(--green-light); color: var(--green); }
@@ -463,7 +557,7 @@ body {
   padding: 6px 10px;
   font-size: 12px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   width: 240px;
 }
 .data-table {
@@ -540,7 +634,7 @@ body {
   background: #1e1e2e;
   color: #cdd6f4;
   padding: 16px;
-  border-radius: 6px;
+  border-radius: var(--radius);
   font-size: 12px;
   font-family: 'Cascadia Code', 'Fira Code', monospace;
   overflow-x: auto;
@@ -580,7 +674,7 @@ body {
   position: fixed; bottom: 0; left: 0; right: 0;
   background: var(--surface);
   border-top: 1px solid var(--border);
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
   z-index: 101;
   max-height: 50vh;
   overflow-y: auto;
@@ -590,7 +684,7 @@ body {
 .article-key-panel.open { display: block; }
 .article-key-search {
   width: 100%; padding: 6px 10px; font-size: 12px;
-  border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px;
+  border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px;
 }
 .ak-grid {
   display: grid;
@@ -622,6 +716,10 @@ body {
   <div class="app-title">Note.com Analytics</div>
   <div class="header-controls">
     <div class="status-bar" id="statusBar"></div>
+    <div class="range-filter" id="rangeFilter" style="display:none;">
+      <label for="rangeSelect" style="font-size:10px;color:var(--ink-muted);">Analyse:</label>
+      <select id="rangeSelect" class="range-select" onchange="applyRange()"></select>
+    </div>
     <button class="lang-toggle" id="langToggle" onclick="toggleLang()">EN</button>
   </div>
 </header>
@@ -648,11 +746,29 @@ body {
   <!-- KPI SUMMARY -->
   <div class="summary-block" id="summaryBlock"></div>
 
-  <!-- DIMENSION 1: CONTENT -->
+
+  <!-- DIMENSION 1: TIMING -->
+  <div class="section-heading" id="headingTiming"></div>
+  <div class="chart-section">
+    <div class="chart-main">
+      <div class="action-title" id="activityTitle"></div>
+      <div class="chart-key" id="activityKey"></div>
+      <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
+      <div id="dowSection" style="margin-top:20px;display:none;">
+        <div class="action-title" id="dowTitle"></div>
+        <div class="chart-key" id="dowKey"></div>
+        <div class="chart-wrap"><canvas id="chartDow"></canvas></div>
+      </div>
+    </div>
+    <div class="obs-row" id="obsTiming"></div>
+  </div>
+
+  <!-- DIMENSION 2: CONTENT -->
   <div class="section-heading" id="headingContent"></div>
   <div class="chart-section">
     <div class="chart-main">
       <div class="action-title" id="articlePerfTitle"></div>
+      <div class="chart-key" id="articlePerfKey"></div>
       <div class="chart-wrap"><canvas id="chartArticlePerf"></canvas></div>
       <div style="margin-top:20px;">
         <div class="action-title" id="tagsTitle"></div>
@@ -660,32 +776,18 @@ body {
         <div class="chart-wrap"><canvas id="chartTags"></canvas></div>
       </div>
     </div>
-    <div class="chart-obs" id="obsContent"></div>
-  </div>
-
-  <!-- DIMENSION 2: TIMING -->
-  <div class="section-heading" id="headingTiming"></div>
-  <div class="chart-section">
-    <div class="chart-main">
-      <div class="action-title" id="activityTitle"></div>
-      <div class="chart-key" id="activityKey"></div>
-      <div class="chart-wrap"><canvas id="chartActivity"></canvas></div>
-    </div>
-    <div class="chart-obs" id="obsTiming"></div>
+    <div class="obs-row" id="obsContent"></div>
   </div>
 
   <!-- DIMENSION 3: AUDIENCE -->
   <div class="section-heading" id="headingAudience"></div>
   <div class="chart-section">
     <div class="chart-main">
-      <div class="action-title" id="growthTitle"></div>
-      <div class="chart-wrap"><canvas id="chartGrowth"></canvas></div>
-      <div style="margin-top:20px;">
-        <div class="action-title" id="journeysTitle"></div>
-        <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
-      </div>
+      <div class="action-title" id="journeysTitle"></div>
+      <div class="chart-wrap"><canvas id="chartJourneys"></canvas></div>
+      <div id="friendsNote" style="display:none;font-size:10px;color:var(--ink-muted);margin-top:6px;"></div>
     </div>
-    <div class="chart-obs" id="obsAudience"></div>
+    <div class="obs-row" id="obsAudience"></div>
   </div>
 </div>
 
@@ -1169,8 +1271,8 @@ const STRINGS = {
     summary_picked_up: 'picked up',
     summary_likes_in: 'likes since publish',
     actions_title: 'Key Observations',
-    actions_peak: 'Readers are most active between {start}:00 and {end}:00 JST. Consider publishing to land in this window.',
-    actions_repeat: '{count} readers liked more than one article, suggesting genuine interest rather than one-off discovery.',
+    actions_peak: 'Readers are most active between {start}:00 and {end}:00 JST. Publish in this window.',
+    actions_repeat: '{count} readers liked more than one article, showing genuine interest, not one-off discovery.',
     actions_follow_rate: '{count} of {total} readers who engaged went on to follow ({pct}% conversion rate).',
     actions_top_tag: 'Articles tagged "{tag}" received the most likes ({count} likes across {articles} articles).',
     actions_velocity: 'The most recent article attracted engagement within {hours} hours of being published.',
@@ -1230,7 +1332,7 @@ const STRINGS = {
     summary_days: '日間で',
     summary_views: '合計閲覧数',
     summary_likes: '合計いいね',
-    summary_conversion: 'コンバージョン',
+    summary_conversion: '\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3',
     summary_unique: 'ユニーク読者',
     summary_followed: 'フォロー',
     summary_repeat: '複数記事にいいね',
@@ -1602,7 +1704,7 @@ async function importData(raw) {
 /* ================================================================
    SEED DATA
    ================================================================ */
-const SEED_DATA = {"articles":[{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","title_en":"Self-introduction (8 years strategy consulting)","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","published_date_jst":"2026-03-17T17:40:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":126,"likes_total":14},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","title_en":"What strategy consultants actually do","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","published_date_jst":"2026-03-18T18:29:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","note\u66f8\u304d\u521d\u3081","\u30ad\u30e3\u30ea\u30a2\u30a2\u30c3\u30d7","\u30b3\u30f3\u30b5\u30eb\u30bf\u30f3\u30c8"],"views":34,"likes_total":3},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","title_en":"The rewards and struggles of strategy consulting","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","published_date_jst":"2026-03-19T20:12:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30ad\u30e3\u30ea\u30a2","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","\u30b3\u30f3\u30b5\u30eb"],"views":26,"likes_total":3},{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","title_en":"Self-introduction\u2461\u3011Work is going well, but I questioned this path","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","published_date_jst":"2026-03-21T22:26:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":37,"likes_total":7},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","title_en":"What I learned about working in strategy consulting","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","published_date_jst":"2026-03-25T19:21:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30d3\u30b8\u30cd\u30b9","\u8ee2\u8077","\u30d3\u30b8\u30cd\u30b9\u30b9\u30ad\u30eb","\u30b3\u30f3\u30b5\u30eb","\u30b3\u30f3\u30b5\u30eb\u8ee2\u8077"],"views":31,"likes_total":9},{"title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","title_en":"Why problem-solving fails (problem decomposition)","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","published_date_jst":"2026-03-26T18:00:00+09:00","article_type":"Work Know-how","tags":[],"views":0,"likes_total":0}],"events":[{"id":"quento|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"tabibito_jiro||follow","kind":"follow","who":"\u3058\u308d\u30fc","slug":"tabibito_jiro","who_url":"https://note.com/tabibito_jiro","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"quento||follow","kind":"follow","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt||follow","kind":"follow","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"byonyk|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"byonyk","slug":"byonyk","who_url":"https://note.com/byonyk","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"brisk_lily7639||follow","kind":"follow","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-18T08:44:56.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-18T14:03:29.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-18T18:29:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"excel_seed"},{"id":"mio_ko|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Miik","slug":"mio_ko","who_url":"https://note.com/mio_ko","timestamp_jst":"2026-03-19T02:07:54.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-19T20:12:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"excel_seed"},{"id":"seiya_1||follow","kind":"follow","who":"SI","slug":"seiya_1","who_url":"https://note.com/seiya_1","timestamp_jst":"2026-03-20T09:05:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-20T09:29:54.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"kin_mac_md|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30aa\u30e2\u30a4\u30ab\u30cd","slug":"kin_mac_md","who_url":"https://note.com/kin_mac_md","timestamp_jst":"2026-03-21T10:36:48.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"noble_sedum9692||follow","kind":"follow","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T10:59:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-21T22:26:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"excel_seed"},{"id":"tori_english|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Tori_Englis\u2026","slug":"tori_english","who_url":"https://note.com/tori_english","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"to_make_u_happy|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Cody","slug":"to_make_u_happy","who_url":"https://note.com/to_make_u_happy","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"koilavo4suc|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"taropon123|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"shu","slug":"taropon123","who_url":"https://note.com/taropon123","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"koilavo4suc||follow","kind":"follow","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T12:08:35.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T16:35:47.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"royal0708|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Royal0708","slug":"royal0708","who_url":"https://note.com/royal0708","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"oyazi_kosodate|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u4e21\u9ebb\u75fa\u3067\u3059\u304c\u3001\u4f55\u304b\uff1f|\u2026","slug":"oyazi_kosodate","who_url":"https://note.com/oyazi_kosodate","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-25T19:21:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"excel_seed"},{"id":"nomadic_sidejob|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u99d0\u5728\u54e1\u306e\u672c\u97f3\uff5c\u6226\u7565\u4f01\u753b\u2026","slug":"nomadic_sidejob","who_url":"https://note.com/nomadic_sidejob","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"rio_ai_bootcamp|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Rio\uff5c\u85e4\u4e95\u4ea8\u5b50 @\u975e\u2026","slug":"rio_ai_bootcamp","who_url":"https://note.com/rio_ai_bootcamp","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:29.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"tora_nari_gogo|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3068\u3089\u306a\u308a\u306a\u308a","slug":"tora_nari_gogo","who_url":"https://note.com/tora_nari_gogo","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"nisson_cons||follow","kind":"follow","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"yu0412||follow","kind":"follow","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"akino12|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Akino","slug":"akino12","who_url":"https://note.com/akino12","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"nisson_cons|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"yu0412|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"flower_index|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"Kyo","slug":"flower_index","who_url":"https://note.com/flower_index","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"haihaihaii|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"\u3053\u3057\u3042\u3093 | \u30b0\u30ed\u30fc\u30d0\u2026","slug":"haihaihaii","who_url":"https://note.com/haihaihaii","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"brisk_lily7639|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-26T20:49:37.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"ronxworks|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Ron","slug":"ronxworks","who_url":"https://note.com/ronxworks","timestamp_jst":"2026-03-26T20:55:27.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"}]};
+const SEED_DATA = {"articles":[{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","title_en":"Self-introduction (8 years strategy consulting)","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","published_date_jst":"2026-03-17T17:40:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":126,"likes_total":14},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","title_en":"What strategy consultants actually do","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","published_date_jst":"2026-03-18T18:29:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","note\u66f8\u304d\u521d\u3081","\u30ad\u30e3\u30ea\u30a2\u30a2\u30c3\u30d7","\u30b3\u30f3\u30b5\u30eb\u30bf\u30f3\u30c8"],"views":34,"likes_total":3},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","title_en":"The rewards and struggles of strategy consulting","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","published_date_jst":"2026-03-19T20:12:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30ad\u30e3\u30ea\u30a2","\u4ed5\u4e8b\u306b\u3064\u3044\u3066\u8a71\u305d\u3046","\u30b3\u30f3\u30b5\u30eb"],"views":26,"likes_total":3},{"title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","title_en":"Self-introduction\u2461\u3011Work is going well, but I questioned this path","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","published_date_jst":"2026-03-21T22:26:00+09:00","article_type":"Life","tags":["\u4ed5\u4e8b","\u81ea\u5df1\u7d39\u4ecb","\u751f\u304d\u65b9","\u30ad\u30e3\u30ea\u30a2","\u30b3\u30f3\u30b5\u30eb"],"views":37,"likes_total":7},{"title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","title_en":"What I learned about working in strategy consulting","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","published_date_jst":"2026-03-25T19:21:00+09:00","article_type":"Work Know-how","tags":["\u4ed5\u4e8b","\u30d3\u30b8\u30cd\u30b9","\u8ee2\u8077","\u30d3\u30b8\u30cd\u30b9\u30b9\u30ad\u30eb","\u30b3\u30f3\u30b5\u30eb","\u30b3\u30f3\u30b5\u30eb\u8ee2\u8077"],"views":31,"likes_total":9},{"title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","title_en":"Why problem-solving fails (problem decomposition)","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","published_date_jst":"2026-03-26T18:00:00+09:00","article_type":"Work Know-how","tags":[],"views":0,"likes_total":0}],"events":[{"id":"quento|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-17T21:45:33.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"tabibito_jiro||follow","kind":"follow","who":"\u3058\u308d\u30fc","slug":"tabibito_jiro","who_url":"https://note.com/tabibito_jiro","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"quento||follow","kind":"follow","who":"Quento","slug":"quento","who_url":"https://note.com/quento","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt||follow","kind":"follow","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-17T23:49:23.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"byonyk|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"byonyk","slug":"byonyk","who_url":"https://note.com/byonyk","timestamp_jst":"2026-03-17T17:40:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"excel_seed"},{"id":"brisk_lily7639||follow","kind":"follow","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-18T08:44:56.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-18T14:03:29.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-18T18:29:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"excel_seed"},{"id":"mio_ko|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"Miik","slug":"mio_ko","who_url":"https://note.com/mio_ko","timestamp_jst":"2026-03-19T02:07:54.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-19T20:12:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"excel_seed"},{"id":"seiya_1||follow","kind":"follow","who":"SI","slug":"seiya_1","who_url":"https://note.com/seiya_1","timestamp_jst":"2026-03-20T09:05:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"masami_kt|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"masami","slug":"masami_kt","who_url":"https://note.com/masami_kt","timestamp_jst":"2026-03-20T09:29:54.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"kin_mac_md|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u30aa\u30e2\u30a4\u30ab\u30cd","slug":"kin_mac_md","who_url":"https://note.com/kin_mac_md","timestamp_jst":"2026-03-21T10:36:48.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"noble_sedum9692||follow","kind":"follow","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T10:59:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-21T22:26:00.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"excel_seed"},{"id":"tori_english|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Tori_Englis\u2026","slug":"tori_english","who_url":"https://note.com/tori_english","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"to_make_u_happy|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"Cody","slug":"to_make_u_happy","who_url":"https://note.com/to_make_u_happy","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"kouji0516|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u6d69\u4e8c\uff5c\u77e5\u8b58\u30fb\u7d4c\u9a13\u30fb\u5b9f\u7e3e\u2026","slug":"kouji0516","who_url":"https://note.com/kouji0516","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"noble_sedum9692|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3064\u3080 | \u5916\u8cc7\u7cfb\u3086\u308b\u30ad\u2026","slug":"noble_sedum9692","who_url":"https://note.com/noble_sedum9692","timestamp_jst":"2026-03-21T23:46:02.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"koilavo4suc|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"taropon123|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"shu","slug":"taropon123","who_url":"https://note.com/taropon123","timestamp_jst":"2026-03-22T21:36:03.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"koilavo4suc||follow","kind":"follow","who":"\ud83e\ude84\u3042\u305f\u308b\u306e\u604b\u611b\u6210\u529f\u30e9\u30dc\u2026","slug":"koilavo4suc","who_url":"https://note.com/koilavo4suc","timestamp_jst":"2026-03-22T21:36:11.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T12:08:35.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"tamashi63|https://note.com/penduck_mk/n/n0b1a7b82ef02|like","kind":"like","who":"\u9b42\u306e\u3057\u308b\u3079\ud83e\ude6c","slug":"tamashi63","who_url":"https://note.com/tamashi63","timestamp_jst":"2026-03-23T16:35:47.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u3011\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u30928\u5e74\u3084\u3063\u3066\u3001\u305d\u308c\u3067\u3082\u7b54\u3048\u304c\u51fa\u3066\u3044\u306a\u3044\u554f\u3044","article_url":"https://note.com/penduck_mk/n/n0b1a7b82ef02","source":"notifications_2026-03-26"},{"id":"royal0708|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Royal0708","slug":"royal0708","who_url":"https://note.com/royal0708","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"oyazi_kosodate|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u4e21\u9ebb\u75fa\u3067\u3059\u304c\u3001\u4f55\u304b\uff1f|\u2026","slug":"oyazi_kosodate","who_url":"https://note.com/oyazi_kosodate","timestamp_jst":"2026-03-25T21:02:58.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"icarus_journal|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u30a4\u30ab\u30ed\u30b9","slug":"icarus_journal","who_url":"https://note.com/icarus_journal","timestamp_jst":"2026-03-25T19:21:00.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"excel_seed"},{"id":"nomadic_sidejob|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u99d0\u5728\u54e1\u306e\u672c\u97f3\uff5c\u6226\u7565\u4f01\u753b\u2026","slug":"nomadic_sidejob","who_url":"https://note.com/nomadic_sidejob","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"rio_ai_bootcamp|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Rio\uff5c\u85e4\u4e95\u4ea8\u5b50 @\u975e\u2026","slug":"rio_ai_bootcamp","who_url":"https://note.com/rio_ai_bootcamp","timestamp_jst":"2026-03-26T07:56:39.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/ndc1e9112c32f|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:29.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u3084\u308a\u304c\u3044\u3068\u845b\u85e4","article_url":"https://note.com/penduck_mk/n/ndc1e9112c32f","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"tora_nari_gogo|https://note.com/penduck_mk/n/n7d0be2eaeb94|like","kind":"like","who":"\u3068\u3089\u306a\u308a\u306a\u308a","slug":"tora_nari_gogo","who_url":"https://note.com/tora_nari_gogo","timestamp_jst":"2026-03-26T08:53:55.000+09:00","article_title_jp":"\u3010\u81ea\u5df1\u7d39\u4ecb\u2461\u3011\u4ed5\u4e8b\u306f\u9806\u8abf\u3002\u3067\u3082\u3001\u3053\u306e\u307e\u307e\u3067\u3044\u3044\u306e\u304b\u3068\u601d\u3063\u3066\u3044\u305f","article_url":"https://note.com/penduck_mk/n/n7d0be2eaeb94","source":"notifications_2026-03-26"},{"id":"nisson_cons||follow","kind":"follow","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"yu0412||follow","kind":"follow","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T11:34:18.000+09:00","article_title_jp":null,"article_url":null,"source":"notifications_2026-03-26"},{"id":"akino12|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Akino","slug":"akino12","who_url":"https://note.com/akino12","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"nisson_cons|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u306b\u3063\u305d\u3093 | \u30b3\u30f3\u30b5\u30eb\u2026","slug":"nisson_cons","who_url":"https://note.com/nisson_cons","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"yu0412|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"yu","slug":"yu0412","who_url":"https://note.com/yu0412","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"aiux_unite|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"\u5409\u5ddd \u8061\u53f2 | AI\uff06\u2026","slug":"aiux_unite","who_url":"https://note.com/aiux_unite","timestamp_jst":"2026-03-26T14:06:04.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"},{"id":"flower_index|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"Kyo","slug":"flower_index","who_url":"https://note.com/flower_index","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"haihaihaii|https://note.com/penduck_mk/n/n10a21e58d065|like","kind":"like","who":"\u3053\u3057\u3042\u3093 | \u30b0\u30ed\u30fc\u30d0\u2026","slug":"haihaihaii","who_url":"https://note.com/haihaihaii","timestamp_jst":"2026-03-26T19:25:55.000+09:00","article_title_jp":"\u8ab2\u984c\u89e3\u6c7a\u304c\u3046\u307e\u304f\u3044\u304b\u306a\u3044\u7406\u7531\uff08\u8ab2\u984c\u5206\u89e3\u7de8\uff09","article_url":"https://note.com/penduck_mk/n/n10a21e58d065","source":"notifications_2026-03-26"},{"id":"brisk_lily7639|https://note.com/penduck_mk/n/nacca9952b9e3|like","kind":"like","who":"brisk_lily7\u2026","slug":"brisk_lily7639","who_url":"https://note.com/brisk_lily7639","timestamp_jst":"2026-03-26T20:49:37.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u306e\u4ed5\u4e8b\u306f\u3001\u5b9f\u969b\u306b\u306f\u4f55\u3092\u3057\u3066\u3044\u308b\u306e\u304b","article_url":"https://note.com/penduck_mk/n/nacca9952b9e3","source":"notifications_2026-03-26"},{"id":"ronxworks|https://note.com/penduck_mk/n/n8554484e8fc4|like","kind":"like","who":"Ron","slug":"ronxworks","who_url":"https://note.com/ronxworks","timestamp_jst":"2026-03-26T20:55:27.000+09:00","article_title_jp":"\u6226\u7565\u30b3\u30f3\u30b5\u30eb\u3067\u5b66\u3093\u3060\u4ed5\u4e8b\u306e\u3084\u308a\u65b9","article_url":"https://note.com/penduck_mk/n/n8554484e8fc4","source":"notifications_2026-03-26"}],"user_metadata":[{"slug":"icarus_journal","is_friend":1},{"slug":"quento","is_friend":1},{"slug":"byonyk","is_friend":1},{"slug":"masami_kt","is_friend":1}]};
 
 /* ================================================================
    RULES ENGINE
@@ -1683,7 +1785,8 @@ function generateTagsTitle(tagData, articleCount, isJa) {
 function generateJourneysTitle(journeys, isJa) {
   if (journeys.length === 0) return isJa ? 'まだフォロワーデータがありません' : 'No follower data yet';
   const likedFirst = journeys.filter(j => j.likes.length > 0).length;
-  return isJa ? likedFirst + '人のフォロワーがフォロー前にいいね' : likedFirst + (likedFirst === 1 ? ' follower' : ' followers') + ' liked before they followed';
+  var directFollow = journeys.length - likedFirst;
+  return isJa ? journeys.length + '人中' + likedFirst + '人が先にスキ、' + directFollow + '人が直接フォロー' : likedFirst + ' of ' + journeys.length + (journeys.length === 1 ? ' follower' : ' followers') + ' liked first, ' + directFollow + ' followed directly';
 }
 
 /* ================================================================
@@ -1718,10 +1821,11 @@ function computeContentObs(m) {
     var secondAvg = secondHalf.reduce(function(a, b) { return a + b; }, 0) / secondHalf.length;
     var trendDiff = secondAvg - firstAvg;
     if (Math.abs(trendDiff) >= 3) {
+      var trending = secondAvg > firstAvg ? (isJa ? '\u6539\u5584\u50be\u5411' : 'Improving') : (isJa ? '\u4f4e\u4e0b\u50be\u5411' : 'Declining');
       obs.push({
-        text: isJa
-          ? '\u6700\u8fd1\u306e\u8a18\u4e8b\u306e\u5e73\u5747\u30b9\u30ad\u7387\u306f <strong>' + secondAvg.toFixed(0) + '%</strong>\u3002\u521d\u671f\u306e\u8a18\u4e8b\u306f <strong>' + firstAvg.toFixed(0) + '%</strong>\u3002'
-          : 'Recent articles average <strong>' + secondAvg.toFixed(0) + '%</strong> like rate. Earlier articles averaged <strong>' + firstAvg.toFixed(0) + '%</strong>.'
+        metric: firstAvg.toFixed(0) + '% \u2192 ' + secondAvg.toFixed(0) + '%',
+        label: isJa ? '\u30b9\u30ad\u7387\u306e\u63a8\u79fb\uff08\u521d\u671f\u2192\u6700\u8fd1\uff09' : 'Recent articles converting ' + (secondAvg > firstAvg ? 'better' : 'worse') + ' than earlier ones',
+        meaning: secondAvg > firstAvg ? (isJa ? '\u6700\u8fd1\u306e\u65b9\u5411\u6027\u3092\u7dad\u6301\u3002\u6b21\u306e\u8a18\u4e8b\u3082\u540c\u8def\u7dda\u3067' : 'Keep experimenting with recent topics') : (isJa ? '\u521d\u671f\u306e\u8a18\u4e8b\u3092\u898b\u76f4\u3057\u3001\u6210\u529f\u30d1\u30bf\u30fc\u30f3\u3092\u518d\u73fe\u3059\u308b' : 'Revisit what worked in your earlier articles')
       });
     }
   }
@@ -1736,17 +1840,20 @@ function computeContentObs(m) {
   var worstRate = (worst.likes_total / worst.views * 100);
   var bestIdx = m.articleMetrics.indexOf(best) + 1;
   var worstIdx = m.articleMetrics.indexOf(worst) + 1;
-  if (worstRate > 0 && bestRate > worstRate * 2) {
+  var ratio = worstRate > 0 ? bestRate / worstRate : 0;
+  if (ratio > 2) {
     obs.push({
-      text: isJa
-        ? 'A' + bestIdx + '\u306e\u30b9\u30ad\u7387(' + bestRate.toFixed(0) + '%)\u304cA' + worstIdx + '(' + worstRate.toFixed(0) + '%)\u306e<strong>' + (bestRate / worstRate).toFixed(1) + '\u500d</strong>'
-        : 'A' + bestIdx + ' converts <strong>' + (bestRate / worstRate).toFixed(1) + 'x</strong> more viewers to likers than A' + worstIdx + ' (' + bestRate.toFixed(0) + '% vs ' + worstRate.toFixed(0) + '%)'
+      metric: ratio.toFixed(1) + 'x',
+      label: isJa ? 'A' + bestIdx + '(' + bestRate.toFixed(0) + '%) vs A' + worstIdx + '(' + worstRate.toFixed(0) + '%)' : 'A' + bestIdx + '\'s approach works ' + ratio.toFixed(1) + 'x better than A' + worstIdx,
+      meaning: ratio > 4
+        ? (isJa ? 'A' + bestIdx + '\u306e\u69cb\u6210\u3068\u30c8\u30d4\u30c3\u30af\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Replicate A' + bestIdx + '\'s topic and structure in your next article')
+        : (isJa ? 'A' + bestIdx + '\u3068A' + worstIdx + '\u306e\u9055\u3044\u3092\u6bd4\u8f03\u3057\u3001\u6b21\u306e\u8a18\u4e8b\u3067\u8a66\u3059\u4fa1\u5024\u3042\u308a' : 'Compare these two articles and reuse what A' + bestIdx + ' does differently')
     });
   } else {
     obs.push({
-      text: isJa
-        ? '\u30b9\u30ad\u7387\u306f' + worstRate.toFixed(0) + '%\u304b\u3089' + bestRate.toFixed(0) + '%\u306e\u7bc4\u56f2\u3002\u5e73\u5747' + avgRate.toFixed(0) + '%\u3002'
-        : 'Like rates range from ' + worstRate.toFixed(0) + '% to ' + bestRate.toFixed(0) + '%, averaging ' + avgRate.toFixed(0) + '%.'
+      metric: worstRate.toFixed(0) + '%\u2013' + bestRate.toFixed(0) + '%',
+      label: isJa ? '\u30b9\u30ad\u7387\u306e\u7bc4\u56f2\uff08\u5e73\u5747' + avgRate.toFixed(0) + '%\uff09' : 'All articles convert within a narrow ' + worstRate.toFixed(0) + '\u2013' + bestRate.toFixed(0) + '% band',
+      meaning: isJa ? '\u54c1\u8cea\u304c\u5b89\u5b9a\u3002\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u306f\u305d\u306e\u307e\u307e\u3067\u65b0\u30c8\u30d4\u30c3\u30af\u3092\u8a66\u3059' : 'Keep your current format and experiment with new topics instead'
     });
   }
 
@@ -1772,10 +1879,13 @@ function computeContentObs(m) {
     }
   }
   if (bestOverlap.count >= 2) {
+    var overlapPct = m.uniqueUsers > 0 ? Math.round(bestOverlap.count / m.uniqueUsers * 100) : 0;
     obs.push({
-      text: isJa
-        ? '<strong>' + bestOverlap.count + '\u4eba</strong>\u306e\u8aad\u8005\u304cA' + bestOverlap.pair[0] + '\u3068A' + bestOverlap.pair[1] + '\u306e\u4e21\u65b9\u306b\u3044\u3044\u306d\u3002\u3053\u306e2\u8a18\u4e8b\u306f\u540c\u3058\u8aad\u8005\u5c64\u306b\u5c4a\u3044\u3066\u3044\u308b\u3002'
-        : '<strong>' + bestOverlap.count + '</strong> readers liked both A' + bestOverlap.pair[0] + ' and A' + bestOverlap.pair[1] + '. These articles reach the same audience.'
+      metric: bestOverlap.count + (isJa ? '\u4eba' : ''),
+      label: isJa ? 'A' + bestOverlap.pair[0] + '\u3068A' + bestOverlap.pair[1] + '\u306e\u5171\u901a\u8aad\u8005 (' + overlapPct + '%)' : overlapPct + '% of readers liked both A' + bestOverlap.pair[0] + ' and A' + bestOverlap.pair[1],
+      meaning: overlapPct >= 25
+        ? (isJa ? '\u30b3\u30a2\u8aad\u8005\u304c\u91cd\u306a\u308b\u3002\u3053\u306e2\u8a18\u4e8b\u306e\u63a5\u70b9\u3067\u66f8\u304f' : 'Write more at this intersection. it resonates with your core audience')
+        : (isJa ? '\u3053\u306e2\u8a18\u4e8b\u306b\u76f8\u4e92\u30ea\u30f3\u30af\u3092\u8ffd\u52a0\u3059\u308b' : 'Add cross-links between these two articles to boost discovery')
     });
   }
 
@@ -1810,9 +1920,11 @@ function computeContentObs(m) {
         return isJa ? t : (TAG_EN[t] || t);
       }).join(', ');
       obs.push({
-        text: isJa
-          ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u308f\u308c\u3066\u3044\u308b\u30bf\u30b0: <strong>' + tagStr + '</strong>'
-          : 'Tags found only on above-average articles: <strong>' + tagStr + '</strong>'
+        metric: tagStr,
+        label: isJa ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u7528' : 'These tags only appear on your top-performing articles',
+        meaning: distinctiveTags.length >= 3
+          ? (isJa ? '\u6b21\u306e\u8a18\u4e8b\u3067\u3053\u306e\u30bf\u30b0\u30922\u3064\u4ee5\u4e0a\u4f7f\u3046' : 'Use at least two of these tags on your next article')
+          : (isJa ? '\u6b21\u306e\u8a18\u4e8b\u3067\u3053\u306e\u30bf\u30b0\u3092\u4f7f\u3046' : 'Include this tag in your next article')
       });
     }
   }
@@ -1831,12 +1943,16 @@ function computeContentObs(m) {
   if (articleSpeeds.length >= 2) {
     articleSpeeds.sort(function(a, b) { return a.median - b.median; });
     var fastest = articleSpeeds[0], slowest = articleSpeeds[articleSpeeds.length - 1];
-    var fUnit = fastest.median < 24 ? Math.round(fastest.median) + (isJa ? '\u6642\u9593' : ' hours') : Math.round(fastest.median / 24) + (isJa ? '\u65e5' : ' days');
-    var sUnit = slowest.median < 24 ? Math.round(slowest.median) + (isJa ? '\u6642\u9593' : ' hours') : Math.round(slowest.median / 24) + (isJa ? '\u65e5' : ' days');
+    var fVal = fastest.median < 24 ? Math.round(fastest.median) : Math.round(fastest.median / 24);
+    var fUnit = fastest.median < 24 ? (isJa ? '\u6642\u9593' : (fVal === 1 ? ' hour' : ' hours')) : (isJa ? '\u65e5' : (fVal === 1 ? ' day' : ' days'));
+    var sVal = slowest.median < 24 ? Math.round(slowest.median) : Math.round(slowest.median / 24);
+    var sUnit = slowest.median < 24 ? (isJa ? '\u6642\u9593' : (sVal === 1 ? ' hour' : ' hours')) : (isJa ? '\u65e5' : (sVal === 1 ? ' day' : ' days'));
     obs.push({
-      text: isJa
-        ? 'A' + fastest.idx + '\u306f\u516c\u958b\u5f8c<strong>' + fUnit + '</strong>\u3067\u3044\u3044\u306d\u306e\u534a\u6570\u306b\u5230\u9054\u3002A' + slowest.idx + '\u306f<strong>' + sUnit + '</strong>\u304b\u304b\u3063\u305f\u3002'
-        : 'A' + fastest.idx + ' reached half its likes in <strong>' + fUnit + '</strong>. A' + slowest.idx + ' took <strong>' + sUnit + '</strong>.'
+      metric: fVal + fUnit + ' vs ' + sVal + sUnit,
+      label: isJa ? 'A' + fastest.idx + '(\u6700\u901f) vs A' + slowest.idx + '(\u6700\u9045)\u306e\u30b9\u30ad\u534a\u6e1b\u671f' : 'A' + fastest.idx + ' attracts likes ' + (sVal > fVal ? Math.round(sVal / Math.max(fVal, 1)) + 'x' : 'much') + ' faster than A' + slowest.idx,
+      meaning: fastest.median < 6
+        ? (isJa ? 'A' + fastest.idx + '\u306e\u30bf\u30a4\u30c8\u30eb\u3068\u5c0e\u5165\u3092\u6b21\u306e\u8a18\u4e8b\u3067\u518d\u73fe\u3059\u308b' : 'Study A' + fastest.idx + '\'s title and opening. reuse that hook next time')
+        : (isJa ? 'A' + fastest.idx + '\u306e\u5c0e\u5165\u90e8\u5206\u3092\u53c2\u8003\u306b\u3001\u6b21\u306e\u8a18\u4e8b\u306e\u30d5\u30c3\u30af\u3092\u5f37\u5316\u3059\u308b' : 'A' + fastest.idx + ' hooks readers quickly. Try a similar opening for your next piece')
     });
   }
 
@@ -1862,53 +1978,73 @@ function computeTimingObs(m) {
     var pct48 = Math.round(within48 / hoursAfterPub.length * 100);
     var longTail = hoursAfterPub.filter(function(h) { return h > 48; }).length;
     var pctLong = Math.round(longTail / hoursAfterPub.length * 100);
-    var line = isJa
-      ? '\u3044\u3044\u306d\u306e<strong>' + pct48 + '%</strong>\u304c\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u767a\u751f\u3002'
-      : '<strong>' + pct48 + '%</strong> of likes arrive within 48 hours of publish.';
+    var metricStr = pct48 + '%';
+    var labelStr = isJa ? '\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u53cd\u5fda' : pct48 + '% of likes arrive within 48 hours of publish';
     if (pctLong >= 20) {
-      line += isJa
-        ? ' <strong>' + pctLong + '%</strong>\u306f48\u6642\u9593\u4ee5\u964d\u306b\u767a\u751f\u3002'
-        : ' <strong>' + pctLong + '%</strong> arrive after 48 hours.';
+      labelStr += isJa ? '\u3002' + pctLong + '%\u306f\u305d\u308c\u4ee5\u964d' : ', ' + pctLong + '% trickle in later';
     }
-    obs.push({ text: line });
+    var remainPct = 100 - pct48;
+    var timingMeaning = pct48 >= 70
+      ? (isJa ? '\u516c\u958b\u65e5\u306e\u62e1\u6563\u306b\u96c6\u4e2d\u3059\u308b' : 'Promote heavily on publish day. that is when readers engage')
+      : (isJa ? '\u904e\u53bb\u8a18\u4e8b\u306e\u518d\u5171\u6709\u3082\u6709\u52b9\u3002\u6025\u304c\u306a\u304f\u3066\u3088\u3044' : 'No rush to promote. reshare older articles, they still convert');
+    obs.push({ metric: metricStr, label: labelStr, meaning: timingMeaning });
   }
 
-  // 2. Peak 4-hour window on JST clock
-  var hourCounts = new Array(24).fill(0);
-  likes.forEach(function(e) { hourCounts[new Date(e.timestamp_jst).getHours()]++; });
-  var bestSum = 0, bestStart = 0;
-  for (var s = 0; s < 24; s++) {
-    var sum = 0;
-    for (var j = 0; j < 4; j++) sum += hourCounts[(s + j) % 24];
-    if (sum > bestSum) { bestSum = sum; bestStart = s; }
-  }
-  var windowPct = likes.length > 0 ? Math.round(bestSum / likes.length * 100) : 0;
-  if (windowPct > 34) {
-    var wEnd = (bestStart + 3) % 24;
+  // 2. Peak concentration (use same window as the chart)
+  if (m.peakStart !== null) {
+    var peakLikes = m.hourLikes.slice(m.peakStart, m.peakEnd + 1).reduce(function(a, b) { return a + b; }, 0);
+    var totalH = m.hourLikes.reduce(function(a, b) { return a + b; }, 0);
+    var peakPct = totalH > 0 ? Math.round(peakLikes / totalH * 100) : 0;
     obs.push({
-      text: isJa
-        ? 'JST <strong>' + String(bestStart).padStart(2, '0') + ':00\u304b\u3089' + String(wEnd).padStart(2, '0') + ':00</strong>\u306b\u3044\u3044\u306d\u306e<strong>' + windowPct + '%</strong>\u304c\u96c6\u4e2d (GMT ' + String(jstToGmt(bestStart)).padStart(2, '0') + ':00\u304b\u3089' + String(jstToGmt(wEnd)).padStart(2, '0') + ':00)'
-        : '<strong>' + windowPct + '%</strong> of likes fall between JST <strong>' + String(bestStart).padStart(2, '0') + ':00 and ' + String(wEnd).padStart(2, '0') + ':00</strong> (GMT ' + String(jstToGmt(bestStart)).padStart(2, '0') + ':00 to ' + String(jstToGmt(wEnd)).padStart(2, '0') + ':00)'
+      metric: peakPct + '%',
+      label: isJa
+        ? 'JST ' + String(m.peakStart).padStart(2, '0') + '\u2013' + String(m.peakEnd).padStart(2, '0') + '\u6642\u306b\u96c6\u4e2d (GMT ' + String(jstToGmt(m.peakStart)).padStart(2, '0') + '\u2013' + String(jstToGmt(m.peakEnd)).padStart(2, '0') + ')'
+        : peakPct + '% of likes land between JST ' + String(m.peakStart).padStart(2, '0') + '\u2013' + String(m.peakEnd).padStart(2, '0') + ' (GMT ' + String(jstToGmt(m.peakStart)).padStart(2, '0') + '\u2013' + String(jstToGmt(m.peakEnd)).padStart(2, '0') + ')',
+      meaning: peakPct >= 50
+        ? (isJa ? '\u6b21\u306e\u8a18\u4e8b\u306fJST ' + String(m.peakStart).padStart(2, '0') + ':00\u524d\u306b\u516c\u958b\u3059\u308b' : 'Aim to publish just before JST ' + String(m.peakStart).padStart(2, '0') + ':00 next time')
+        : (isJa ? '\u516c\u958b\u6642\u523b\u306e\u5f71\u97ff\u306f\u9650\u5b9a\u7684\u3002\u597d\u304d\u306a\u6642\u9593\u3067\u3088\u3044' : 'Publish whenever suits you. timing has limited effect')
     });
   } else {
     obs.push({
-      text: isJa
-        ? '\u3044\u3044\u306d\u306f\u6642\u9593\u5e2f\u306b\u5927\u304d\u306a\u504f\u308a\u306a\u304f\u5206\u6563\u3057\u3066\u3044\u308b\u3002'
-        : 'Likes are spread across the day with no strong concentration.'
+      metric: '\u2014',
+      label: isJa ? '\u6642\u9593\u5e2f\u306b\u504f\u308a\u306a\u3057' : 'Likes spread evenly across hours',
+      meaning: isJa ? '\u597d\u304d\u306a\u6642\u9593\u306b\u516c\u958b\u3057\u3066\u3088\u3044' : 'Publish whenever suits you. no timing advantage to capture'
     });
   }
 
   // 3. Publish time vs peak
   if (m.peakStart !== null && m.articles.length >= 2) {
-    var pubHours = m.articles.filter(function(a) { return a.published_date_jst; }).map(function(a) {
-      return new Date(a.published_date_jst).getHours();
+    // Extract JST hours from timestamps (browser-independent)
+    var pubHoursJST = m.articles.filter(function(a) { return a.published_date_jst; }).map(function(a) {
+      var hm = (a.published_date_jst || '').match(/T(\d{2}):/);
+      return hm ? parseInt(hm[1]) : 0;
     });
-    var duringPeak = pubHours.filter(function(h) { return h >= m.peakStart && h <= m.peakEnd; }).length;
-    obs.push({
-      text: isJa
-        ? m.articles.length + '\u8a18\u4e8b\u4e2d<strong>' + duringPeak + '</strong>\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u516c\u958b\u3001<strong>' + (m.articles.length - duringPeak) + '</strong>\u8a18\u4e8b\u304c\u305d\u308c\u4ee5\u5916\u306e\u6642\u9593\u5e2f\u306b\u516c\u958b\u3002'
-        : '<strong>' + duringPeak + '</strong> of ' + m.articles.length + ' articles published during peak hours. <strong>' + (m.articles.length - duringPeak) + '</strong> outside.'
-    });
+    var duringPeak = pubHoursJST.filter(function(h) { return h >= m.peakStart && h <= m.peakEnd; }).length;
+    // Author publishes in GMT, audience peaks in JST
+    var avgPubJST = Math.round(pubHoursJST.reduce(function(a, b) { return a + b; }, 0) / pubHoursJST.length);
+    var avgPubGMT = jstToGmt(avgPubJST);
+    var peakMid = Math.round((m.peakStart + m.peakEnd) / 2);
+    var peakMidGMT = jstToGmt(peakMid);
+    var gap = Math.abs(avgPubJST - peakMid);
+    if (gap >= 3) {
+      obs.push({
+        metric: gap + (isJa ? '\u6642\u9593' : 'h gap'),
+        label: isJa
+          ? '\u516c\u958b GMT ' + String(avgPubGMT).padStart(2, '0') + ':00 vs \u30d4\u30fc\u30af JST ' + String(peakMid).padStart(2, '0') + ':00'
+          : 'You publish at ' + String(avgPubGMT).padStart(2, '0') + ':00 GMT, readers peak at ' + String(peakMid).padStart(2, '0') + ':00 JST',
+        meaning: gap >= 4
+          ? (isJa ? '\u6b21\u56de\u306f GMT ' + String(peakMidGMT).padStart(2,'0') + ':00\uff08JST ' + String(peakMid).padStart(2,'0') + ':00\uff09\u306b\u516c\u958b\u3092\u8a66\u3059' : 'Try publishing at ' + String(peakMidGMT).padStart(2,'0') + ':00 GMT (' + String(peakMid).padStart(2,'0') + ':00 JST) next week')
+          : (isJa ? 'GMT ' + String(peakMidGMT).padStart(2,'0') + ':00\u306b' + gap + '\u6642\u9593\u5bc4\u305b\u308b\u5b9f\u9a13\u3092' : 'Try shifting ' + gap + 'h closer to ' + String(peakMidGMT).padStart(2,'0') + ':00 GMT')
+      });
+    } else {
+      obs.push({
+        metric: duringPeak + '/' + m.articles.length,
+        label: isJa ? '\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u516c\u958b' : duringPeak + ' of ' + m.articles.length + ' articles already hit the peak window',
+        meaning: duringPeak > m.articles.length / 2
+          ? (isJa ? '\u73fe\u5728\u306e\u516c\u958b\u6642\u523b\u3092\u7dad\u6301\u3059\u308b' : 'Keep publishing at your current time')
+          : (isJa ? '\u6b21\u306e\u8a18\u4e8b\u306f\u30d4\u30fc\u30af\u6642\u9593\u5e2f\u306b\u516c\u958b\u3092\u8a66\u3059' : 'Try moving your next publish into the peak window')
+      });
+    }
   }
 
   return obs;
@@ -1919,25 +2055,20 @@ function computeAudienceObs(m) {
   var obs = [];
   if (m.uniqueUsers < 3) return obs;
 
-  // 1. Funnel
-  var totalLikers = m.uniqueUsers;
-  var totalFollowers = m.totalFollows;
-  var followPct = totalLikers > 0 ? Math.round(totalFollowers / totalLikers * 100) : 0;
-  // Include friend/organic split if metadata exists
-  if (m.friendLikes > 0 || m.organicLikes > 0) {
+  // 1. Organic vs friend split (skip if no friend data, and skip if it just restates the funnel)
+  if (m.friendLikes > 0) {
     var organicPct = (m.organicLikes + m.organicFollows) > 0
       ? Math.round((m.organicLikes + m.organicFollows) / (m.totalLikes + m.totalFollows) * 100) : 0;
     obs.push({
-      text: isJa
-        ? '<strong>' + m.organicLikes + '</strong>\u4ef6\u306e\u3044\u3044\u306d\u304c\u30aa\u30fc\u30ac\u30cb\u30c3\u30af\u3001<strong>' + m.friendLikes + '</strong>\u4ef6\u304c\u30d5\u30ec\u30f3\u30c9\u304b\u3089\u3002\u30aa\u30fc\u30ac\u30cb\u30c3\u30af\u7387: <strong>' + organicPct + '%</strong>'
-        : '<strong>' + m.organicLikes + '</strong> likes are organic, <strong>' + m.friendLikes + '</strong> from friends. Organic rate: <strong>' + organicPct + '%</strong>'
+      metric: organicPct + '%',
+      label: isJa ? '\u65b0\u898f\u8aad\u8005\u7387 (' + m.organicLikes + '\u4ef6\u65b0\u898f / ' + m.friendLikes + '\u4ef6\u30d5\u30ec\u30f3\u30c9)' : organicPct + '% of engagement comes from new readers (' + m.organicLikes + ' new, ' + m.friendLikes + ' friends)',
+      meaning: organicPct >= 80
+        ? (isJa ? '\u65b0\u898f\u8aad\u8005\u306b\u81ea\u7136\u306b\u5c4a\u3044\u3066\u3044\u308b\u3002\u3053\u306e\u307e\u307e\u7d9a\u3051\u308b' : 'content reaches new readers naturally')
+        : organicPct >= 50
+          ? (isJa ? '\u826f\u3044\u30d0\u30e9\u30f3\u30b9\u3002\u4e21\u65b9\u306e\u8aad\u8005\u5411\u3051\u306b\u66f8\u304d\u7d9a\u3051\u308b' : 'Good balance. keep writing for both audiences')
+          : (isJa ? '\u30bf\u30b0\u3092\u5e83\u3052\u308b\u304b\u4ed6\u30d7\u30e9\u30c3\u30c8\u30d5\u30a9\u30fc\u30e0\u3067\u5171\u6709\u3057\u3001\u65b0\u898f\u8aad\u8005\u3092\u589e\u3084\u3059' : 'Try adding broader tags or sharing on other platforms to attract new readers')
     });
   }
-  obs.push({
-    text: isJa
-      ? '<strong>' + totalLikers + '\u4eba</strong>\u304c\u3044\u3044\u306d\u3001\u305d\u306e\u3046\u3061<strong>' + totalFollowers + '\u4eba</strong>(' + followPct + '%)\u304c\u30d5\u30a9\u30ed\u30fc\u306b\u8ee2\u63db\u3002'
-      : '<strong>' + totalLikers + '</strong> people liked, <strong>' + totalFollowers + '</strong> of them (' + followPct + '%) went on to follow.'
-  });
 
   // 2. Entry point article
   if (m.journeys.length >= 2) {
@@ -1953,9 +2084,11 @@ function computeAudienceObs(m) {
       var artIdx = m.articles.findIndex(function(a) { return a.article_url === entries[0][0]; });
       if (artIdx >= 0) {
         obs.push({
-          text: isJa
-            ? 'A' + (artIdx + 1) + '\u304c<strong>' + entries[0][1] + '\u4eba</strong>\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9\u3002\u3053\u306e\u8a18\u4e8b\u304c\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u3078\u306e\u5165\u53e3\u306b\u306a\u3063\u3066\u3044\u308b\u3002'
-            : 'A' + (artIdx + 1) + ' was the first article liked by <strong>' + entries[0][1] + '</strong> followers. It serves as the entry point to your profile.'
+          metric: 'A' + (artIdx + 1),
+          label: isJa ? entries[0][1] + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9' : entries[0][1] + ' of ' + m.journeys.length + ' followers discovered you through this article',
+          meaning: entries[0][1] >= 3
+            ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u306e\u56fa\u5b9a\u8a18\u4e8b\u306b\u3059\u308b' : 'Pin this article to your profile. it is your best gateway')
+            : (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u304b\u3089\u3053\u306e\u8a18\u4e8b\u306b\u30ea\u30f3\u30af\u3059\u308b' : 'Link to this article from your profile bio')
         });
       }
     }
@@ -1967,9 +2100,13 @@ function computeAudienceObs(m) {
     var likedOne = m.journeys.filter(function(j) { return j.likes.length === 1; }).length;
     var followedDirect = m.journeys.filter(function(j) { return j.likes.length === 0; }).length;
     obs.push({
-      text: isJa
-        ? m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc: <strong>' + likedMultiple + '\u4eba</strong>\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u306b\u30d5\u30a9\u30ed\u30fc\u3001<strong>' + likedOne + '\u4eba</strong>\u304c1\u8a18\u4e8b\u3067\u30d5\u30a9\u30ed\u30fc\u3001<strong>' + followedDirect + '\u4eba</strong>\u304c\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc\u3002'
-        : 'Of ' + m.journeys.length + ' followers: <strong>' + likedMultiple + '</strong> liked multiple articles first, <strong>' + likedOne + '</strong> liked one then followed, <strong>' + followedDirect + '</strong> followed without liking.'
+      metric: likedMultiple + ' / ' + likedOne + ' / ' + followedDirect,
+      label: isJa ? '\u8907\u6570\u8a18\u4e8b / 1\u8a18\u4e8b / \u76f4\u63a5\u30d5\u30a9\u30ed\u30fc (' + m.journeys.length + '\u4eba)' : likedMultiple + ' read multiple, ' + likedOne + ' read one, ' + followedDirect + ' followed without liking',
+      meaning: likedMultiple > likedOne + followedDirect
+        ? (isJa ? '\u8a18\u4e8b\u9593\u306b\u76f8\u4e92\u30ea\u30f3\u30af\u3092\u8ffd\u52a0\u3059\u308b\u3002\u8aad\u8005\u306f\u56de\u904a\u3057\u3066\u304b\u3089\u6c7a\u3081\u308b' : 'Add cross-links between articles. readers browse before committing')
+        : followedDirect > likedMultiple
+          ? (isJa ? '\u30d7\u30ed\u30d5\u30a3\u30fc\u30eb\u30da\u30fc\u30b8\u3092\u5145\u5b9f\u3055\u305b\u308b\u3002\u305d\u3053\u3067\u5224\u65ad\u3055\u308c\u3066\u3044\u308b' : 'Invest in your profile page. most followers decide there')
+          : (isJa ? '\u8907\u6570\u306e\u5165\u53e3\u304c\u6a5f\u80fd\u3057\u3066\u3044\u308b\u3002\u3053\u306e\u307e\u307e\u7dad\u6301\u3059\u308b' : 'Keep multiple entry points. followers arrive through different routes')
     });
   }
 
@@ -1994,8 +2131,6 @@ function computeMetrics(events, articles) {
   const likes = events.filter(e => e.kind === 'like');
   const follows = events.filter(e => e.kind === 'follow');
   const uniqueUsers = new Set(events.map(e => e.slug));
-  const followSlugs = new Set(follows.map(e => e.slug));
-
   // Repeat likers
   const userArticles = {};
   for (const e of likes) {
@@ -2018,15 +2153,6 @@ function computeMetrics(events, articles) {
       else if (e.kind === 'follow') hourFollows[h]++;
     }
   }
-
-  // Peak hours (top 3)
-  const peakHours = hourCounts
-    .map((c, i) => ({ hour: i, count: c }))
-    .sort((a, b) => b.count - a.count)
-    .filter(h => h.count > 0)
-    .slice(0, 3)
-    .map(h => h.hour)
-    .sort((a, b) => a - b);
 
   // Tag reach
   const tagLikes = {};
@@ -2054,8 +2180,11 @@ function computeMetrics(events, articles) {
     }))
     .sort((a, b) => b.likes - a.likes);
 
-  // Article metrics
-  const articleMetrics = articles.map(art => {
+  // Sort articles chronologically first so A-numbering is consistent everywhere
+  const sortedArticles = [...articles].sort((a, b) => a.published_date_jst.localeCompare(b.published_date_jst));
+
+  // Article metrics (built from sorted array so A1=first published, A2=second, etc.)
+  const articleMetrics = sortedArticles.map(art => {
     const artLikes = likes.filter(e => e.article_url === art.article_url);
     const artFollowsNearby = follows.filter(f => {
       const ft = new Date(f.timestamp_jst).getTime();
@@ -2075,27 +2204,11 @@ function computeMetrics(events, articles) {
   });
 
   // Days span
-  const sortedArticles = [...articles].sort((a, b) => a.published_date_jst.localeCompare(b.published_date_jst));
   let daySpan = 0;
   if (sortedArticles.length >= 2) {
     const first = new Date(sortedArticles[0].published_date_jst);
     const last = new Date(sortedArticles[sortedArticles.length - 1].published_date_jst);
     daySpan = Math.round((last - first) / (1000 * 60 * 60 * 24));
-  }
-
-  // Latest article velocity
-  const latestArt = sortedArticles[sortedArticles.length - 1];
-  let latestVelocityHours = null;
-  if (latestArt) {
-    const latestLikes = likes
-      .filter(e => e.article_url === latestArt.article_url)
-      .map(e => new Date(e.timestamp_jst).getTime())
-      .sort();
-    if (latestLikes.length > 0) {
-      const pubTime = new Date(latestArt.published_date_jst).getTime();
-      const lastLike = latestLikes[latestLikes.length - 1];
-      latestVelocityHours = Math.round((lastLike - pubTime) / (1000 * 60 * 60));
-    }
   }
 
   // Follower journeys
@@ -2137,67 +2250,41 @@ function computeMetrics(events, articles) {
     dowPublish[d.getDay()]++;
   }
 
-  // Content mix: article type breakdown
-  const typeGroups = {};
-  for (const art of articleMetrics) {
-    const tp = art.article_type || 'Unknown';
-    if (!typeGroups[tp]) typeGroups[tp] = { count: 0, views: 0, likes: 0, observed: 0 };
-    typeGroups[tp].count++;
-    typeGroups[tp].views += art.views;
-    typeGroups[tp].likes += art.likes_total;
-    typeGroups[tp].observed += art.observed_likes;
-  }
-  const contentMix = Object.entries(typeGroups).map(([type, g]) => ({
-    type,
-    count: g.count,
-    pct: sortedArticles.length > 0 ? Math.round(g.count / sortedArticles.length * 100) : 0,
-    avgViews: g.count > 0 ? Math.round(g.views / g.count) : 0,
-    avgLikes: g.count > 0 ? (g.likes / g.count).toFixed(1) : '0',
-    likeRate: g.views > 0 ? (g.likes / g.views * 100).toFixed(1) : '0',
-  }));
-
   // Publish hours for annotation on activity chart
+  // Extract JST hour directly from timestamp string (not browser-dependent)
   const publishHours = sortedArticles
     .filter(a => a.published_date_jst)
     .map(a => {
-      const d = new Date(a.published_date_jst);
-      return { hour: d.getHours(), title_jp: a.title_jp, title_en: a.title_en };
+      var hMatch = (a.published_date_jst || '').match(/T(\d{2}):/);
+      return { hour: hMatch ? parseInt(hMatch[1]) : 0, title_jp: a.title_jp, title_en: a.title_en };
     });
 
-  // Best and worst performing articles by like rate
-  const ranked = [...articleMetrics]
-    .filter(a => a.views > 0)
-    .sort((a, b) => (b.likes_total / b.views) - (a.likes_total / a.views));
-  const bestArticle = ranked[0] || null;
-  const worstArticle = ranked[ranked.length - 1] || null;
-
-  // Tags unique to best performers vs shared everywhere
-  const uniqueTags = {};
-  const sharedTags = {};
-  for (const art of articleMetrics) {
-    if (!art.tags) continue;
-    for (const tag of art.tags) {
-      if (!uniqueTags[tag]) uniqueTags[tag] = [];
-      uniqueTags[tag].push(art.views > 0 ? art.likes_total / art.views : 0);
-    }
-  }
-
-  // Peak zone: sliding window of 3-5 hours with highest concentration
+  // Peak zone: find core window then extend to include adjacent active hours
   const allHourCounts = hourLikes.map((l, i) => l + hourFollows[i]);
   const totalEngagement = allHourCounts.reduce((a, b) => a + b, 0);
   let peakStart = null, peakEnd = null;
   if (totalEngagement > 0) {
+    // Step 1: find best 4-hour core window
     let bestSum = 0, bestStart = 0;
-    const windowSize = Math.min(5, Math.max(3, Math.floor(24 * 0.2))); // 3-5 hours
     for (let start = 0; start < 24; start++) {
       let sum = 0;
-      for (let j = 0; j < windowSize; j++) sum += allHourCounts[(start + j) % 24];
+      for (let j = 0; j < 4; j++) sum += allHourCounts[(start + j) % 24];
       if (sum > bestSum) { bestSum = sum; bestStart = start; }
     }
-    // Only mark as peak if it contains at least 40% of engagement
-    if (bestSum / totalEngagement >= 0.4) {
-      peakStart = bestStart;
-      peakEnd = (bestStart + windowSize - 1) % 24;
+    // Step 2: extend only if adjacent hour >= current boundary hour (prevents noise inclusion)
+    var s = bestStart, e = (bestStart + 3) % 24;
+    var zoneSize = 4;
+    var maxZone = 6;
+    // Extend start backward: adjacent must match or exceed the current start hour
+    while (zoneSize < maxZone && allHourCounts[(s - 1 + 24) % 24] >= allHourCounts[s]) { s = (s - 1 + 24) % 24; zoneSize++; if (s === e) break; }
+    // Extend end forward: adjacent must match or exceed the current end hour
+    while (zoneSize < maxZone && allHourCounts[(e + 1) % 24] >= allHourCounts[e]) { e = (e + 1) % 24; zoneSize++; if (e === s) break; }
+    // Calculate total in extended zone
+    var peakTotal = 0, h = s;
+    while (true) { peakTotal += allHourCounts[h]; if (h === e) break; h = (h + 1) % 24; }
+    if (peakTotal / totalEngagement >= 0.35) {
+      peakStart = s;
+      peakEnd = e;
     }
   }
 
@@ -2208,19 +2295,15 @@ function computeMetrics(events, articles) {
     totalLikes: likes.length,
     totalFollows: follows.length,
     uniqueUsers: uniqueUsers.size,
-    followSlugs,
     repeatLikers,
     hourLikes,
     hourFollows,
-    peakHours,
     peakStart,
     peakEnd,
     tagData,
     articleMetrics,
     articles: sortedArticles,
     daySpan,
-    latestVelocityHours,
-    latestArticle: latestArt,
     journeys,
     totalViews: articles.reduce((s, a) => s + a.views, 0),
     totalLikesReported: articles.reduce((s, a) => s + a.likes_total, 0),
@@ -2229,11 +2312,7 @@ function computeMetrics(events, articles) {
     dowFollows,
     dowPublish,
     DOW_NAMES,
-    contentMix,
     publishHours,
-    bestArticle,
-    worstArticle,
-    // Friend vs organic breakdown
     friendLikes: likes.filter(function(e) { return e.is_friend === 1; }).length,
     organicLikes: likes.filter(function(e) { return e.is_friend !== 1; }).length,
     friendFollows: follows.filter(function(e) { return e.is_friend === 1; }).length,
@@ -2253,6 +2332,7 @@ const COLOURS = {
   accentZone: '#dbeafe',
   grey: '#d1d5db',
   green: '#0d9488',
+  amber: '#d97706',
   red: '#dc2626',
   purple: '#7c3aed',
   ink: '#1a1a2e',
@@ -2324,56 +2404,94 @@ function renderSummary(m, prevSnapshot) {
 
   function trend(current, prevVal) {
     if (!prev || prevVal === undefined || prevVal === null) return '';
-    if (current > prevVal) return ' <span class="kpi-trend">\u2191</span>';
-    if (current < prevVal) return ' <span class="kpi-trend">\u2193</span>';
+    if (current > prevVal) return ' <span class="kpi-trend up">\u2191</span>';
+    if (current < prevVal) return ' <span class="kpi-trend down">\u2193</span>';
     return '';
   }
 
-  // Narrative summary above KPIs
-  var summary = isJa
-    ? m.articles.length + '\u8a18\u4e8b\u3092' + m.daySpan + '\u65e5\u9593\u306b\u516c\u958b\u3002' + totalViews + '\u95b2\u89a7\u3001' + totalLikes + '\u3044\u3044\u306d\uff08' + likeRate.toFixed(0) + '%\u306e\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3\uff09\u3001' + m.totalFollows + '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\u3002'
-    : m.articles.length + ' articles over ' + m.daySpan + ' days. ' + totalViews + ' views, ' + totalLikes + ' likes (' + likeRate.toFixed(0) + '% conversion), ' + m.totalFollows + ' followers.';
-  let html = '<div style="font-size:13px;color:var(--ink-light);margin-bottom:12px;line-height:1.6;">' + summary + '</div>';
-  html += '<div class="kpi-grid">';
+  // Summary layout: funnel card left, KPIs right
+  var likeToFollowPct = totalLikes > 0 ? (m.totalFollows / totalLikes * 100) : 0;
+  var maxBarW = 100;
+  var likesBarW = Math.max(8, Math.round(totalLikes / Math.max(totalViews, 1) * maxBarW));
+  var followsBarW = Math.max(4, Math.round(m.totalFollows / Math.max(totalViews, 1) * maxBarW));
 
-  html += '<div class="kpi-item"><div class="kpi-value">' + m.articles.length + trend(m.articles.length, prev && prev.articles) + '</div>';
-  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u6570' : 'Articles Published') + '</div>';
-  if (m.daySpan > 0) html += '<div class="kpi-sub">' + (isJa ? m.daySpan + '\u65e5\u9593\u306b\u516c\u958b' : 'over ' + m.daySpan + ' days') + '</div>';
+  let html = '<div class="summary-layout">';
+
+  // Funnel card
+  html += '<div class="funnel-card">';
+  html += '<div class="funnel-card-title">' + (isJa ? '\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3' : 'Conversion') + '</div>';
+  html += '<div class="funnel-step"><span class="funnel-step-val">' + totalViews + '</span><div class="funnel-step-bar" style="width:' + maxBarW + 'px;background:#9ca3af;"></div><span class="funnel-step-label">' + (isJa ? '\u95b2\u89a7' : 'views') + '</span></div>';
+  html += '<div class="funnel-step"><span class="funnel-step-val">' + totalLikes + '</span><div class="funnel-step-bar" style="width:' + likesBarW + 'px;background:var(--accent);"></div><span class="funnel-step-label">' + (isJa ? '\u3044\u3044\u306d' : 'likes') + '</span><span class="funnel-step-pct">' + likeRate.toFixed(0) + '%</span></div>';
+  html += '<div class="funnel-step"><span class="funnel-step-val">' + m.totalFollows + '</span><div class="funnel-step-bar" style="width:' + followsBarW + 'px;background:var(--green);"></div><span class="funnel-step-label">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'follows') + '</span><span class="funnel-step-pct">' + likeToFollowPct.toFixed(0) + '%</span></div>';
   html += '</div>';
 
+  // 4 KPIs
+  // 4 KPIs: complementary to funnel (funnel shows conversion rates, KPIs show per-article and loyalty metrics)
+  html += '<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);border-bottom:none;padding-bottom:0;margin-bottom:0;">';
+
   html += '<div class="kpi-item"><div class="kpi-value">' + avgViewsPerArt + trend(totalViews / artCount, prev && prev.avgViews) + '</div>';
-  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u95b2\u89a7\u6570' : 'Avg. Views per Article') + '</div>';
-  html += '<div class="kpi-sub">' + totalViews.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u95b2\u89a7' : 'total views') + '</div></div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u95b2\u89a7' : 'Views per Article') + '</div>';
+  html += '<div class="kpi-sub">' + m.articles.length + (isJa ? '\u8a18\u4e8b\u3001' + m.daySpan + '\u65e5\u9593' : ' articles, ' + m.daySpan + ' days') + '</div></div>';
 
   html += '<div class="kpi-item"><div class="kpi-value">' + avgLikesPerArt + trend(totalLikes / artCount, prev && prev.avgLikes) + '</div>';
-  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u3044\u3044\u306d' : 'Avg. Likes per Article') + '</div>';
-  html += '<div class="kpi-sub">' + totalLikes.toLocaleString() + ' ' + (isJa ? '\u5408\u8a08\u3044\u3044\u306d' : 'total likes') + '</div></div>';
-
-  html += '<div class="kpi-item"><div class="kpi-value">' + likeRate.toFixed(1) + '%' + trend(likeRate, prev && prev.likeRate) + '</div>';
-  html += '<div class="kpi-label">' + (isJa ? '\u30b9\u30ad\u7387' : 'Like Rate') + '</div>';
-  html += '<div class="kpi-sub">' + (isJa ? '\u95b2\u89a7\u8005\u306e\u3046\u3061\u3044\u3044\u306d\u3057\u305f\u5272\u5408' : '% of viewers who liked') + '</div></div>';
+  html += '<div class="kpi-label">' + (isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u3044\u3044\u306d' : 'Likes per Article') + '</div>';
+  html += '<div class="kpi-sub">' + totalLikes + (isJa ? ' \u5408\u8a08\u3044\u3044\u306d' : ' total likes') + '</div></div>';
 
   html += '<div class="kpi-item"><div class="kpi-value">' + followRate.toFixed(0) + '%' + trend(followRate, prev && prev.followRate) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u30d5\u30a9\u30ed\u30fc\u7387' : 'Follow Rate') + '</div>';
-  html += '<div class="kpi-sub">' + m.totalFollows + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\uff08\u3044\u3044\u306d\u3057\u305f' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' followed out of ' + m.uniqueUsers + ' who liked') + '</div></div>';
+  html += '<div class="kpi-sub">' + m.totalFollows + (isJa ? '\u4eba\u304c\u30d5\u30a9\u30ed\u30fc\uff08\u30b9\u30ad\u3057\u305f' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' followed out of ' + m.uniqueUsers + ' who liked') + '</div></div>';
 
   html += '<div class="kpi-item"><div class="kpi-value">' + returnPct.toFixed(0) + '%' + trend(returnPct, prev && prev.returnRate) + '</div>';
   html += '<div class="kpi-label">' + (isJa ? '\u518d\u8a2a\u7387' : 'Return Rate') + '</div>';
-  html += '<div class="kpi-sub">' + m.repeatLikers.length + (isJa ? '\u4eba\u304c2\u4ef6\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u3044\u3044\u306d\uff08' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' came back to like another article (of ' + m.uniqueUsers + ')') + '</div></div>';
+  html += '<div class="kpi-sub">' + m.repeatLikers.length + (isJa ? '\u4eba\u304c2\u4ef6\u4ee5\u4e0a\u306b\u30b9\u30ad\uff08' + m.uniqueUsers + '\u4eba\u4e2d\uff09' : ' liked 2+ articles (of ' + m.uniqueUsers + ')') + '</div></div>';
 
-  html += '</div>';
+  html += '</div></div>';
+
+  // Executive summary: one computed sentence per dimension
+  var execLines = [];
+  // Timing
+  if (m.peakStart !== null) {
+    var peakStartGMT = jstToGmt(m.peakStart), peakEndGMT = jstToGmt(m.peakEnd);
+    execLines.push(isJa
+      ? 'GMT ' + String(peakStartGMT).padStart(2,'0') + '\u2013' + String(peakEndGMT).padStart(2,'0') + '\u6642\uff08JST ' + String(m.peakStart).padStart(2,'0') + '\u2013' + String(m.peakEnd).padStart(2,'0') + '\u6642\uff09\u306b\u516c\u958b\u304c\u6709\u5229\u3002'
+      : 'Publish around ' + String(peakStartGMT).padStart(2,'0') + ':00\u2013' + String(peakEndGMT).padStart(2,'0') + ':00 GMT (JST ' + String(m.peakStart).padStart(2,'0') + '\u2013' + String(m.peakEnd).padStart(2,'0') + ').');
+  }
+  // Content
+  var withViews = m.articleMetrics.filter(function(a) { return a.views > 0; });
+  if (withViews.length >= 2) {
+    var bestArt = withViews.slice().sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); })[0];
+    var bestArtIdx = m.articleMetrics.indexOf(bestArt) + 1;
+    var bestArtRate = Math.round(bestArt.likes_total / bestArt.views * 100);
+    execLines.push(isJa
+      ? 'A' + bestArtIdx + '\u306e\u30a2\u30d7\u30ed\u30fc\u30c1\u304c\u6700\u3082\u52b9\u679c\u7684\uff08\u30b9\u30ad\u7387' + bestArtRate + '%\uff09\u3002'
+      : 'A' + bestArtIdx + '\'s approach works best (' + bestArtRate + '% like rate).');
+  }
+  // Audience
+  if (returnPct >= 20) {
+    execLines.push(isJa
+      ? '\u518d\u8a2a\u7387' + returnPct.toFixed(0) + '%\u3002\u8aad\u8005\u304c\u5b9a\u7740\u3057\u59cb\u3081\u3066\u3044\u308b\u3002'
+      : returnPct.toFixed(0) + '% return rate. Readers are sticking.');
+  } else if (m.uniqueUsers >= 3) {
+    execLines.push(isJa
+      ? '\u518d\u8a2a\u7387' + returnPct.toFixed(0) + '%\u3002\u30ea\u30d4\u30fc\u30c8\u8aad\u8005\u306e\u7372\u5f97\u304c\u8ab2\u984c\u3002'
+      : returnPct.toFixed(0) + '% return rate. Building repeat readers is the challenge.');
+  }
+
+  if (execLines.length > 0) {
+    html += '<div style="font-size:12px;color:var(--ink-light);padding:10px 0 0;border-top:1px solid var(--border);margin-top:12px;line-height:1.6;">' + execLines.join(' ') + '</div>';
+  }
 
   el.innerHTML = html;
 
   renderArticleKey(m);
 
   // Section headings
-  document.getElementById('headingContent').textContent =
-    isJa ? '1. \u30b3\u30f3\u30c6\u30f3\u30c4: \u6b21\u306b\u4f55\u3092\u66f8\u304f\u304b' : '1. Content: what to write next';
   document.getElementById('headingTiming').textContent =
-    isJa ? '2. \u30bf\u30a4\u30df\u30f3\u30b0: \u3044\u3064\u516c\u958b\u3059\u308b\u304b' : '2. Timing: when to publish';
+    isJa ? '1. \u3044\u3064\u516c\u958b\u3059\u308b\u304b' : '1. When to publish';
+  document.getElementById('headingContent').textContent =
+    isJa ? '2. \u4f55\u304c\u8aad\u8005\u306b\u97ff\u304f\u304b' : '2. What resonates with readers';
   document.getElementById('headingAudience').textContent =
-    isJa ? '3. \u30aa\u30fc\u30c7\u30a3\u30a8\u30f3\u30b9: \u8aad\u8005\u306f\u5b9a\u7740\u3057\u3066\u3044\u308b\u304b' : '3. Audience: are readers staying';
+    isJa ? '3. \u8aad\u8005\u306f\u5b9a\u7740\u3057\u3066\u3044\u308b\u304b' : '3. Are readers staying';
 
   // Chart titles: computed at render time so they respond to language changes
   // Note: growthTitle, trendTitle are set by their own render functions
@@ -2392,58 +2510,94 @@ function renderGrowth(m) {
   if (chartGrowth) chartGrowth.destroy();
   var isJa = currentLang === 'ja';
 
-  var totalViews = m.totalViews;
-  var totalLikers = m.uniqueUsers;
-  var organicLikes = m.organicLikes || m.totalLikes;
-  var friendLikes = m.friendLikes || 0;
-  var totalFollows = m.totalFollows;
-  var repeatCount = m.repeatLikers ? m.repeatLikers.length : 0;
+  if (m.events.length === 0) {
+    document.getElementById('growthTitle').textContent = isJa
+      ? '\u307e\u3060\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'No data yet';
+    return;
+  }
 
-  // Conversion percentages (each step relative to previous)
-  var likeRate = totalViews > 0 ? (m.totalLikesReported / totalViews * 100) : 0;
-  var followRate = totalLikers > 0 ? (totalFollows / totalLikers * 100) : 0;
-  var repeatRate = totalLikers > 0 ? (repeatCount / totalLikers * 100) : 0;
-  var organicPct = m.totalLikes > 0 ? Math.round(organicLikes / m.totalLikes * 100) : 100;
+  // Reader loyalty breakdown with friend/organic split
+  var repeatCount = m.repeatLikers.length;
+  var followPct = m.uniqueUsers > 0 ? Math.round(m.totalFollows / m.uniqueUsers * 100) : 0;
+  var repeatPct = m.uniqueUsers > 0 ? Math.round(repeatCount / m.uniqueUsers * 100) : 0;
+
+  // Count friends in each loyalty tier
+  var friendSlugs = new Set();
+  m.events.forEach(function(e) { if (e.is_friend === 1) friendSlugs.add(e.slug); });
+  var friendReaders = 0, friendRepeat = 0, friendFollows = 0;
+  var likes = m.events.filter(function(e) { return e.kind === 'like'; });
+  var userArts = {};
+  likes.forEach(function(e) {
+    if (!userArts[e.slug]) userArts[e.slug] = new Set();
+    userArts[e.slug].add(e.article_url);
+  });
+  Object.keys(userArts).forEach(function(slug) {
+    if (friendSlugs.has(slug)) {
+      friendReaders++;
+      if (userArts[slug].size > 1) friendRepeat++;
+    }
+  });
+  m.journeys.forEach(function(j) { if (friendSlugs.has(j.slug)) friendFollows++; });
+
+  var hasFriends = friendReaders > 0;
 
   // Title
   document.getElementById('growthTitle').textContent = isJa
-    ? '\u95b2\u89a7\u304b\u3089\u30d5\u30a9\u30ed\u30fc\u307e\u3067\u306e\u30b3\u30f3\u30d0\u30fc\u30b8\u30e7\u30f3'
-    : 'Conversion from views to followers';
+    ? m.uniqueUsers + '\u4eba\u306e\u8aad\u8005\u306e\u3046\u3061' + repeatCount + '\u4eba(' + repeatPct + '%)\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d'
+    : repeatCount + ' of ' + m.uniqueUsers + ' readers (' + repeatPct + '%) liked multiple articles';
+
+  // Legend
+  var legendHtml =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af' : 'Organic') + '</div>';
+  if (hasFriends) {
+    legendHtml += '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.amber + ';"></div> ' + (isJa ? '\u30d5\u30ec\u30f3\u30c9' : 'Friends') + '</div>';
+  }
+  document.getElementById('growthKey').innerHTML = legendHtml;
 
   var labels = isJa
-    ? [totalViews + ' \u95b2\u89a7', m.totalLikesReported + ' \u3044\u3044\u306d (' + likeRate.toFixed(0) + '%)', totalFollows + ' \u30d5\u30a9\u30ed\u30fc (' + followRate.toFixed(0) + '%)', repeatCount + ' \u30ea\u30d4\u30fc\u30c8 (' + repeatRate.toFixed(0) + '%)']
-    : [totalViews + ' views', m.totalLikesReported + ' likes (' + likeRate.toFixed(0) + '%)', totalFollows + ' followers (' + followRate.toFixed(0) + '% of likers)', repeatCount + ' repeat (' + repeatRate.toFixed(0) + '% of likers)'];
+    ? ['\u8aad\u8005\u5168\u4f53', '\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d', '\u30d5\u30a9\u30ed\u30fc\u6e08\u307f']
+    : ['All readers', 'Liked 2+ articles', 'Followed'];
 
-  var data = [totalViews, m.totalLikesReported, totalFollows, repeatCount];
-  var colours = [COLOURS.grey, COLOURS.accent, COLOURS.accent + '80', COLOURS.accent + '50'];
+  var organicData = [m.uniqueUsers - friendReaders, repeatCount - friendRepeat, m.totalFollows - friendFollows];
+  var friendData = [friendReaders, friendRepeat, friendFollows];
+
+  var datasets = [{
+    label: isJa ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af' : 'Organic',
+    data: organicData,
+    backgroundColor: COLOURS.accent,
+    borderRadius: 3,
+  }];
+  if (hasFriends) {
+    datasets.push({
+      label: isJa ? '\u30d5\u30ec\u30f3\u30c9' : 'Friends',
+      data: friendData,
+      backgroundColor: COLOURS.amber,
+      borderRadius: 3,
+    });
+  }
+
+  canvas.parentElement.style.height = '150px';
 
   chartGrowth = new Chart(canvas, {
     type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        data: data,
-        backgroundColor: colours,
-        borderRadius: 3,
-      }],
-    },
+    data: { labels: labels, datasets: datasets },
     options: {
       indexAxis: 'y',
       responsive: true,
+      maintainAspectRatio: false,
       scales: {
-        x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
-        y: { grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
+        x: { stacked: true, beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
           callbacks: {
-            label: function(ctx) {
-              if (ctx.dataIndex === 0) return ctx.raw + (isJa ? ' \u95b2\u89a7' : ' total views');
-              if (ctx.dataIndex === 1) return ctx.raw + (isJa ? ' \u3044\u3044\u306d (\u30aa\u30fc\u30ac\u30cb\u30c3\u30af ' + organicLikes + ', \u30d5\u30ec\u30f3\u30c9 ' + friendLikes + ')' : ' likes (organic ' + organicLikes + ', friends ' + friendLikes + ')');
-              if (ctx.dataIndex === 2) return ctx.raw + (isJa ? ' \u30d5\u30a9\u30ed\u30ef\u30fc' : ' followers');
-              return ctx.raw + (isJa ? ' \u4eba\u304c\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d' : ' liked 2+ articles');
+            afterTitle: function(items) {
+              var idx = items[0].dataIndex;
+              if (idx === 0) return '';
+              return idx === 1 ? repeatPct + '% ' + (isJa ? '\u306e\u8aad\u8005' : 'of readers') : followPct + '% ' + (isJa ? '\u306e\u8aad\u8005' : 'of readers');
             },
           },
         },
@@ -2466,8 +2620,23 @@ function renderActivity(m) {
     return (peakS !== null && h >= peakS && h <= peakE) ? COLOURS.accent : COLOURS.grey;
   });
 
-  // Annotations: publish ticks only (no background box, no average line)
+  // Annotations: peak zone background + publish ticks
   var annotations = {};
+  if (peakS !== null) {
+    // Calculate peak % for the label
+    var peakLikesTotal = 0;
+    for (var ph = peakS; ; ph = (ph + 1) % 24) { peakLikesTotal += m.hourLikes[ph]; if (ph === peakE) break; }
+    var totalLikesH = m.hourLikes.reduce(function(a, b) { return a + b; }, 0);
+    var peakLabelPct = totalLikesH > 0 ? Math.round(peakLikesTotal / totalLikesH * 100) : 0;
+
+    annotations.peakZone = {
+      type: 'box',
+      xMin: peakS - 0.5, xMax: peakE + 0.5,
+      backgroundColor: COLOURS.accentZone + '50',
+      borderWidth: 0,
+      drawTime: 'beforeDatasetsDraw',
+    };
+  }
   m.publishHours.forEach(function(ph, i) {
     annotations['pub' + i] = {
       type: 'line',
@@ -2479,10 +2648,22 @@ function renderActivity(m) {
   });
 
   // Legend
-  document.getElementById('activityKey').innerHTML =
+  var legendHtml =
     '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30d4\u30fc\u30af' : 'Peak') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u305d\u306e\u4ed6' : 'Other') + '</div>' +
-    '<div class="chart-key-item"><div style="width:0;height:10px;border-left:2px dashed ' + COLOURS.red + '50;"></div> ' + (isJa ? '\u516c\u958b\u6642\u523b' : 'Publish time') + '</div>';
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u305d\u306e\u4ed6' : 'Other') + '</div>';
+  if (m.publishHours.length > 0) {
+    legendHtml += '<div class="chart-key-item"><div style="width:0;height:10px;border-left:2px dashed ' + COLOURS.red + '50;"></div> ' + (isJa ? '\u516c\u958b\u6642\u523b' : 'Publish time') + '</div>';
+  }
+  if (peakS !== null) {
+    legendHtml += '<div class="chart-key-item" style="margin-left:auto;font-weight:600;color:' + COLOURS.accentBorder + ';">' +
+      (isJa ? '\u30d4\u30fc\u30af ' : 'PEAK ') +
+      String(peakS).padStart(2, '0') + ':00\u2013' + String(peakE).padStart(2, '0') + ':00 (' + peakLabelPct + '%)' +
+      '</div>';
+  }
+  document.getElementById('activityKey').innerHTML = legendHtml;
+
+  // GMT labels for secondary axis
+  var gmtLabels = Array.from({ length: 24 }, function(_, i) { return String(jstToGmt(i)); });
 
   chartActivity = new Chart(canvas, {
     type: 'bar',
@@ -2492,21 +2673,28 @@ function renderActivity(m) {
         data: m.hourLikes,
         backgroundColor: barColours,
         borderRadius: 2,
+        xAxisID: 'x',
       }],
     },
     options: {
       responsive: true,
+      layout: { padding: { bottom: 4 } },
       scales: {
         x: {
           grid: { display: false },
           ticks: { font: { size: 10, weight: '500' }, color: COLOURS.ink, maxRotation: 0 },
-          title: {
-            display: true,
-            text: isJa ? 'JST (\u8aad\u8005) | GMT (\u8457\u8005)' : 'JST (audience) | GMT (author)',
+          title: { display: true, text: 'JST', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
+        },
+        xGmt: {
+          position: 'bottom',
+          grid: { display: false, drawOnChartArea: false },
+          ticks: {
             font: { size: 9 },
             color: COLOURS.inkMuted,
-            align: 'start',
+            maxRotation: 0,
+            callback: function(val, idx) { return gmtLabels[idx]; },
           },
+          title: { display: true, text: 'GMT', font: { size: 9 }, color: COLOURS.inkMuted, align: 'start' },
         },
         y: {
           beginAtZero: true,
@@ -2537,95 +2725,170 @@ function renderActivity(m) {
   });
 }
 
-function renderArticlePerf(m) {
-  var canvas = document.getElementById('chartArticlePerf');
-  if (chartArticlePerf) chartArticlePerf.destroy();
+var chartDow = null;
+function renderDow(m) {
+  var section = document.getElementById('dowSection');
+  if (!section) return;
+  // Only show with 14+ days of data
+  if (m.daySpan < 14) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+
+  var canvas = document.getElementById('chartDow');
+  if (chartDow) chartDow.destroy();
   var isJa = currentLang === 'ja';
-  var arts = m.articleMetrics.filter(function(a) { return a.views > 0; })
-    .sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
-  if (arts.length === 0) return;
 
-  var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
-  var rates = arts.map(function(a) { return parseFloat((a.likes_total / a.views * 100).toFixed(1)); });
-  var labels = arts.map(function(a) {
-    return 'A' + (m.articleMetrics.indexOf(a) + 1) + '  ' + artTitle(a, 24);
-  });
+  var dowNamesJa = ['\u65e5', '\u6708', '\u706b', '\u6c34', '\u6728', '\u91d1', '\u571f'];
+  var dowNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var labels = isJa ? dowNamesJa : dowNamesEn;
 
-  canvas.parentElement.style.height = Math.max(160, arts.length * 38 + 40) + 'px';
+  document.getElementById('dowTitle').textContent = generateDowTitle(m.DOW_NAMES, m.dowLikes, isJa);
 
-  chartArticlePerf = new Chart(canvas, {
+  document.getElementById('dowKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u3044\u3044\u306d' : 'Likes') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.green + ';"></div> ' + (isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows') + '</div>';
+
+  chartDow = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: labels,
-      datasets: [{
-        data: rates,
-        backgroundColor: rates.map(function(r) { return r >= avgRate ? COLOURS.accent : COLOURS.grey; }),
-        borderRadius: 3,
-      }],
+      datasets: [
+        {
+          label: isJa ? '\u3044\u3044\u306d' : 'Likes',
+          data: m.dowLikes,
+          backgroundColor: COLOURS.accent,
+          borderRadius: 3,
+        },
+        {
+          label: isJa ? '\u30d5\u30a9\u30ed\u30fc' : 'Follows',
+          data: m.dowFollows,
+          backgroundColor: COLOURS.green,
+          borderRadius: 3,
+        },
+      ],
     },
     options: {
-      indexAxis: 'y',
       responsive: true,
-      maintainAspectRatio: false,
-      layout: { padding: { top: 20 } },
       scales: {
-        x: {
-          beginAtZero: true,
-          grid: { color: '#f3f4f6' },
-          ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } },
-        },
-        y: {
-          grid: { display: false },
-          ticks: {
-            font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" },
-            color: COLOURS.ink,
-          },
-          afterFit: function(axis) { axis.width = Math.min(220, Math.max(140, axis.width)); },
-        },
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: COLOURS.ink + 'ee',
-          cornerRadius: 6,
-          padding: 10,
-          titleFont: { family: "'Noto Sans JP', 'Inter', sans-serif", size: 12 },
-          bodyFont: { family: "'Noto Sans JP', 'Inter', sans-serif", size: 11 },
-          callbacks: {
-            title: function(items) { return labels[items[0].dataIndex]; },
-            label: function(ctx) {
-              var a = arts[ctx.dataIndex];
-              return [
-                (isJa ? '\u30b9\u30ad\u7387: ' : 'Like rate: ') + ctx.raw + '%',
-                (isJa ? '\u95b2\u89a7: ' : 'Views: ') + a.views + '  ' + (isJa ? '\u3044\u3044\u306d: ' : 'Likes: ') + a.likes_total,
-              ];
-            },
-          },
+          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
         },
-        annotation: {
-          annotations: {
-            avgLine: {
-              type: 'line',
-              xMin: avgRate, xMax: avgRate,
-              borderColor: COLOURS.inkMuted,
-              borderWidth: 1.5,
-              borderDash: [6, 4],
-              label: {
-                display: true,
-                content: (isJa ? '\u5e73\u5747 ' : 'avg ') + avgRate.toFixed(0) + '%',
-                position: 'start',
-                yAdjust: -20,
-                font: { size: 10, weight: '600' },
-                color: COLOURS.inkMuted,
-                backgroundColor: '#ffffff',
-                padding: { top: 2, bottom: 2, left: 6, right: 6 },
+      },
+    },
+  });
+}
+
+function renderArticlePerf(m) {
+  var canvas = document.getElementById('chartArticlePerf');
+  if (chartArticlePerf) chartArticlePerf.destroy();
+  var isJa = currentLang === 'ja';
+  var arts = m.articleMetrics;
+  if (arts.length === 0) return;
+
+  var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
+  var labels = arts.map(function(a) { return 'A' + (m.articleMetrics.indexOf(a) + 1); });
+  var views = arts.map(function(a) { return a.views; });
+  var likes = arts.map(function(a) { return a.likes_total; });
+  var rates = arts.map(function(a) { return a.views > 0 ? parseFloat((a.likes_total / a.views * 100).toFixed(1)) : 0; });
+
+  // Legend
+  document.getElementById('articlePerfKey').innerHTML =
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u95b2\u89a7' : 'Views') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u3044\u3044\u306d' : 'Likes') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:' + COLOURS.red + ';"></div> ' + (isJa ? '\u30b9\u30ad\u7387 (%)' : 'Like rate (%)') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-line" style="border-color:' + COLOURS.inkMuted + ';"></div> ' + (isJa ? '\u5e73\u5747 ' : 'Avg ') + avgRate.toFixed(0) + '%</div>';
+
+  // Scale chart: vertical up to 10 articles, horizontal with scroll at 10+
+  var horizontal = arts.length > 10;
+  if (horizontal) {
+    canvas.parentElement.style.height = Math.max(300, arts.length * 36 + 60) + 'px';
+    canvas.parentElement.style.maxHeight = '500px';
+    canvas.parentElement.style.overflowY = 'auto';
+  } else {
+    canvas.parentElement.style.height = '260px';
+    canvas.parentElement.style.maxHeight = '';
+    canvas.parentElement.style.overflowY = '';
+  }
+
+  // At 10+ articles, use horizontal bars (views+likes stacked) with rate in tooltip
+  // At <10, use vertical grouped bars with rate line overlay
+  if (horizontal) {
+    var hLabels = arts.map(function(a) { return 'A' + (m.articleMetrics.indexOf(a) + 1) + '  ' + artTitle(a, 20); });
+    chartArticlePerf = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: hLabels,
+        datasets: [
+          { label: isJa ? '\u3044\u3044\u306d' : 'Likes', data: likes, backgroundColor: COLOURS.accent, borderRadius: 3 },
+          { label: isJa ? '\u95b2\u89a7\uff08\u6b8b\u308a\uff09' : 'Views (remaining)', data: views.map(function(v, i) { return Math.max(0, v - likes[i]); }), backgroundColor: COLOURS.grey, borderRadius: 3 },
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { stacked: true, beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
+          y: { stacked: true, grid: { display: false }, ticks: { font: { size: 10, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 10,
+            callbacks: {
+              title: function(items) { return hLabels[items[0].dataIndex]; },
+              afterBody: function(items) {
+                var i = items[0].dataIndex;
+                return (isJa ? '\u30b9\u30ad\u7387: ' : 'Like rate: ') + rates[i] + '%';
               },
             },
           },
         },
       },
-    },
-  });
+    });
+  } else {
+    chartArticlePerf = new Chart(canvas, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: isJa ? '\u95b2\u89a7' : 'Views', data: views, backgroundColor: COLOURS.grey, borderRadius: 3, yAxisID: 'y', order: 2 },
+          { label: isJa ? '\u3044\u3044\u306d' : 'Likes', data: likes, backgroundColor: COLOURS.accent, borderRadius: 3, yAxisID: 'y', order: 2 },
+          { label: isJa ? '\u30b9\u30ad\u7387' : 'Like rate', data: rates, type: 'line', borderColor: COLOURS.red, backgroundColor: 'transparent', borderWidth: 2, pointRadius: 4, pointBackgroundColor: COLOURS.red, yAxisID: 'yRate', order: 1 },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 10, weight: '500' }, color: COLOURS.ink } },
+          y: { beginAtZero: true, position: 'left', grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } }, title: { display: true, text: isJa ? '\u95b2\u89a7 / \u3044\u3044\u306d' : 'Views / Likes', font: { size: 9 }, color: COLOURS.inkMuted } },
+          yRate: { beginAtZero: true, position: 'right', grid: { display: false }, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } }, title: { display: true, text: isJa ? '\u30b9\u30ad\u7387 (%)' : 'Like Rate (%)', font: { size: 9 }, color: COLOURS.inkMuted } },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 10,
+            titleFont: { family: "'Noto Sans JP', 'Inter', sans-serif", size: 12 },
+            bodyFont: { family: "'Noto Sans JP', 'Inter', sans-serif", size: 11 },
+            callbacks: {
+              title: function(items) { var idx = items[0].dataIndex; return labels[idx] + '  ' + artTitle(arts[idx], 30); },
+            },
+          },
+          annotation: {
+            annotations: {
+              avgLine: { type: 'line', yScaleID: 'yRate', yMin: avgRate, yMax: avgRate, borderColor: COLOURS.inkMuted, borderWidth: 1.5, borderDash: [6, 4] },
+            },
+          },
+        },
+      },
+    });
+  }
 }
 
 
@@ -2636,62 +2899,70 @@ function renderTags(m) {
   if (chartTags) chartTags.destroy();
   var isJa = currentLang === 'ja';
 
-  // All tags with ubiquitous ones in amber
   var ubiqThreshold = m.articles.length * 0.5;
-  var allTags = m.tagData.slice(0, THRESHOLDS.tagMax);
-  if (allTags.length === 0) return;
-  var avgLikesPerArt = m.totalLikesReported / (m.articles.length || 1);
+  var nonUbiq = m.tagData.filter(function(t) { return t.articles <= ubiqThreshold; });
+  var ubiqTags = m.tagData.filter(function(t) { return t.articles > ubiqThreshold; });
+  var displayTags = nonUbiq.slice(0, THRESHOLDS.tagMax);
+  var ubiqDisplay = ubiqTags.slice(0, 3);
+  var combined = displayTags.concat(ubiqDisplay);
+  if (combined.length === 0) return;
 
-  var labels = allTags.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; });
-  var data = allTags.map(function(t) { return t.articles > 0 ? parseFloat((t.likes / t.articles).toFixed(1)) : 0; });
-  var colours = allTags.map(function(t) {
-    if (t.articles > ubiqThreshold) return '#d97706'; // amber: ubiquitous
-    var tagAvg = t.articles > 0 ? t.likes / t.articles : 0;
-    return tagAvg > avgLikesPerArt ? COLOURS.accent : COLOURS.grey;
-  });
+  var titles = getActionTitles(m);
+  document.getElementById('tagsTitle').textContent = titles.tags;
 
-  // Title
-  var nonUbiq = allTags.filter(function(t) { return t.articles <= ubiqThreshold; });
-  if (nonUbiq.length > 0) {
-    var topTag = nonUbiq[0];
-    var tagName = isJa ? topTag.tag : (TAG_EN[topTag.tag] || topTag.tag);
-    document.getElementById('tagsTitle').textContent = isJa
-      ? '"' + topTag.tag + '"\u30bf\u30b0\u306e\u8a18\u4e8b\u304c\u5e73\u5747' + (topTag.likes / topTag.articles).toFixed(0) + '\u4ef6\u306e\u3044\u3044\u306d'
-      : '"' + tagName + '" articles average ' + (topTag.likes / topTag.articles).toFixed(0) + ' likes each';
-  } else {
-    document.getElementById('tagsTitle').textContent = isJa
-      ? '\u307b\u3068\u3093\u3069\u306e\u30bf\u30b0\u304c\u5168\u8a18\u4e8b\u306b\u5171\u901a'
-      : 'Most tags are shared across all articles';
-  }
+  var labels = combined.map(function(t) { return translateTag(t.tag) + ' (' + t.articles + ')'; });
+  var repeatData = combined.map(function(t) { return t.articles > 0 ? parseFloat((t.repeat / t.articles).toFixed(1)) : 0; });
+  var onetimeData = combined.map(function(t) { return t.articles > 0 ? parseFloat((t.onetime / t.articles).toFixed(1)) : 0; });
 
   // Legend
   document.getElementById('tagsKey').innerHTML =
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0a' : 'Above avg') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u5e73\u5747\u4ee5\u4e0b' : 'Below avg') + '</div>' +
-    '<div class="chart-key-item"><div class="chart-key-dot" style="background:#d97706;"></div> ' + (isJa ? '\u307b\u307c\u5168\u8a18\u4e8b\u306b\u5171\u901a' : 'On most articles') + '</div>';
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.accent + ';"></div> ' + (isJa ? '\u30ea\u30d4\u30fc\u30c8\u8aad\u8005' : 'Repeat readers') + '</div>' +
+    '<div class="chart-key-item"><div class="chart-key-dot" style="background:' + COLOURS.grey + ';"></div> ' + (isJa ? '\u4e00\u56de\u306e\u307f' : 'One-time') + '</div>' +
+    (ubiqDisplay.length > 0 ? '<div class="chart-key-item" style="color:' + COLOURS.amber + ';font-weight:500;">' + (isJa ? '\u2605 = \u5171\u901a\u30bf\u30b0' : '\u2605 = shared tag') + '</div>' : '');
 
   chartTags = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: labels,
-      datasets: [{ data: data, backgroundColor: colours, borderRadius: 3 }],
+      datasets: [
+        {
+          label: isJa ? '\u30ea\u30d4\u30fc\u30c8' : 'Repeat',
+          data: repeatData,
+          backgroundColor: COLOURS.accent,
+          borderRadius: 3,
+        },
+        {
+          label: isJa ? '\u4e00\u56de\u306e\u307f' : 'One-time',
+          data: onetimeData,
+          backgroundColor: COLOURS.grey,
+          borderRadius: 3,
+        },
+      ],
     },
     options: {
       indexAxis: 'y',
       responsive: true,
       scales: {
-        x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } },
-          title: { display: true, text: isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article', font: { size: 10 } } },
-        y: { grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
+        x: {
+          stacked: true, beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } },
+          title: { display: true, text: isJa ? '\u8a18\u4e8b\u3042\u305f\u308a\u5e73\u5747\u3044\u3044\u306d' : 'Avg likes per article', font: { size: 10 }, color: COLOURS.inkMuted },
+        },
+        y: {
+          stacked: true, grid: { display: false },
+          ticks: {
+            font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" },
+            color: function(ctx) { return combined[ctx.index] && combined[ctx.index].articles > ubiqThreshold ? COLOURS.amber : COLOURS.ink; },
+          },
+        },
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
           callbacks: {
-            label: function(ctx) {
-              var t = m.tagData[ctx.dataIndex];
-              return ctx.raw + (isJa ? ' \u3044\u3044\u306d/\u8a18\u4e8b (' + t.articles + '\u8a18\u4e8b)' : ' likes/article (' + t.articles + ' articles)');
+            afterTitle: function(items) {
+              var t = combined[items[0].dataIndex];
+              return t.articles + (isJa ? '\u8a18\u4e8b' : ' articles') + (t.articles > ubiqThreshold ? (isJa ? ' (\u5171\u901a)' : ' (shared)') : '');
             },
           },
         },
@@ -2714,11 +2985,14 @@ function renderJourneys(m) {
     return;
   }
 
+  var titles = getActionTitles(m);
+  document.getElementById('journeysTitle').textContent = titles.journeys;
+
   var likedMultiple = m.journeys.filter(function(j) { return j.likes.length > 1; }).length;
   var likedOne = m.journeys.filter(function(j) { return j.likes.length === 1; }).length;
   var noLike = m.journeys.filter(function(j) { return j.likes.length === 0; }).length;
 
-  // Count friends vs organic in each bucket
+  // Friend split
   var friendMulti = 0, friendOne = 0, friendNone = 0;
   m.journeys.forEach(function(j) {
     var isFriend = m.events.some(function(e) { return e.slug === j.slug && e.is_friend === 1; });
@@ -2726,50 +3000,47 @@ function renderJourneys(m) {
     else if (j.likes.length === 1) { if (isFriend) friendOne++; }
     else { if (isFriend) friendNone++; }
   });
-
-  // Title
-  document.getElementById('journeysTitle').textContent = isJa
-    ? m.journeys.length + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u884c\u52d5\u30d1\u30bf\u30fc\u30f3'
-    : 'How ' + m.journeys.length + ' followers discovered you';
+  var hasFriends = friendMulti + friendOne + friendNone > 0;
 
   var labels = isJa
-    ? ['\u8907\u6570\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u30d5\u30a9\u30ed\u30fc', '1\u8a18\u4e8b\u306b\u3044\u3044\u306d\u5f8c\u30d5\u30a9\u30ed\u30fc', '\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc']
-    : ['Liked 2+ articles then followed', 'Liked 1 article then followed', 'Followed without liking'];
+    ? ['\u8907\u6570\u8a18\u4e8b\u2192\u30d5\u30a9\u30ed\u30fc', '1\u8a18\u4e8b\u2192\u30d5\u30a9\u30ed\u30fc', '\u76f4\u63a5\u30d5\u30a9\u30ed\u30fc']
+    : ['Liked 2+ then followed', 'Liked 1 then followed', 'Followed directly'];
 
+  var datasets = [{
+    label: isJa ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af' : 'Organic',
+    data: [likedMultiple - friendMulti, likedOne - friendOne, noLike - friendNone],
+    backgroundColor: COLOURS.accent, borderRadius: 3, barThickness: 22,
+  }];
+  if (hasFriends) {
+    datasets.push({
+      label: isJa ? '\u30d5\u30ec\u30f3\u30c9' : 'Friends',
+      data: [friendMulti, friendOne, friendNone],
+      backgroundColor: COLOURS.amber, borderRadius: 3, barThickness: 22,
+    });
+  }
+
+  // Friends definition note
+  var noteEl = document.getElementById('friendsNote');
+  if (noteEl) {
+    if (hasFriends) {
+      noteEl.style.display = 'block';
+      noteEl.textContent = isJa ? '\u30d5\u30ec\u30f3\u30c9 = \u8457\u8005\u304c\u77e5\u3063\u3066\u3044\u308b\u4eba\uff08\u30aa\u30fc\u30ac\u30cb\u30c3\u30af\u3067\u306f\u306a\u3044\u30a8\u30f3\u30b2\u30fc\u30b8\u30e1\u30f3\u30c8\uff09' : 'Friends = people the author knows personally (not organic engagement)';
+    } else { noteEl.style.display = 'none'; }
+  }
+
+  canvas.parentElement.style.height = '170px';
   chartJourneys = new Chart(canvas, {
     type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: isJa ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af' : 'Organic',
-          data: [likedMultiple - friendMulti, likedOne - friendOne, noLike - friendNone],
-          backgroundColor: COLOURS.accent,
-          borderRadius: 3,
-        },
-        {
-          label: isJa ? '\u30d5\u30ec\u30f3\u30c9' : 'Friends',
-          data: [friendMulti, friendOne, friendNone],
-          backgroundColor: '#d97706',
-          borderRadius: 3,
-        },
-      ],
-    },
+    data: { labels: labels, datasets: datasets },
     options: {
-      indexAxis: 'y',
-      responsive: true,
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       scales: {
         x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } }, grid: { color: '#f3f4f6' } },
         y: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, family: "'Noto Sans JP', 'Inter', sans-serif" } } },
       },
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 },
-        },
-        tooltip: {
-          backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8,
-        },
+        legend: { display: hasFriends, position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, usePointStyle: true, padding: 12 } },
+        tooltip: { backgroundColor: COLOURS.ink + 'ee', cornerRadius: 6, padding: 8 },
       },
     },
   });
@@ -2780,153 +3051,38 @@ function renderObservations(m, prevSnapshot) {
     var el = document.getElementById(id);
     if (!el) return;
     if (items.length === 0) {
-      el.innerHTML = '<div class="obs-box"><p style="color:var(--ink-muted);">' +
-        (currentLang === 'ja' ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093\u3002' : 'Not enough data yet.') +
-        '</p></div>';
+      el.innerHTML = '<div class="obs-card secondary"><span class="obs-label">' +
+        (currentLang === 'ja' ? '\u307e\u3060\u5341\u5206\u306a\u30c7\u30fc\u30bf\u304c\u3042\u308a\u307e\u305b\u3093' : 'Not enough data yet') +
+        '</span></div>';
       return;
     }
-    el.innerHTML = '<div class="obs-box">' + items.map(function(t) { return '<p>' + t + '</p>'; }).join('') + '</div>';
-  }
-
-  var isJa = currentLang === 'ja';
-  var likes = m.events.filter(function(e) { return e.kind === 'like'; });
-  var withViews = m.articleMetrics.filter(function(a) { return a.views > 0; });
-
-  // CONTENT observations
-  var contentObs = [];
-  if (withViews.length >= 2) {
-    var avgRate = m.totalViews > 0 ? m.totalLikesReported / m.totalViews * 100 : 0;
-    var sorted = withViews.slice().sort(function(a, b) { return (b.likes_total / b.views) - (a.likes_total / a.views); });
-    var best = sorted[0], worst = sorted[sorted.length - 1];
-    var bestRate = (best.likes_total / best.views * 100).toFixed(0);
-    var worstRate = (worst.likes_total / worst.views * 100).toFixed(0);
-    var bestIdx = m.articleMetrics.indexOf(best) + 1;
-    var worstIdx = m.articleMetrics.indexOf(worst) + 1;
-
-    contentObs.push(isJa
-      ? 'A' + bestIdx + ' (' + bestRate + '%) \u304c\u6700\u3082\u9ad8\u3044\u30b9\u30ad\u7387\u3002A' + worstIdx + ' (' + worstRate + '%) \u304c\u6700\u3082\u4f4e\u3044\u3002'
-      : 'A' + bestIdx + ' has the highest like rate at ' + bestRate + '%. A' + worstIdx + ' is lowest at ' + worstRate + '%.');
-
-    // Tags on above-avg articles only
-    var aboveTags = new Set(), belowTags = new Set();
-    m.articles.forEach(function(art) {
-      if (!art.tags || art.views <= 0) return;
-      var r = art.likes_total / art.views * 100;
-      art.tags.forEach(function(tag) {
-        if (r >= avgRate) aboveTags.add(tag); else belowTags.add(tag);
-      });
-    });
-    var distinctive = [];
-    aboveTags.forEach(function(t) { if (!belowTags.has(t)) distinctive.push(t); });
-    if (distinctive.length > 0) {
-      var tagStr = distinctive.slice(0, 3).map(function(t) { return isJa ? t : (TAG_EN[t] || t); }).join(', ');
-      contentObs.push(isJa
-        ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u308f\u308c\u3066\u3044\u308b\u30bf\u30b0: <strong>' + tagStr + '</strong>'
-        : 'Tags only on above-average articles: <strong>' + tagStr + '</strong>');
-    }
-
-    // Trend (if 4+ articles)
-    if (withViews.length >= 4) {
-      var rates = withViews.map(function(a) { return a.likes_total / a.views * 100; });
-      var firstAvg = rates.slice(0, Math.ceil(rates.length / 2)).reduce(function(a, b) { return a + b; }, 0) / Math.ceil(rates.length / 2);
-      var secondAvg = rates.slice(Math.ceil(rates.length / 2)).reduce(function(a, b) { return a + b; }, 0) / (rates.length - Math.ceil(rates.length / 2));
-      var diff = secondAvg - firstAvg;
-      if (Math.abs(diff) >= 3) {
-        contentObs.push(isJa
-          ? '\u6700\u8fd1\u306e\u8a18\u4e8b: \u5e73\u5747' + secondAvg.toFixed(0) + '%\u3002\u521d\u671f: ' + firstAvg.toFixed(0) + '%\u3002'
-          : 'Recent articles: ' + secondAvg.toFixed(0) + '% avg. Earlier: ' + firstAvg.toFixed(0) + '%.');
+    var maxObs = 3;
+    var preliminary = currentMetrics && currentMetrics.daySpan < 14;
+    function renderCard(item, cls) {
+      if (item.metric) {
+        var h = '<div class="obs-card' + (cls ? ' ' + cls : '') + '">';
+        h += '<span class="obs-metric">' + item.metric + '</span>';
+        h += '<span class="obs-label">' + item.label + '</span>';
+        if (item.meaning) h += '<span class="obs-meaning">' + item.meaning + '</span>';
+        if (preliminary) h += '<span style="display:block;font-size:9px;color:var(--ink-muted);margin-top:4px;opacity:0.7;">' + (currentLang === 'ja' ? '\u203b \u6697\u5b9a\u7684\uff0814\u65e5\u4ee5\u964d\u3067\u5b89\u5b9a\uff09' : '\u203b Preliminary (stabilises at 14+ days)') + '</span>';
+        return h + '</div>';
       }
+      return '<div class="obs-card' + (cls ? ' ' + cls : '') + '"><span class="obs-label">' + (item.text || item) + '</span></div>';
     }
+    el.innerHTML = items.slice(0, maxObs).map(function(item) {
+      return renderCard(item, '');
+    }).join('') + items.slice(maxObs).map(function(item) {
+      return renderCard(item, 'secondary');
+    }).join('');
   }
+
+  // Use the observation engine for all 3 dimensions
+  var contentObs = computeContentObs(m);
+  var timingObs = computeTimingObs(m);
+  var audienceObs = computeAudienceObs(m);
+
   obsPanel('obsContent', contentObs);
-
-  // TIMING observations
-  var timingObs = [];
-  if (likes.length >= 5) {
-    // 48h capture
-    var hoursAfter = [];
-    m.articles.forEach(function(art) {
-      var pt = new Date(art.published_date_jst).getTime();
-      likes.filter(function(e) { return e.article_url === art.article_url; }).forEach(function(e) {
-        hoursAfter.push(Math.round((new Date(e.timestamp_jst).getTime() - pt) / 3600000));
-      });
-    });
-    if (hoursAfter.length > 0) {
-      var w48 = hoursAfter.filter(function(h) { return h >= 0 && h <= 48; }).length;
-      var pct48 = Math.round(w48 / hoursAfter.length * 100);
-      var longTail = hoursAfter.filter(function(h) { return h > 48; }).length;
-      var pctLong = Math.round(longTail / hoursAfter.length * 100);
-      var line = isJa
-        ? '<strong>' + pct48 + '%</strong>\u306e\u3044\u3044\u306d\u304c\u516c\u958b\u5f8c48\u6642\u9593\u4ee5\u5185\u306b\u767a\u751f\u3002'
-        : '<strong>' + pct48 + '%</strong> of likes arrive within 48 hours of publish.';
-      if (pctLong >= 20) line += isJa ? ' <strong>' + pctLong + '%</strong>\u306f48\u6642\u9593\u4ee5\u964d\u3002' : ' <strong>' + pctLong + '%</strong> arrive later.';
-      timingObs.push(line);
-    }
-
-    // Peak concentration
-    if (m.peakStart !== null) {
-      var peakLikes = m.hourLikes.slice(m.peakStart, m.peakEnd + 1).reduce(function(a, b) { return a + b; }, 0);
-      var totalH = m.hourLikes.reduce(function(a, b) { return a + b; }, 0);
-      var peakPct = totalH > 0 ? Math.round(peakLikes / totalH * 100) : 0;
-      timingObs.push(isJa
-        ? 'JST ' + String(m.peakStart).padStart(2, '0') + ':00\u301c' + String(m.peakEnd).padStart(2, '0') + ':00\u306b\u3044\u3044\u306d\u306e<strong>' + peakPct + '%</strong>\u304c\u96c6\u4e2d\u3002'
-        : '<strong>' + peakPct + '%</strong> of likes fall between JST ' + String(m.peakStart).padStart(2, '0') + ':00 and ' + String(m.peakEnd).padStart(2, '0') + ':00.');
-    }
-
-    // Publish alignment
-    if (m.peakStart !== null && m.publishHours.length >= 2) {
-      var during = m.publishHours.filter(function(p) { return p.hour >= m.peakStart && p.hour <= m.peakEnd; }).length;
-      timingObs.push(isJa
-        ? m.articles.length + '\u8a18\u4e8b\u4e2d<strong>' + during + '</strong>\u8a18\u4e8b\u304c\u30d4\u30fc\u30af\u4e2d\u306b\u516c\u958b\u3002'
-        : '<strong>' + during + '</strong> of ' + m.articles.length + ' articles published during peak hours.');
-    }
-  }
   obsPanel('obsTiming', timingObs);
-
-  // AUDIENCE observations
-  var audienceObs = [];
-  if (m.uniqueUsers >= 3) {
-    // Funnel
-    var followPct = m.uniqueUsers > 0 ? Math.round(m.totalFollows / m.uniqueUsers * 100) : 0;
-    audienceObs.push(isJa
-      ? '<strong>' + m.uniqueUsers + '\u4eba</strong>\u304c\u3044\u3044\u306d\u3001<strong>' + m.totalFollows + '\u4eba</strong>(' + followPct + '%)\u304c\u30d5\u30a9\u30ed\u30fc\u3002'
-      : '<strong>' + m.uniqueUsers + '</strong> people liked, <strong>' + m.totalFollows + '</strong> (' + followPct + '%) followed.');
-
-    // Organic vs friend
-    if (m.friendLikes > 0) {
-      audienceObs.push(isJa
-        ? '\u30aa\u30fc\u30ac\u30cb\u30c3\u30af: <strong>' + m.organicLikes + '</strong>\u4ef6\u306e\u3044\u3044\u306d\u3002\u30d5\u30ec\u30f3\u30c9: <strong>' + m.friendLikes + '</strong>\u4ef6\u3002'
-        : 'Organic: <strong>' + m.organicLikes + '</strong> likes. Friends: <strong>' + m.friendLikes + '</strong> likes.');
-    }
-
-    // Entry point + pre-follow behaviour
-    if (m.journeys && m.journeys.length >= 2) {
-      var likedMultiple = m.journeys.filter(function(j) { return j.likes.length > 1; }).length;
-      var likedOne = m.journeys.filter(function(j) { return j.likes.length === 1; }).length;
-      var noLike = m.journeys.filter(function(j) { return j.likes.length === 0; }).length;
-      audienceObs.push(isJa
-        ? '\u30d5\u30a9\u30ed\u30ef\u30fc' + m.journeys.length + '\u4eba: <strong>' + likedMultiple + '</strong>\u4eba\u304c\u8907\u6570\u8a18\u4e8b\u3001<strong>' + likedOne + '</strong>\u4eba\u304c1\u8a18\u4e8b\u3001<strong>' + noLike + '</strong>\u4eba\u304c\u3044\u3044\u306d\u306a\u3057\u3067\u30d5\u30a9\u30ed\u30fc\u3002'
-        : m.journeys.length + ' followers: <strong>' + likedMultiple + '</strong> liked multiple articles, <strong>' + likedOne + '</strong> liked one, <strong>' + noLike + '</strong> followed without liking.');
-
-      // Entry point: which article was first liked by most followers
-      var entryArticles = {};
-      m.journeys.forEach(function(j) {
-        if (j.likes.length > 0) {
-          var firstUrl = j.likes[0].article_url;
-          entryArticles[firstUrl] = (entryArticles[firstUrl] || 0) + 1;
-        }
-      });
-      var entries = Object.entries(entryArticles).sort(function(a, b) { return b[1] - a[1]; });
-      if (entries.length > 0 && entries[0][1] >= 2) {
-        var artIdx = m.articles.findIndex(function(a) { return a.article_url === entries[0][0]; });
-        if (artIdx >= 0) {
-          audienceObs.push(isJa
-            ? 'A' + (artIdx + 1) + '\u304c<strong>' + entries[0][1] + '\u4eba</strong>\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9\u3002'
-            : 'A' + (artIdx + 1) + ' was the first article liked by <strong>' + entries[0][1] + '</strong> followers.');
-        }
-      }
-    }
-  }
   obsPanel('obsAudience', audienceObs);
 }
 
@@ -3048,9 +3204,12 @@ function renderStatusBar(m) {
   const dateStr = lastImport ? formatDate(lastImport) : '';
 
   let html = '<span>' + m.articles.length + (isJa ? '\u8a18\u4e8b' : ' articles') +
-    ', ' + m.uniqueUsers + (isJa ? '\u4eba\u306e\u8aad\u8005' : ' total readers') + '</span>';
+    ', ' + m.uniqueUsers + (isJa ? '\u4eba\u306e\u8aad\u8005' : ' readers') + '</span>';
   if (dateStr) {
     html += '<span>' + (isJa ? '\u6700\u65b0: ' : 'Latest: ') + dateStr + '</span>';
+  }
+  if (m.daySpan < 14) {
+    html += '<span style="color:var(--amber);font-weight:500;">' + (isJa ? m.daySpan + '\u65e5\u9593\u306e\u30c7\u30fc\u30bf\uff0814\u65e5\u4ee5\u964d\u3067\u5b89\u5b9a' : m.daySpan + ' days of data (stabilises at 14+)') + '</span>';
   }
   bar.innerHTML = html;
 }
@@ -3219,6 +3378,60 @@ importZone.addEventListener('drop', async (e) => {
    MAIN
    ================================================================ */
 let currentMetrics = null;
+let allMetrics = null;
+let prevSnapshot = null;
+let selectedRange = 'all';
+
+function buildRangeFilter(totalArticles) {
+  var filter = document.getElementById('rangeFilter');
+  var select = document.getElementById('rangeSelect');
+  var label = filter.querySelector('label');
+  var isJa = currentLang === 'ja';
+
+  label.textContent = isJa ? '\u5206\u6790:' : 'Analyse:';
+
+  if (totalArticles <= 5) { filter.style.display = 'none'; return; }
+  filter.style.display = 'flex';
+
+  var options = [
+    { value: 'all', label: isJa ? '\u5168' + totalArticles + '\u8a18\u4e8b' : 'All ' + totalArticles + ' articles' },
+  ];
+  if (totalArticles > 5) options.push({ value: '5', label: isJa ? '\u6700\u65b05\u8a18\u4e8b' : 'Last 5 articles' });
+  if (totalArticles > 10) options.push({ value: '10', label: isJa ? '\u6700\u65b010\u8a18\u4e8b' : 'Last 10 articles' });
+  if (totalArticles > 20) options.push({ value: '20', label: isJa ? '\u6700\u65b020\u8a18\u4e8b' : 'Last 20 articles' });
+
+  select.innerHTML = options.map(function(o) {
+    return '<option value="' + o.value + '"' + (o.value === selectedRange ? ' selected' : '') + '>' + o.label + '</option>';
+  }).join('');
+}
+
+function getFilteredMetrics() {
+  if (!allMetrics || selectedRange === 'all') return allMetrics;
+  var n = parseInt(selectedRange);
+  var recentArticles = allMetrics.articles.slice(-n);
+  var recentUrls = new Set(recentArticles.map(function(a) { return a.article_url; }));
+  var filteredEvents = allMetrics.events.filter(function(e) {
+    return e.kind === 'follow' || recentUrls.has(e.article_url);
+  });
+  return computeMetrics(filteredEvents, recentArticles);
+}
+
+function applyRange() {
+  selectedRange = document.getElementById('rangeSelect').value;
+  currentMetrics = getFilteredMetrics();
+  renderBriefing();
+}
+
+
+function renderBriefing() {
+  renderSummary(currentMetrics, prevSnapshot);
+  renderActivity(currentMetrics);
+  renderDow(currentMetrics);
+  renderArticlePerf(currentMetrics);
+  renderTags(currentMetrics);
+  renderJourneys(currentMetrics);
+  renderObservations(currentMetrics, prevSnapshot);
+}
 
 async function loadAndRender() {
   const events = await dbGetAll('events');
@@ -3239,23 +3452,19 @@ async function loadAndRender() {
     }
   });
 
-  currentMetrics = computeMetrics(events, articles);
+  allMetrics = computeMetrics(events, articles);
+  currentMetrics = getFilteredMetrics();
 
   // Load previous snapshot for trend arrows
-  let prevSnapshot = null;
+  prevSnapshot = null;
   try {
     const snaps = await dbGetAll('metrics_snapshot');
     prevSnapshot = snaps.find(s => s.id === 'latest') || null;
   } catch(e) {}
 
   renderStatusBar(currentMetrics);
-  renderSummary(currentMetrics, prevSnapshot);
-  renderArticlePerf(currentMetrics);
-  renderActivity(currentMetrics);
-  renderGrowth(currentMetrics);
-  renderTags(currentMetrics);
-  renderJourneys(currentMetrics);
-  renderObservations(currentMetrics, prevSnapshot);
+  buildRangeFilter(allMetrics.articles.length);
+  renderBriefing();
   renderEventsTable(currentMetrics.events);
   renderImportHistory();
   renderDictionary();
@@ -3267,6 +3476,9 @@ async function seedIfEmpty() {
 
   for (const art of SEED_DATA.articles) await dbPut('articles', art);
   for (const ev of SEED_DATA.events) await dbPut('events', ev);
+  if (SEED_DATA.user_metadata) {
+    for (const u of SEED_DATA.user_metadata) await dbPut('user_metadata', u);
+  }
   await dbPut('imports', {
     timestamp: new Date().toISOString(),
     events_added: SEED_DATA.events.length,
@@ -3291,15 +3503,11 @@ async function init() {
 
 function renderAll() {
   applyI18n();
-  if (currentMetrics) {
+  if (allMetrics) {
+    currentMetrics = getFilteredMetrics();
     renderStatusBar(currentMetrics);
-    renderSummary(currentMetrics, null);
-    renderArticlePerf(currentMetrics);
-    renderActivity(currentMetrics);
-    renderGrowth(currentMetrics);
-    renderTags(currentMetrics);
-    renderJourneys(currentMetrics);
-    renderObservations(currentMetrics, null);
+    buildRangeFilter(allMetrics.articles.length);
+    renderBriefing();
     renderEventsTable(currentMetrics.events);
     renderImportHistory();
     renderDictionary();
