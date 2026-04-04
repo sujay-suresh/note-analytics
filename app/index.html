@@ -1776,8 +1776,8 @@ function computeContentObs(m) {
       var trending = secondAvg > firstAvg ? (isJa ? '\u6539\u5584\u50be\u5411' : 'Improving') : (isJa ? '\u4f4e\u4e0b\u50be\u5411' : 'Declining');
       obs.push({
         metric: firstAvg.toFixed(0) + '% \u2192 ' + secondAvg.toFixed(0) + '%',
-        label: isJa ? '\u30b9\u30ad\u7387\u306e\u63a8\u79fb\uff08\u521d\u671f\u2192\u6700\u8fd1\uff09' : 'Recent articles converting ' + (secondAvg > firstAvg ? 'better' : 'worse') + ' than earlier ones',
-        meaning: secondAvg > firstAvg ? (isJa ? '\u6700\u8fd1\u306e\u8a18\u4e8b\u306e\u30b9\u30ad\u7387\u304c\u521d\u671f\u3088\u308a\u9ad8\u3044' : 'Recent articles are converting better than earlier ones') : (isJa ? '\u521d\u671f\u306e\u8a18\u4e8b\u306e\u65b9\u304c\u30b9\u30ad\u7387\u304c\u9ad8\u304b\u3063\u305f' : 'Earlier articles had higher like rates')
+        label: isJa ? '\u30b9\u30ad\u7387\u306e\u63a8\u79fb\uff08\u521d\u671f\u2192\u6700\u8fd1\uff09' : 'Like rate ' + (secondAvg > firstAvg ? 'rising' : 'falling') + ' over time (' + firstAvg.toFixed(0) + '% \u2192 ' + secondAvg.toFixed(0) + '%)',
+        meaning: secondAvg > firstAvg ? (isJa ? '\u6700\u8fd1\u306e\u8a18\u4e8b\u306e\u65b9\u304c\u95b2\u89a7\u3042\u305f\u308a\u306e\u3044\u3044\u306d\u304c\u591a\u3044' : 'Later articles get more likes per view than earlier ones') : (isJa ? '\u521d\u671f\u306e\u8a18\u4e8b\u306e\u65b9\u304c\u95b2\u89a7\u3042\u305f\u308a\u306e\u3044\u3044\u306d\u304c\u591a\u304b\u3063\u305f' : 'Earlier articles got more likes per view')
       });
     }
   }
@@ -1796,20 +1796,20 @@ function computeContentObs(m) {
   if (ratio > 2) {
     obs.push({
       metric: ratio.toFixed(1) + 'x',
-      label: isJa ? 'A' + bestIdx + '(' + bestRate.toFixed(0) + '%) vs A' + worstIdx + '(' + worstRate.toFixed(0) + '%)' : 'A' + bestIdx + '\'s approach works ' + ratio.toFixed(1) + 'x better than A' + worstIdx,
+      label: isJa ? 'A' + bestIdx + '(' + bestRate.toFixed(0) + '%) vs A' + worstIdx + '(' + worstRate.toFixed(0) + '%)' : 'A' + bestIdx + ' has a ' + ratio.toFixed(1) + 'x higher like rate than A' + worstIdx,
       meaning: ratio > 4
-        ? (isJa ? 'A' + bestIdx + '\u306e\u69cb\u6210\u3068\u30c8\u30d4\u30c3\u30af\u304c\u7a81\u51fa\u3057\u3066\u3044\u308b' : 'A' + bestIdx + '\'s topic and structure stand out from the rest')
-        : (isJa ? 'A' + bestIdx + '\u306e\u30b9\u30ad\u7387\u304cA' + worstIdx + '\u306e' + ratio.toFixed(1) + '\u500d\u3002\u69cb\u6210\u3068\u30c8\u30d4\u30c3\u30af\u304c\u7570\u306a\u308b' : 'A' + bestIdx + ' converts ' + ratio.toFixed(1) + 'x better than A' + worstIdx + '. Topic, title, and length differ')
+        ? (isJa ? 'A' + bestIdx + '\u306f\u95b2\u89a7\u306e' + bestRate.toFixed(0) + '%\u304c\u3044\u3044\u306d\u3002A' + worstIdx + '\u306f' + worstRate.toFixed(0) + '%' : 'A' + bestIdx + ': ' + bestRate.toFixed(0) + '% of views become likes. A' + worstIdx + ': ' + worstRate.toFixed(0) + '%')
+        : (isJa ? 'A' + bestIdx + '\u306e\u30b9\u30ad\u7387\u304cA' + worstIdx + '\u306e' + ratio.toFixed(1) + '\u500d' : 'A' + bestIdx + ' gets ' + ratio.toFixed(1) + 'x more likes per view than A' + worstIdx)
     });
   } else {
     obs.push({
       metric: worstRate.toFixed(0) + '%\u2013' + bestRate.toFixed(0) + '%',
-      label: isJa ? '\u30b9\u30ad\u7387\u306e\u7bc4\u56f2\uff08\u5e73\u5747' + avgRate.toFixed(0) + '%\uff09' : 'All articles convert within a narrow ' + worstRate.toFixed(0) + '\u2013' + bestRate.toFixed(0) + '% band',
+      label: isJa ? '\u30b9\u30ad\u7387\u306e\u7bc4\u56f2\uff08\u5e73\u5747' + avgRate.toFixed(0) + '%\uff09' : 'Like rates range from ' + worstRate.toFixed(0) + '% to ' + bestRate.toFixed(0) + '% (avg ' + avgRate.toFixed(0) + '%)',
       meaning: avgRate >= 15
-        ? (isJa ? '\u5168\u8a18\u4e8b\u304c\u5b89\u5b9a\u3057\u3066\u9ad8\u3044\u30b9\u30ad\u7387\u3002\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u304c\u6a5f\u80fd\u3057\u3066\u3044\u308b' : 'All articles converting well. The format is consistent')
+        ? (isJa ? '\u5168\u8a18\u4e8b\u3067\u95b2\u89a7\u306e' + avgRate.toFixed(0) + '%\u4ee5\u4e0a\u304c\u3044\u3044\u306d\u3057\u3066\u3044\u308b' : avgRate.toFixed(0) + '%+ of views become likes across all articles')
         : avgRate >= 5
-          ? (isJa ? '\u5b89\u5b9a\u3057\u3066\u3044\u308b\u304c\u4f4e\u3081\u3002\u30c8\u30d4\u30c3\u30af\u3088\u308a\u30d5\u30a9\u30fc\u30de\u30c3\u30c8\u304c\u5f71\u97ff\u3057\u3066\u3044\u308b\u53ef\u80fd\u6027' : 'Narrow band. Topic differences are not driving like-rate variance')
-          : (isJa ? '\u5168\u4f53\u7684\u306b\u30b9\u30ad\u7387\u304c\u4f4e\u3044\u3002\u95b2\u89a7\u6570\u306b\u5bfe\u3057\u3066\u53cd\u5fdc\u304c\u5c11\u306a\u3044' : 'Like rates are low across all articles. Views are not converting to likes')
+          ? (isJa ? '\u30b9\u30ad\u7387\u306f\u5b89\u5b9a\u3057\u3066\u3044\u308b\u304c\u4f4e\u3081\u3002\u8a18\u4e8b\u9593\u306e\u5dee\u306f\u5c0f\u3055\u3044' : 'Like rates are similar across articles. The topic is not the differentiator')
+          : (isJa ? '\u5168\u4f53\u7684\u306b\u30b9\u30ad\u7387\u304c\u4f4e\u3044\u3002\u95b2\u89a7\u8005\u306e\u5927\u534a\u304c\u3044\u3044\u306d\u305b\u305a\u306b\u96e2\u308c\u3066\u3044\u308b' : 'Few viewers are liking. Under ' + avgRate.toFixed(0) + '% of views result in a like')
     });
   }
 
@@ -1840,8 +1840,8 @@ function computeContentObs(m) {
       metric: bestOverlap.count + (isJa ? '\u4eba' : ''),
       label: isJa ? 'A' + bestOverlap.pair[0] + '\u3068A' + bestOverlap.pair[1] + '\u306e\u5171\u901a\u8aad\u8005 (' + overlapPct + '%)' : overlapPct + '% of readers liked both A' + bestOverlap.pair[0] + ' and A' + bestOverlap.pair[1],
       meaning: overlapPct >= 25
-        ? (isJa ? '\u8aad\u8005\u306e' + overlapPct + '%\u304c\u4e21\u65b9\u306b\u53cd\u5fdc\u3002\u5171\u901a\u306e\u8aad\u8005\u5c64\u304c\u3044\u308b' : overlapPct + '% of readers liked both. These articles share a core audience')
-        : (isJa ? '\u4e00\u90e8\u306e\u8aad\u8005\u304c\u4e21\u65b9\u306b\u53cd\u5fdc\u3057\u3066\u3044\u308b' : 'Some readers engage with both articles')
+        ? (isJa ? '\u8aad\u8005\u306e4\u4eba\u306b1\u4eba\u4ee5\u4e0a\u304c\u4e21\u65b9\u3092\u8aad\u3093\u3067\u3044\u308b' : 'At least 1 in 4 readers liked both articles')
+        : (isJa ? bestOverlap.count + '\u4eba\u304c\u4e21\u65b9\u306b\u3044\u3044\u306d\u3057\u305f' : bestOverlap.count + ' readers liked both articles')
     });
   }
 
@@ -1852,7 +1852,7 @@ function computeContentObs(m) {
     // Find tags that appear on above-avg articles but not on below-avg ones
     var aboveOnlyTags = [];
     m.tagData.forEach(function(t) {
-      if (t.articles <= m.articles.length * 0.5) return; // skip ubiquitous
+      if (t.articles >= m.articles.length * 0.5) return; // skip ubiquitous
       // Check if this tag appears on any above-avg article
       // tagData doesn't have per-article breakdown, so use raw article data
     });
@@ -1877,10 +1877,10 @@ function computeContentObs(m) {
       }).join(', ');
       obs.push({
         metric: tagStr,
-        label: isJa ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u7528' : 'These tags only appear on your top-performing articles',
+        label: isJa ? '\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u4f7f\u7528' : 'Only used on articles with above-average like rates',
         meaning: distinctiveTags.length >= 3
-          ? (isJa ? '\u3053\u306e\u30bf\u30b0\u306f\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u767b\u5834\u3059\u308b' : 'These tags appear exclusively on top-performing articles')
-          : (isJa ? '\u3053\u306e\u30bf\u30b0\u306f\u5e73\u5747\u4ee5\u4e0a\u306e\u8a18\u4e8b\u306b\u306e\u307f\u767b\u5834\u3059\u308b' : 'This tag appears only on above-average articles')
+          ? (isJa ? '\u5e73\u5747\u4ee5\u4e0b\u306e\u8a18\u4e8b\u306b\u306f\u3053\u306e\u30bf\u30b0\u304c\u306a\u3044' : 'None of the below-average articles use these tags')
+          : (isJa ? '\u5e73\u5747\u4ee5\u4e0b\u306e\u8a18\u4e8b\u306b\u306f\u3053\u306e\u30bf\u30b0\u304c\u306a\u3044' : 'Below-average articles do not use this tag')
       });
     }
   }
@@ -1941,8 +1941,8 @@ function computeTimingObs(m) {
     }
     var remainPct = 100 - pct48;
     var timingMeaning = pct48 >= 70
-      ? (isJa ? '\u516c\u958b\u5f8c2\u65e5\u4ee5\u5185\u306b\u5927\u534a\u306e\u53cd\u5fdc\u304c\u96c6\u4e2d\u3059\u308b' : pct48 + '% of likes arrive within 48 hours. The publish window drives most engagement')
-      : (isJa ? '\u53cd\u5fdc\u304c\u9577\u671f\u7684\u306b\u5165\u308b\u3002\u904e\u53bb\u8a18\u4e8b\u306e\u518d\u5171\u6709\u3082\u6709\u52b9' : 'Likes arrive over time. Articles continue attracting likes well after publish');
+      ? (isJa ? '\u516c\u958b\u76f4\u5f8c\u306e\u53cd\u5fdc\u304c\u4e2d\u5fc3\u3002\u6b8b\u308a' + remainPct + '%\u306f\u305d\u308c\u4ee5\u964d\u306b\u5c4a\u304f' : 'Most likes arrive quickly. The remaining ' + remainPct + '% trickle in after 48 hours')
+      : (isJa ? '\u53cd\u5fdc\u304c\u9577\u671f\u7684\u306b\u5165\u308b\u3002\u516c\u958b\u5f8c\u6570\u65e5\u7d4c\u3063\u3066\u3082\u3044\u3044\u306d\u304c\u5c4a\u304f' : 'Likes spread across days. Articles keep attracting likes well after the first 48 hours');
     obs.push({ metric: metricStr, label: labelStr, meaning: timingMeaning });
   }
 
@@ -1957,16 +1957,16 @@ function computeTimingObs(m) {
         ? 'JST ' + String(m.peakStart).padStart(2, '0') + '\u2013' + String(m.peakEnd).padStart(2, '0') + '\u6642\u306b\u96c6\u4e2d (GMT ' + String(jstToGmt(m.peakStart)).padStart(2, '0') + '\u2013' + String(jstToGmt(m.peakEnd)).padStart(2, '0') + ')'
         : peakPct + '% of likes land between JST ' + String(m.peakStart).padStart(2, '0') + '\u2013' + String(m.peakEnd).padStart(2, '0') + ' (GMT ' + String(jstToGmt(m.peakStart)).padStart(2, '0') + '\u2013' + String(jstToGmt(m.peakEnd)).padStart(2, '0') + ')',
       meaning: peakPct >= 50
-        ? (isJa ? '\u53cd\u5fdc\u306eJST ' + String(m.peakStart).padStart(2, '0') + ':00\u301c' + String(m.peakEnd).padStart(2, '0') + ':00\u3078\u306e\u96c6\u4e2d\u5ea6\u304c\u9ad8\u3044' : 'Over half of all likes land in the JST ' + String(m.peakStart).padStart(2, '0') + '\u2013' + String(m.peakEnd).padStart(2, '0') + ' window')
-        : (isJa ? '\u516c\u958b\u6642\u523b\u306e\u5f71\u97ff\u306f\u9650\u5b9a\u7684\u3002\u597d\u304d\u306a\u6642\u9593\u3067\u3088\u3044' : 'Publish whenever suits you. timing has limited effect')
+        ? (isJa ? '\u6b8b\u308a' + (100 - peakPct) + '%\u306f\u305d\u306e\u4ed6\u306e\u6642\u9593\u5e2f\u306b\u5206\u6563\u3057\u3066\u3044\u308b' : 'The other ' + (100 - peakPct) + '% of likes are spread across the remaining hours')
+        : (isJa ? '\u3044\u3044\u306d\u306f\u6642\u9593\u5e2f\u306b\u95a2\u4fc2\u306a\u304f\u5c4a\u304f' : 'Likes arrive regardless of time of day. No strong peak')
     });
   } else {
     obs.push({
       metric: '\u2014',
       label: isJa ? '\u6642\u9593\u5e2f\u306b\u504f\u308a\u306a\u3057' : 'Likes spread evenly across hours',
       meaning: likes.length < 20
-        ? (isJa ? '\u30c7\u30fc\u30bf\u304c\u5c11\u306a\u3044\u305f\u3081\u30d1\u30bf\u30fc\u30f3\u304c\u4e0d\u660e\u78ba\u3002\u30c7\u30fc\u30bf\u304c\u5897\u3048\u308b\u3068\u5091\u5411\u304c\u898b\u3048\u308b' : 'Not enough data yet to detect a pattern. Trends will emerge with more likes')
-        : (isJa ? '\u8aad\u8005\u306f\u6642\u9593\u5e2f\u3092\u554f\u308f\u305a\u53cd\u5fdc\u3002\u516c\u958b\u6642\u523b\u306e\u5f71\u97ff\u304c\u5c0f\u3055\u3044' : 'Readers respond at all hours. Publish timing has minimal effect on engagement')
+        ? (isJa ? '\u30c7\u30fc\u30bf\u304c\u5c11\u306a\u3044\u305f\u3081\u30d1\u30bf\u30fc\u30f3\u304c\u4e0d\u660e\u78ba\u3002\u3044\u3044\u306d\u304c\u5897\u3048\u308b\u3068\u50be\u5411\u304c\u898b\u3048\u308b' : 'Under ' + likes.length + ' likes so far. A pattern may appear with more data')
+        : (isJa ? '\u8aad\u8005\u306f\u6642\u9593\u5e2f\u3092\u554f\u308f\u305a\u3044\u3044\u306d\u3057\u3066\u3044\u308b' : 'Readers like at all hours. No single time of day stands out')
     });
   }
 
@@ -2020,10 +2020,10 @@ function computeAudienceObs(m) {
       metric: organicPct + '%',
       label: isJa ? '\u65b0\u898f\u8aad\u8005\u7387 (' + m.organicUsers + '\u4eba\u65b0\u898f / ' + m.friendUsers + '\u4eba\u30d5\u30ec\u30f3\u30c9)' : organicPct + '% of readers are new (' + m.organicUsers + ' new, ' + m.friendUsers + ' friends)',
       meaning: organicPct >= 80
-        ? (isJa ? '\u65b0\u898f\u8aad\u8005\u304c\u5927\u534a\u3002\u81ea\u7136\u306b\u5c4a\u3044\u3066\u3044\u308b' : 'Almost all engagement comes from new readers')
+        ? (isJa ? '\u65b0\u898f\u8aad\u8005\u304c\u5927\u534a\u3002\u30d5\u30ec\u30f3\u30c9\u4ee5\u5916\u304b\u3089\u3044\u3044\u306d\u304c\u5c4a\u3044\u3066\u3044\u308b' : 'Almost all likes come from people who are not friends')
         : organicPct >= 50
-          ? (isJa ? '\u65b0\u898f\u8aad\u8005\u3068\u30d5\u30ec\u30f3\u30c9\u306e\u30d0\u30e9\u30f3\u30b9\u304c\u826f\u3044' : 'Engagement comes from both new readers and friends')
-          : (isJa ? '\u30d5\u30ec\u30f3\u30c9\u304b\u3089\u306e\u53cd\u5fdc\u304c\u591a\u3044\u3002\u30bf\u30b0\u3092\u5e83\u3052\u3066\u65b0\u898f\u8aad\u8005\u3092\u589e\u3084\u3059' : 'Most engagement is from friends. New reader reach is limited')
+          ? (isJa ? '\u65b0\u898f\u8aad\u8005\u3068\u30d5\u30ec\u30f3\u30c9\u306e\u4e21\u65b9\u304b\u3089\u3044\u3044\u306d\u304c\u5c4a\u3044\u3066\u3044\u308b' : 'Likes come from both new readers and friends')
+          : (isJa ? '\u3044\u3044\u306d\u306e\u5927\u534a\u304c\u30d5\u30ec\u30f3\u30c9\u304b\u3089\u3002\u65b0\u898f\u8aad\u8005\u304b\u3089\u306e\u53cd\u5fdc\u304c\u5c11\u306a\u3044' : 'Most likes are from friends. Few new readers are liking')
     });
   }
 
@@ -2044,8 +2044,8 @@ function computeAudienceObs(m) {
           metric: 'A' + (artIdx + 1),
           label: isJa ? entries[0][1] + '\u4eba\u306e\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u6700\u521d\u306e\u63a5\u70b9' : entries[0][1] + ' of ' + m.journeys.length + ' followers discovered you through this article',
           meaning: entries[0][1] >= 3
-            ? (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u591a\u304f\u304c\u3053\u306e\u8a18\u4e8b\u3092\u6700\u521d\u306b\u8aad\u3093\u3067\u3044\u308b' : 'This article is where most followers first engage')
-            : (isJa ? '\u3053\u306e\u8a18\u4e8b\u304c\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u5165\u53e3\u306b\u306a\u3063\u3066\u3044\u308b' : 'This article draws followers into the profile')
+            ? (isJa ? '\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u591a\u304f\u304c\u3053\u306e\u8a18\u4e8b\u3092\u6700\u521d\u306b\u8aad\u3093\u3067\u3044\u308b' : 'This article is the first one most followers liked')
+            : (isJa ? '\u3053\u306e\u8a18\u4e8b\u304c\u30d5\u30a9\u30ed\u30ef\u30fc\u306e\u5165\u53e3\u306b\u306a\u3063\u3066\u3044\u308b' : 'This article is where followers first liked before following')
         });
       }
     }
