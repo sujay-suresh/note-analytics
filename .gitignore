@@ -3,3 +3,7 @@ __pycache__/
 .env
 .claude/
 .playwright-mcp/
+
+# Raw data imports (contain personal data)
+data/*.csv
+data/*.xlsx
